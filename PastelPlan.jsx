@@ -314,7 +314,7 @@ function CheckBox({ checked, onClick, size = 22, tone = "var(--pp-line)", label 
 
 export default function PastelPlan() {
   const [userProfile, setUserProfile] = useLocalStorageState("pastelplan.user.v1", null);
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [showLanding, setShowLanding] = useState(true);
   const [now, setNow] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(() => todayISO());
   const [schedule, setSchedule] = useState(() => loadScheduleFor(todayISO()));
@@ -494,7 +494,7 @@ export default function PastelPlan() {
       : {}),
   };
 
-  if (!userProfile?.name) {
+  if (showLanding) {
     return (
       <div
         className="flex min-h-screen items-center justify-center p-6"
@@ -502,23 +502,16 @@ export default function PastelPlan() {
       >
         <PastelPlanStyles />
         <SignUpCard
+          userProfile={userProfile}
+          firstName={firstName}
+          dateLabel={dateLabel}
+          quote={quote}
           onSubmit={(profile) => {
             setUserProfile(profile);
-            setShowWelcome(false);
+            setShowLanding(false);
           }}
+          onContinue={() => setShowLanding(false)}
         />
-      </div>
-    );
-  }
-
-  if (showWelcome) {
-    return (
-      <div
-        className="flex min-h-screen items-center justify-center p-6"
-        style={{ background: "linear-gradient(155deg, var(--pp-lavender) 0%, var(--pp-blush) 45%, var(--pp-sky) 100%)" }}
-      >
-        <PastelPlanStyles />
-        <WelcomeSplash dateLabel={dateLabel} quote={quote} onContinue={() => setShowWelcome(false)} />
       </div>
     );
   }
@@ -847,10 +840,11 @@ export default function PastelPlan() {
   );
 }
 
-function SignUpCard({ onSubmit }) {
+function SignUpCard({ userProfile, firstName, dateLabel, quote, onSubmit, onContinue }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const nameRef = useRef(null);
+  const isReturning = !!userProfile?.name;
 
   function submit() {
     const trimmed = name.trim();
@@ -867,128 +861,59 @@ function SignUpCard({ onSubmit }) {
         className="relative rounded-[30px] px-6 pb-6 pt-7 text-center shadow-[0_20px_44px_-14px_rgba(30,20,40,.45)]"
         style={{ background: "linear-gradient(165deg, var(--pp-surface), color-mix(in srgb, var(--pp-lavender) 25%, var(--pp-surface)))" }}
       >
-        <h2 className="pp-font-display mb-1.5 text-[1.3rem] font-semibold leading-tight text-[var(--pp-ink)]">
-          Welcome to
-          <br />
-          Daily GIYA!
-        </h2>
-        <p className="mb-5.5 text-[0.82rem] italic leading-[1.45] text-[var(--pp-ink-soft)]">"Small steps every day lead to big changes."</p>
-        <label className="mb-1.5 block text-left text-[0.66rem] font-extrabold uppercase tracking-[.04em] text-[var(--pp-ink-soft)]">Your name</label>
-        <input
-          ref={nameRef}
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submit()}
-          placeholder="e.g. Jess Cordova"
-          className="mb-3.5 w-full rounded-xl bg-[var(--pp-surface-alt)] px-3.5 py-2.5 text-[0.88rem] text-[var(--pp-ink)] shadow-[inset_0_2px_4px_rgba(30,20,40,.16)]"
-        />
-        <label className="mb-1.5 block text-left text-[0.66rem] font-extrabold uppercase tracking-[.04em] text-[var(--pp-ink-soft)]">Email (optional)</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submit()}
-          placeholder="you@school.edu"
-          className="mb-3.5 w-full rounded-xl bg-[var(--pp-surface-alt)] px-3.5 py-2.5 text-[0.88rem] text-[var(--pp-ink)] shadow-[inset_0_2px_4px_rgba(30,20,40,.16)]"
-        />
-        <button
-          type="button"
-          onClick={submit}
-          className="mt-1 w-full rounded-2xl py-3.5 text-[0.9rem] font-bold text-[var(--pp-surface)] shadow-[0_10px_20px_-6px_rgba(30,20,40,.4)] transition-transform active:scale-[0.98]"
-          style={{ background: "linear-gradient(135deg, var(--pp-lavender-ink), var(--pp-blush-ink))" }}
-        >
-          Get Started
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ClayShape({ className = "", style, children }) {
-  return (
-    <div
-      className={"absolute flex items-center justify-center rounded-2xl shadow-[0_10px_18px_-8px_rgba(30,20,40,.4)] " + className}
-      style={style}
-    >
-      {children}
-    </div>
-  );
-}
-
-const WELCOME_STICKIES = [
-  { emoji: "📎", size: 56, font: 22, top: -8, left: -4, rotate: -14, color: "var(--pp-mint)" },
-  { emoji: "📌", size: 48, font: 20, top: 6, right: -2, rotate: 10, color: "var(--pp-lilac)" },
-  { emoji: "📝", size: 56, font: 22, top: -4, left: "36%", rotate: 8, color: "var(--pp-blush)" },
-  { emoji: "✏️", size: 44, font: 19, top: 52, left: 4, rotate: -8, color: "var(--pp-sky)" },
-  { emoji: "✏️", size: 40, font: 17, top: 36, right: 8, rotate: 14, color: "var(--pp-peach)" },
-  { emoji: "📌", size: 42, font: 18, top: 112, left: -8, rotate: -16, color: "var(--pp-gold)" },
-  { emoji: "📎", size: 44, font: 18, top: 100, right: "22%", rotate: 18, color: "var(--pp-seafoam)" },
-  { emoji: "📝", size: 46, font: 19, top: 126, left: "66%", rotate: -10, color: "var(--pp-lavender)" },
-  { emoji: "✅", size: 40, font: 17, top: 140, left: "14%", rotate: 10, color: "var(--pp-mint)" },
-];
-
-function WelcomeStickies() {
-  return (
-    <>
-      {WELCOME_STICKIES.map((s, i) => (
-        <ClayShape
-          key={i}
-          style={{
-            width: s.size,
-            height: s.size,
-            top: `${s.top}px`,
-            left: s.left !== undefined ? (typeof s.left === "number" ? `${s.left}px` : s.left) : undefined,
-            right: s.right !== undefined ? (typeof s.right === "number" ? `${s.right}px` : s.right) : undefined,
-            transform: `rotate(${s.rotate}deg)`,
-            fontSize: s.font,
-            background: `radial-gradient(circle at 30% 25%, #fff8, transparent 55%), ${s.color}`,
-          }}
-        >
-          {s.emoji}
-        </ClayShape>
-      ))}
-    </>
-  );
-}
-
-function SpiralDots({ count = 7 }) {
-  return (
-    <div className="absolute bottom-6 top-6 left-3 flex w-2 flex-col justify-between" aria-hidden="true">
-      {Array.from({ length: count }).map((_, i) => (
-        <span key={i} className="h-2 w-2 rounded-full" style={{ background: "color-mix(in srgb, var(--pp-ink) 12%, transparent)" }} />
-      ))}
-    </div>
-  );
-}
-
-function WelcomeSplash({ dateLabel, quote, onContinue }) {
-  return (
-    <div className="relative w-full max-w-[360px] px-2 pt-10">
-      <WelcomeStickies />
-
-      <div
-        className="relative mt-16 rounded-[30px] px-6 pb-7 pt-7 text-center shadow-[0_20px_44px_-14px_rgba(30,20,40,.45)]"
-        style={{ background: "linear-gradient(165deg, var(--pp-surface), color-mix(in srgb, var(--pp-lavender) 25%, var(--pp-surface)))" }}
-      >
-        <SpiralDots />
-
-        <h2 className="pp-font-display mb-1.5 text-[1.35rem] font-semibold leading-tight text-[var(--pp-ink)]">
-          Welcome Back!
-          <br />
-          to your Daily GIYA!
-        </h2>
-        <p className="mb-3 text-[0.72rem] font-bold uppercase tracking-[.05em] text-[var(--pp-ink-soft)]">{dateLabel}</p>
-        <p className="mb-6 text-[0.82rem] italic leading-[1.45] text-[var(--pp-ink-soft)]">"{quote}"</p>
-
-        <button
-          type="button"
-          onClick={onContinue}
-          className="w-full rounded-2xl py-3.5 text-[0.9rem] font-bold text-[var(--pp-surface)] shadow-[0_10px_20px_-6px_rgba(30,20,40,.4)] transition-transform active:scale-[0.98]"
-          style={{ background: "linear-gradient(135deg, var(--pp-lavender-ink), var(--pp-blush-ink))" }}
-        >
-          Enter Planner
-        </button>
+        {isReturning ? (
+          <>
+            <h2 className="pp-font-display mb-1.5 text-[1.3rem] font-semibold leading-tight text-[var(--pp-ink)]">
+              Welcome Back{firstName ? `, ${firstName}` : ""}!
+            </h2>
+            <p className="mb-3 text-[0.72rem] font-bold uppercase tracking-[.05em] text-[var(--pp-ink-soft)]">{dateLabel}</p>
+            <p className="mb-6 text-[0.82rem] italic leading-[1.45] text-[var(--pp-ink-soft)]">"{quote}"</p>
+            <button
+              type="button"
+              onClick={onContinue}
+              className="w-full rounded-2xl py-3.5 text-[0.9rem] font-bold text-[var(--pp-surface)] shadow-[0_10px_20px_-6px_rgba(30,20,40,.4)] transition-transform active:scale-[0.98]"
+              style={{ background: "linear-gradient(135deg, var(--pp-lavender-ink), var(--pp-blush-ink))" }}
+            >
+              Continue
+            </button>
+          </>
+        ) : (
+          <>
+            <h2 className="pp-font-display mb-1.5 text-[1.3rem] font-semibold leading-tight text-[var(--pp-ink)]">
+              Welcome to
+              <br />
+              Daily GIYA!
+            </h2>
+            <p className="mb-5.5 text-[0.82rem] italic leading-[1.45] text-[var(--pp-ink-soft)]">"Small steps every day lead to big changes."</p>
+            <label className="mb-1.5 block text-left text-[0.66rem] font-extrabold uppercase tracking-[.04em] text-[var(--pp-ink-soft)]">Your name</label>
+            <input
+              ref={nameRef}
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              placeholder="e.g. Jess Cordova"
+              className="mb-3.5 w-full rounded-xl bg-[var(--pp-surface-alt)] px-3.5 py-2.5 text-[0.88rem] text-[var(--pp-ink)] shadow-[inset_0_2px_4px_rgba(30,20,40,.16)]"
+            />
+            <label className="mb-1.5 block text-left text-[0.66rem] font-extrabold uppercase tracking-[.04em] text-[var(--pp-ink-soft)]">Email (optional)</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              placeholder="you@school.edu"
+              className="mb-3.5 w-full rounded-xl bg-[var(--pp-surface-alt)] px-3.5 py-2.5 text-[0.88rem] text-[var(--pp-ink)] shadow-[inset_0_2px_4px_rgba(30,20,40,.16)]"
+            />
+            <button
+              type="button"
+              onClick={submit}
+              className="mt-1 w-full rounded-2xl py-3.5 text-[0.9rem] font-bold text-[var(--pp-surface)] shadow-[0_10px_20px_-6px_rgba(30,20,40,.4)] transition-transform active:scale-[0.98]"
+              style={{ background: "linear-gradient(135deg, var(--pp-lavender-ink), var(--pp-blush-ink))" }}
+            >
+              Get Started
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
