@@ -304,6 +304,114 @@
     font-size: 0.9rem; font-weight: 700; cursor: pointer;
   }
 
+  /* ---------- personal / work switcher ---------- */
+  .main-page-tabs { display: flex; gap: 8px; padding: 16px 18px 0; }
+  .main-page-tab {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    border: 1.5px solid var(--line); background: transparent; border-radius: 12px;
+    padding: 10px 0; font-family: var(--font-body); font-size: 0.82rem; font-weight: 700; color: var(--ink-soft); cursor: pointer;
+  }
+  .main-page-tab svg { width: 15px; height: 15px; }
+  .main-page-tab.active { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+
+  /* ---------- work page ---------- */
+  .work-role-section .card { padding: 16px; }
+  .work-title { font-family: var(--font-display); font-weight: 650; font-size: 1.02rem; color: var(--ink); margin: 0 0 4px; }
+  .work-sub { font-size: 0.78rem; color: var(--ink-soft); margin: 0 0 12px; }
+  .role-select {
+    width: 100%; font-family: var(--font-body); font-size: 0.85rem; font-weight: 600;
+    border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px;
+    background: var(--paper); color: var(--ink);
+  }
+  .work-generic { text-align: center; padding: 30px 16px; }
+  .work-generic-icon {
+    width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px; background: var(--sky); color: var(--sky-ink);
+  }
+  .work-generic-title { font-family: var(--font-display); font-weight: 650; font-size: 1.02rem; color: var(--ink); margin: 0 0 6px; }
+  .work-generic-desc { font-size: 0.8rem; color: var(--ink-soft); margin: 0; max-width: 280px; margin-inline: auto; }
+
+  .outline-mode-toggle { display: flex; gap: 6px; background: var(--paper); border-radius: 12px; padding: 4px; margin-bottom: 16px; }
+  .outline-mode-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    border: none; background: transparent; border-radius: 9px; padding: 8px 0;
+    font-family: var(--font-body); font-size: 0.74rem; font-weight: 700; color: var(--ink-soft); cursor: pointer;
+  }
+  .outline-mode-btn svg { width: 13px; height: 13px; }
+  .outline-mode-btn.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.15); }
+
+  .outline-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; }
+  .outline-tab {
+    flex-shrink: 0; display: flex; align-items: center; gap: 5px;
+    border: 1.5px solid var(--line); background: transparent; border-radius: 999px;
+    padding: 7px 12px; font-family: var(--font-body); font-size: 0.7rem; font-weight: 700; color: var(--ink-soft); cursor: pointer;
+  }
+  .outline-tab svg { width: 12px; height: 12px; }
+  .outline-panel { border: 1.5px solid var(--line); border-radius: 14px; padding: 14px; background: var(--paper); }
+  .outline-textarea {
+    width: 100%; font-family: var(--font-body); font-size: 0.82rem; color: var(--ink);
+    border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface); resize: vertical;
+  }
+  .outline-date-input {
+    font-family: var(--font-body); font-size: 0.82rem; color: var(--ink);
+    border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 12px; background: var(--surface);
+  }
+  .five-e-field { border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; background: var(--surface); margin-bottom: 8px; }
+  .five-e-field:last-child { margin-bottom: 0; }
+  .five-e-label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--lavender-ink); margin-bottom: 3px; }
+  .five-e-input { width: 100%; border: none; background: transparent; font-family: var(--font-body); font-size: 0.8rem; color: var(--ink); padding: 0; }
+  .five-e-input:focus { outline: none; }
+
+  .outline-dropzone {
+    width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    border: 2px dashed var(--line); border-radius: 14px; padding: 32px 16px; background: var(--paper);
+    cursor: pointer; color: var(--sky-ink);
+  }
+  .outline-dropzone-title { font-family: var(--font-body); font-size: 0.82rem; font-weight: 700; color: var(--ink); }
+  .outline-dropzone-sub { font-family: var(--font-body); font-size: 0.7rem; color: var(--ink-soft); }
+  .outline-file-chip {
+    display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 12px;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--paper);
+  }
+  .outline-file-chip svg { width: 16px; height: 16px; color: var(--sky-ink); flex-shrink: 0; }
+  .outline-file-chip span.name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; font-weight: 600; color: var(--ink); }
+  .outline-file-chip button { border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; flex-shrink: 0; }
+  .outline-file-chip button svg { color: inherit; }
+
+  .office-item { position: relative; padding-right: 24px; }
+  .office-item .office-del {
+    position: absolute; right: 0; top: 0; border: none; background: transparent;
+    color: var(--ink-soft); cursor: pointer; display: flex; padding: 2px;
+  }
+  .office-item .office-del svg { width: 14px; height: 14px; }
+
+  .class-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .class-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .class-row:last-child { border-bottom: none; }
+  .class-row .class-info { flex: 1; min-width: 0; }
+  .class-row .class-name {
+    margin: 0; font-size: 0.83rem; font-weight: 650; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .class-row .class-meta { margin: 2px 0 0; font-size: 0.68rem; color: var(--ink-soft); font-weight: 600; }
+  .class-row .class-outline-btn {
+    display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+    border: 1.5px solid var(--line); background: transparent; color: var(--ink-soft);
+    font-family: var(--font-body); font-size: 0.68rem; font-weight: 700;
+    border-radius: 999px; padding: 6px 10px; cursor: pointer;
+  }
+  .class-row .class-outline-btn svg { width: 13px; height: 13px; }
+  .class-row .class-del { border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; flex-shrink: 0; padding: 2px; }
+  .class-row .class-del svg { width: 15px; height: 15px; }
+  .back-to-classes-btn {
+    display: flex; align-items: center; gap: 5px; border: none; background: transparent;
+    color: var(--ink-soft); font-family: var(--font-body); font-size: 0.76rem; font-weight: 700;
+    cursor: pointer; padding: 0; margin-bottom: 10px;
+  }
+  .back-to-classes-btn svg { width: 14px; height: 14px; }
+  .active-class-label { font-family: var(--font-display); font-size: 0.9rem; font-weight: 650; color: var(--ink); margin: -4px 0 12px; }
+  .active-class-label span { margin-left: 6px; font-family: var(--font-body); font-size: 0.72rem; font-weight: 500; color: var(--ink-soft); }
+
   /* ---------- view tabs + dashboard ---------- */
   .view-tabs { display: flex; gap: 8px; padding: 16px 18px 0; }
   .view-tab {
@@ -763,6 +871,18 @@
     </div>
   </header>
 
+  <div class="main-page-tabs">
+    <button type="button" class="main-page-tab active" data-mainpage="personal">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8.5" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M5 20C5 16.5 8 14 12 14C16 14 19 16.5 19 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Personal
+    </button>
+    <button type="button" class="main-page-tab" data-mainpage="work">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="7.5" width="17" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 7.5V6C8.5 4.9 9.4 4 10.5 4H13.5C14.6 4 15.5 4.9 15.5 6V7.5" stroke="currentColor" stroke-width="1.8"/></svg>
+      Work
+    </button>
+  </div>
+
+  <div id="personalPage">
   <div class="view-tabs">
     <button type="button" class="view-tab" data-view="planner">📋 Planner</button>
     <button type="button" class="view-tab active" data-view="dashboard">📊 Dashboard</button>
@@ -884,6 +1004,112 @@
       <div class="card" id="dashSnapshot"></div>
     </section>
   </div>
+  </div>
+
+  <div id="workPage" style="display:none">
+    <section class="work-role-section">
+      <div class="card">
+        <p class="work-title">Work Workspace</p>
+        <p class="work-sub">Select your role to adapt the workspace tools.</p>
+        <label class="t-edit-caption" for="roleSelect">Role</label>
+        <select id="roleSelect" class="role-select">
+          <option value="select">Select Role...</option>
+          <option value="teacher">Teacher</option>
+          <option value="office-head">Office Head</option>
+          <option value="executive-assistant">Executive Assistant</option>
+          <option value="staff">Staff</option>
+          <option value="coordinator">Coordinator</option>
+          <option value="laboratory-incharge">Laboratory In-Charge</option>
+          <option value="others">Others</option>
+        </select>
+      </div>
+    </section>
+
+    <section id="roleGenericSection">
+      <div class="card work-generic">
+        <span class="work-generic-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="7.5" width="17" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 7.5V6C8.5 4.9 9.4 4 10.5 4H13.5C14.6 4 15.5 4.9 15.5 6V7.5" stroke="currentColor" stroke-width="1.8"/></svg>
+        </span>
+        <p class="work-generic-title" id="roleGenericTitle">Select a Role</p>
+        <p class="work-generic-desc" id="roleGenericDesc">Choose a role above to unlock tailored tools and workflows.</p>
+      </div>
+    </section>
+
+    <section id="teacherWorkspaceSection" style="display:none">
+      <div id="classScheduleBox">
+        <h2 class="section-title">
+          <span class="icon-chip" style="background:var(--sky);color:var(--sky-ink)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 9.5H20.5" stroke="currentColor" stroke-width="1.7"/><path d="M8 3V6M16 3V6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </span>
+          Class Schedule
+        </h2>
+        <div class="card">
+          <ul class="class-list" id="classList"></ul>
+          <div id="classAddForm" style="display:none"></div>
+        </div>
+        <button class="t-add-block" id="classAddBtn" type="button" style="margin-top:10px"></button>
+      </div>
+
+      <div id="classOutlineBox" style="display:none">
+        <button type="button" class="back-to-classes-btn" id="backToClassesBtn">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Back to Class Schedule
+        </button>
+        <p class="active-class-label" id="activeClassLabel"></p>
+
+        <h2 class="section-title">
+          <span class="icon-chip" style="background:var(--gold);color:var(--gold-ink)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 5.5C4 4.67 4.67 4 5.5 4H11V19H5.5C4.67 19 4 18.33 4 17.5V5.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M20 5.5C20 4.67 19.33 4 18.5 4H13V19H18.5C19.33 19 20 18.33 20 17.5V5.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </span>
+          Course Outline
+        </h2>
+        <div class="card">
+          <p class="work-sub" style="margin-bottom:14px;">Upload a syllabus document or fill out the course outline manually.</p>
+
+          <div class="outline-mode-toggle">
+            <button type="button" class="outline-mode-btn active" id="modeManualBtn" data-mode="manual">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M4 20L4.6 16.7L15.5 5.8C16.2 5.1 17.3 5.1 18 5.8L18.7 6.5C19.4 7.2 19.4 8.3 18.7 9L7.8 19.9L4 20Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+              Manual Input
+            </button>
+            <button type="button" class="outline-mode-btn" id="modeUploadBtn" data-mode="upload">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 15V4M12 4L8 8M12 4L16 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 16V17.5C5 18.9 6.1 20 7.5 20H16.5C17.9 20 19 18.9 19 17.5V16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              Upload File
+            </button>
+          </div>
+
+          <div id="outlineManualContainer">
+            <div class="outline-tabs" id="outlineTabs"></div>
+            <div class="outline-panel" id="outlinePanel"></div>
+          </div>
+
+          <div id="outlineUploadContainer" style="display:none">
+            <button type="button" class="outline-dropzone" id="outlineDropzoneBtn">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 15V4M12 4L8 8M12 4L16 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 16V17.5C5 18.9 6.1 20 7.5 20H16.5C17.9 20 19 18.9 19 17.5V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span class="outline-dropzone-title">Click to upload</span>
+              <span class="outline-dropzone-sub">PDF, DOCX, XLSX (max 5MB)</span>
+            </button>
+            <input type="file" id="outlineFileInput" accept=".pdf,.doc,.docx,.xls,.xlsx" style="display:none">
+            <div id="outlineFileChip"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="officeHeadSection" style="display:none">
+      <h2 class="section-title">
+        <span class="icon-chip" style="background:var(--seafoam);color:var(--seafoam-ink)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19C3.5 15.7 6 13.5 9 13.5C12 13.5 14.5 15.7 14.5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15 14C17.3 14.3 19 16.1 19 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M14 8.3C15 8 15.7 7.1 15.7 6C15.7 4.7 14.6 3.6 13.3 3.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </span>
+        Office Head Workspace
+      </h2>
+      <div class="outline-tabs" id="officeTabsBox"></div>
+      <div class="outline-panel">
+        <ul class="todo-list" id="officeList"></ul>
+        <div id="officeAddForm" style="display:none"></div>
+      </div>
+      <button class="t-add-block" id="officeAddBtn" type="button" style="margin-top:10px"></button>
+    </section>
+  </div>
 
   <footer class="foot">PastelPlan · made for the space between periods</footer>
   <p class="foot-credit">jvtcordova@2026</p>
@@ -982,6 +1208,8 @@
     file: '<svg viewBox="0 0 24 24" fill="none"><path d="M6 3.5H14L18.5 8V19.5C18.5 20.3 17.8 21 17 21H6.8C6 21 5.3 20.3 5.3 19.5V5C5.3 4.2 5.6 3.5 6 3.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3.5V8H18.5" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>',
     x: '<svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
     bell: '<svg viewBox="0 0 24 24" fill="none"><path d="M6 10.5C6 7 8.7 4.5 12 4.5C15.3 4.5 18 7 18 10.5C18 15 19.5 16 19.5 16.5H4.5C4.5 16 6 15 6 10.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 19.5C10.4 20.2 11.1 20.7 12 20.7C12.9 20.7 13.6 20.2 14 19.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    mappin: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 19 15.1 19 10C19 6.1 15.9 3 12 3C8.1 3 5 6.1 5 10C5 15.1 12 21 12 21Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" stroke="currentColor" stroke-width="1.8"/></svg>',
+    clipboard: '<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="4.5" width="14" height="17" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M9 4.5V3.8C9 3.1 9.6 2.5 10.3 2.5H13.7C14.4 2.5 15 3.1 15 3.8V4.5" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 11H15.5M8.5 15H13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
   };
 
   const CATS = {
@@ -1772,6 +2000,447 @@
   document.querySelectorAll('.view-tab').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
   switchView('dashboard'); // default landing page
   setInterval(() => { if (dashboardView.style.display !== 'none') renderUpNext(); }, 30000);
+
+  // PERSONAL / WORK SWITCHER
+  const personalPage = document.getElementById('personalPage');
+  const workPage = document.getElementById('workPage');
+  function switchMainPage(page){
+    personalPage.style.display = page === 'personal' ? 'block' : 'none';
+    workPage.style.display = page === 'work' ? 'block' : 'none';
+    document.querySelectorAll('.main-page-tab').forEach(b => b.classList.toggle('active', b.dataset.mainpage === page));
+  }
+  document.querySelectorAll('.main-page-tab').forEach(b => b.addEventListener('click', () => switchMainPage(b.dataset.mainpage)));
+
+  // WORK: ROLE SELECT
+  const ROLE_LABELS = {
+    'office-head': 'Office Head', 'executive-assistant': 'Executive Assistant', staff: 'Staff',
+    coordinator: 'Coordinator', 'laboratory-incharge': 'Laboratory In-Charge', others: 'Others',
+  };
+  let workRole = loadJSON('pastelplan.role.v1', 'select');
+  const roleSelect = document.getElementById('roleSelect');
+  const roleGenericSection = document.getElementById('roleGenericSection');
+  const teacherWorkspaceSection = document.getElementById('teacherWorkspaceSection');
+  const officeHeadSection = document.getElementById('officeHeadSection');
+  const roleGenericTitle = document.getElementById('roleGenericTitle');
+  const roleGenericDesc = document.getElementById('roleGenericDesc');
+  function applyRole(){
+    roleSelect.value = workRole;
+    teacherWorkspaceSection.style.display = 'none';
+    officeHeadSection.style.display = 'none';
+    roleGenericSection.style.display = 'none';
+    if (workRole === 'teacher') {
+      teacherWorkspaceSection.style.display = 'block';
+    } else if (workRole === 'office-head') {
+      officeHeadSection.style.display = 'block';
+    } else {
+      roleGenericSection.style.display = 'block';
+      if (workRole === 'select') {
+        roleGenericTitle.textContent = 'Select a Role';
+        roleGenericDesc.textContent = 'Choose a role above to unlock tailored tools and workflows.';
+      } else {
+        const label = ROLE_LABELS[workRole] || workRole;
+        roleGenericTitle.textContent = label + ' Dashboard';
+        roleGenericDesc.textContent = 'Custom workspace tools for ' + label + ' will appear here.';
+      }
+    }
+  }
+  applyRole();
+  roleSelect.addEventListener('change', () => {
+    workRole = roleSelect.value;
+    saveJSON('pastelplan.role.v1', workRole);
+    applyRole();
+  });
+
+  // WORK: CLASS SCHEDULE (Teacher)
+  const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  let classSchedule = loadJSON('pastelplan.classSchedule.v1', []);
+  let classAdding = false;
+  function saveClassSchedule(){ saveJSON('pastelplan.classSchedule.v1', classSchedule); }
+
+  const classListBox = document.getElementById('classList');
+  const classAddForm = document.getElementById('classAddForm');
+  const classAddBtn = document.getElementById('classAddBtn');
+  const classScheduleBox = document.getElementById('classScheduleBox');
+  const classOutlineBox = document.getElementById('classOutlineBox');
+  const activeClassLabel = document.getElementById('activeClassLabel');
+  const backToClassesBtn = document.getElementById('backToClassesBtn');
+
+  function renderClassList(){
+    if (!classSchedule.length) {
+      classListBox.innerHTML = '<li class="empty-note">No classes yet.</li>';
+      return;
+    }
+    classListBox.innerHTML = '';
+    classSchedule.forEach(cls => {
+      const li = document.createElement('li');
+      li.className = 'class-row';
+      const meta = [cls.day, cls.time ? (fmtTime(cls.time).num + ' ' + fmtTime(cls.time).ampm) : ''].filter(Boolean).join(' · ');
+      li.innerHTML = `<div class="class-info">
+          <p class="class-name">${escapeHTML(cls.className)}</p>
+          ${meta ? `<p class="class-meta">${escapeHTML(meta)}</p>` : ''}
+        </div>
+        <button type="button" class="class-outline-btn" data-id="${cls.id}">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3.5 8C3.5 6.9 4.4 6 5.5 6H9.5L11.5 8H18.5C19.6 8 20.5 8.9 20.5 10V17C20.5 18.1 19.6 19 18.5 19H5.5C4.4 19 3.5 18.1 3.5 17V8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+          Outline
+        </button>
+        <button type="button" class="class-del" data-id="${cls.id}" aria-label="Delete class">${ICONS.x}</button>`;
+      li.querySelector('.class-outline-btn').addEventListener('click', () => openClassFolder(cls.id));
+      li.querySelector('.class-del').addEventListener('click', (e) => {
+        e.stopPropagation();
+        classSchedule = classSchedule.filter(c => c.id !== cls.id);
+        delete courseOutlines[cls.id];
+        saveClassSchedule();
+        saveJSON('pastelplan.courseOutlines.v1', courseOutlines);
+        renderClassList();
+      });
+      classListBox.appendChild(li);
+    });
+  }
+
+  function renderClassAddForm(){
+    if (!classAdding) {
+      classAddForm.style.display = 'none';
+      classAddForm.innerHTML = '';
+      classAddBtn.style.display = 'flex';
+      classAddBtn.innerHTML = `${ICONS.plus} Add class`;
+      return;
+    }
+    classAddBtn.style.display = 'none';
+    classAddForm.style.display = 'block';
+    classAddForm.innerHTML = `
+      <label class="t-edit-caption">Class</label>
+      <input type="text" class="t-input-title" id="classFieldName" placeholder="e.g. Grade 10 Biology">
+      <label class="t-edit-caption">Day</label>
+      <select class="role-select" id="classFieldDay" style="margin-bottom:9px;">
+        ${WEEKDAYS.map(d => `<option value="${d}">${d}</option>`).join('')}
+      </select>
+      <label class="t-edit-caption">Time</label>
+      <input type="time" class="t-input-title" id="classFieldTime">
+      <div class="t-edit-actions" style="margin-top:2px">
+        <button type="button" class="t-btn-cancel" id="classCancelBtn">Cancel</button>
+        <button type="button" class="t-btn-save" id="classSaveBtn" style="margin-left:auto">Add</button>
+      </div>`;
+    document.getElementById('classCancelBtn').addEventListener('click', () => {
+      classAdding = false;
+      renderClassAddForm();
+    });
+    document.getElementById('classSaveBtn').addEventListener('click', () => {
+      const nameEl = document.getElementById('classFieldName');
+      if (!nameEl.value.trim()) return;
+      classSchedule = [...classSchedule, {
+        id: uid(),
+        className: nameEl.value.trim(),
+        day: document.getElementById('classFieldDay').value,
+        time: document.getElementById('classFieldTime').value,
+      }];
+      saveClassSchedule();
+      classAdding = false;
+      renderClassList();
+      renderClassAddForm();
+    });
+  }
+
+  classAddBtn.addEventListener('click', () => {
+    classAdding = true;
+    renderClassAddForm();
+  });
+
+  function openClassFolder(classId){
+    activeClassId = classId;
+    outline = courseOutlines[classId] || freshOutline();
+    activeOutlineTab = 'desc';
+    const cls = classSchedule.find(c => c.id === classId);
+    const meta = cls ? [cls.day, cls.time ? (fmtTime(cls.time).num + ' ' + fmtTime(cls.time).ampm) : ''].filter(Boolean).join(' · ') : '';
+    activeClassLabel.innerHTML = `${escapeHTML(cls ? cls.className : '')}${meta ? `<span>${escapeHTML(meta)}</span>` : ''}`;
+    classScheduleBox.style.display = 'none';
+    classOutlineBox.style.display = 'block';
+    renderOutlineTabs();
+    renderOutlinePanel();
+    applyOutlineMode();
+    renderOutlineFileChip();
+  }
+  backToClassesBtn.addEventListener('click', () => {
+    activeClassId = null;
+    classOutlineBox.style.display = 'none';
+    classScheduleBox.style.display = 'block';
+  });
+
+  renderClassList();
+  renderClassAddForm();
+
+  // WORK: COURSE OUTLINE (Teacher)
+  const MAX_COURSE_FILE_BYTES = 5 * 1024 * 1024; // 5MB cap
+  const OUTLINE_TABS = [
+    { key: 'desc', label: 'Description', accent: 'lavender', icon: 'align' },
+    { key: 'topic', label: 'Topic / Lesson', accent: 'sky', icon: 'book' },
+    { key: 'outcomes', label: 'Learning Outcomes', accent: 'gold', icon: 'target' },
+    { key: 'fiveEs', label: "5E's Activities", accent: 'seafoam', icon: 'layers' },
+    { key: 'assessments', label: 'Assessments', accent: 'blush', icon: 'ruler' },
+    { key: 'labs', label: 'Laboratory Activities', accent: 'mint', icon: 'flask' },
+    { key: 'date', label: 'Date', accent: 'peach', icon: 'calendar' },
+    { key: 'remarks', label: 'Remarks', accent: 'lilac', icon: 'remarks' },
+  ];
+  const OUTLINE_ICONS = {
+    align: '<svg viewBox="0 0 24 24" fill="none"><path d="M4 6H20M4 12H14M4 18H18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    book: ICONS.book,
+    target: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>',
+    layers: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 3L21 8L12 13L3 8L12 3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M3 13L12 18L21 13" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>',
+    ruler: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="8" width="18" height="8" rx="1.5" stroke="currentColor" stroke-width="1.7" transform="rotate(-8 12 12)"/></svg>',
+    flask: '<svg viewBox="0 0 24 24" fill="none"><path d="M9 3H15M10 3V9.5L5.5 18C5 19.1 5.8 20.3 7 20.3H17C18.2 20.3 19 19.1 18.5 18L14 9.5V3" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>',
+    calendar: '<svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 9.5H20.5" stroke="currentColor" stroke-width="1.7"/><path d="M8 3V6M16 3V6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
+    remarks: '<svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H18.5C19.3 4 20 4.7 20 5.5V14.5C20 15.3 19.3 16 18.5 16H9L5 19.5V16H5.5C4.7 16 4 15.3 4 14.5V5.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>',
+  };
+  const FIVE_ES = [
+    { key: 'engage', label: 'Engage', placeholder: 'Hooks, warm-ups, diagnostic queries...' },
+    { key: 'explore', label: 'Explore', placeholder: 'Hands-on observation, guided inquiry...' },
+    { key: 'explain', label: 'Explain', placeholder: 'Direct instruction, key terminology...' },
+    { key: 'elaborate', label: 'Elaborate', placeholder: 'Application, case studies, extended problems...' },
+    { key: 'evaluate', label: 'Evaluate', placeholder: 'Exit tickets, reflection, self-assessment...' },
+  ];
+  const DEFAULT_OUTLINE = {
+    mode: 'manual', desc: '', topic: '', outcomes: '', assessments: '', labs: '', date: '', remarks: '',
+    fiveEs: { engage: '', explore: '', explain: '', elaborate: '', evaluate: '' },
+    uploadedFile: null,
+  };
+  function freshOutline(){ return { ...DEFAULT_OUTLINE, fiveEs: { ...DEFAULT_OUTLINE.fiveEs } }; }
+  let courseOutlines = loadJSON('pastelplan.courseOutlines.v1', {});
+  let activeClassId = null;
+  let outline = freshOutline();
+  let activeOutlineTab = 'desc';
+  function saveOutline(){
+    courseOutlines[activeClassId] = outline;
+    saveJSON('pastelplan.courseOutlines.v1', courseOutlines);
+  }
+
+  const outlineTabsBox = document.getElementById('outlineTabs');
+  const outlinePanel = document.getElementById('outlinePanel');
+  function renderOutlineTabs(){
+    outlineTabsBox.innerHTML = OUTLINE_TABS.map(t => {
+      const sw = swatchByKey(t.accent);
+      const active = t.key === activeOutlineTab;
+      const style = active ? `background:${sw.fill};border-color:${sw.fill};color:${sw.ink}` : '';
+      return `<button type="button" class="outline-tab" data-tab="${t.key}" style="${style}">${OUTLINE_ICONS[t.icon]} ${t.label}</button>`;
+    }).join('');
+    outlineTabsBox.querySelectorAll('.outline-tab').forEach(btn => {
+      btn.addEventListener('click', () => { activeOutlineTab = btn.dataset.tab; renderOutlineTabs(); renderOutlinePanel(); });
+    });
+  }
+  function textareaPanel(label, key, placeholder){
+    return `<label class="t-edit-caption" style="margin-bottom:8px;">${label}</label>
+      <textarea class="outline-textarea" rows="4" id="outlineField-${key}" placeholder="${placeholder}">${escapeHTML(outline[key] || '')}</textarea>`;
+  }
+  function renderOutlinePanel(){
+    const t = activeOutlineTab;
+    if (t === 'desc') outlinePanel.innerHTML = textareaPanel('Course Overview & Description', 'desc', 'Provide a detailed course summary, prerequisites, and introductory scope...');
+    else if (t === 'topic') outlinePanel.innerHTML = textareaPanel('Topic & Lesson Breakdown', 'topic', 'Enter module units, lecture topics, sub-topics, and core concepts...');
+    else if (t === 'outcomes') outlinePanel.innerHTML = textareaPanel('Intended Learning Outcomes (ILO)', 'outcomes', "Detail student competencies and Bloom's Taxonomy-aligned objectives...");
+    else if (t === 'assessments') outlinePanel.innerHTML = textareaPanel('Assessment & Evaluation Methods', 'assessments', 'Outline quizzes, exams, rubrics, grading criteria, and deadlines...');
+    else if (t === 'labs') outlinePanel.innerHTML = textareaPanel('Laboratory Exercises & Experiments', 'labs', 'List practical experiments, specimen lists, and lab safety protocols...');
+    else if (t === 'remarks') outlinePanel.innerHTML = textareaPanel('Teaching Remarks & Notes', 'remarks', 'Post-lesson adjustments, class progress observations...');
+    else if (t === 'date') {
+      outlinePanel.innerHTML = `<label class="t-edit-caption" style="margin-bottom:8px;">Schedule & Target Date</label>
+        <input type="date" class="outline-date-input" id="outlineField-date" value="${escapeHTML(outline.date || '')}">`;
+    } else if (t === 'fiveEs') {
+      outlinePanel.innerHTML = `<p class="t-edit-caption" style="margin-bottom:10px;">5E's Instructional Framework</p>` +
+        FIVE_ES.map(f => `<div class="five-e-field">
+          <span class="five-e-label">${f.label}</span>
+          <input type="text" class="five-e-input" id="outlineField-fiveEs-${f.key}" placeholder="${f.placeholder}" value="${escapeHTML(outline.fiveEs[f.key] || '')}">
+        </div>`).join('');
+    }
+
+    if (t === 'fiveEs') {
+      FIVE_ES.forEach(f => {
+        const el = document.getElementById(`outlineField-fiveEs-${f.key}`);
+        el.addEventListener('input', () => { outline.fiveEs[f.key] = el.value; saveOutline(); });
+      });
+    } else {
+      const el = document.getElementById(`outlineField-${t}`);
+      const evt = t === 'date' ? 'change' : 'input';
+      el.addEventListener(evt, () => { outline[t] = el.value; saveOutline(); });
+    }
+  }
+  renderOutlineTabs();
+  renderOutlinePanel();
+
+  const modeManualBtn = document.getElementById('modeManualBtn');
+  const modeUploadBtn = document.getElementById('modeUploadBtn');
+  const outlineManualContainer = document.getElementById('outlineManualContainer');
+  const outlineUploadContainer = document.getElementById('outlineUploadContainer');
+  function applyOutlineMode(){
+    modeManualBtn.classList.toggle('active', outline.mode === 'manual');
+    modeUploadBtn.classList.toggle('active', outline.mode === 'upload');
+    outlineManualContainer.style.display = outline.mode === 'manual' ? 'block' : 'none';
+    outlineUploadContainer.style.display = outline.mode === 'upload' ? 'block' : 'none';
+  }
+  applyOutlineMode();
+  modeManualBtn.addEventListener('click', () => { outline.mode = 'manual'; saveOutline(); applyOutlineMode(); });
+  modeUploadBtn.addEventListener('click', () => { outline.mode = 'upload'; saveOutline(); applyOutlineMode(); });
+
+  const outlineDropzoneBtn = document.getElementById('outlineDropzoneBtn');
+  const outlineFileInput = document.getElementById('outlineFileInput');
+  const outlineFileChip = document.getElementById('outlineFileChip');
+  function renderOutlineFileChip(){
+    if (!outline.uploadedFile) { outlineFileChip.innerHTML = ''; return; }
+    outlineFileChip.innerHTML = `<div class="outline-file-chip">
+      ${ICONS.file}
+      <span class="name">${escapeHTML(outline.uploadedFile.name)}</span>
+      <button type="button" id="outlineFileRemoveBtn">${ICONS.x}</button>
+    </div>`;
+    document.getElementById('outlineFileRemoveBtn').addEventListener('click', () => {
+      outline.uploadedFile = null;
+      saveOutline();
+      renderOutlineFileChip();
+    });
+  }
+  renderOutlineFileChip();
+  outlineDropzoneBtn.addEventListener('click', () => outlineFileInput.click());
+  outlineFileInput.addEventListener('change', () => {
+    const file = outlineFileInput.files[0];
+    if (!file) return;
+    if (file.size > MAX_COURSE_FILE_BYTES) { alert(`"${file.name}" is over 5MB — try a smaller file.`); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      outline.uploadedFile = { name: file.name, size: file.size, url: reader.result };
+      saveOutline();
+      renderOutlineFileChip();
+    };
+    reader.readAsDataURL(file);
+    outlineFileInput.value = '';
+  });
+
+  // WORK: OFFICE HEAD DASHBOARD
+  const OFFICE_HEAD_TABS = [
+    { key: 'meetings', label: 'Meetings', singular: 'meeting', accent: 'lavender', icon: 'users' },
+    { key: 'field', label: 'Field', singular: 'field entry', accent: 'mint', icon: 'mappin' },
+    { key: 'dailyTasks', label: 'Daily Tasks', singular: 'task', accent: 'blush', icon: 'clipboard' },
+  ];
+  const OFFICE_TAB_FIELDS = {
+    meetings: [
+      { key: 'title', label: 'Title', type: 'text', placeholder: 'e.g. Budget review' },
+      { key: 'date', label: 'Date', type: 'date' },
+      { key: 'time', label: 'Time', type: 'time' },
+      { key: 'location', label: 'Location', type: 'text', placeholder: 'e.g. Conference room' },
+    ],
+    field: [
+      { key: 'title', label: 'Title', type: 'text', placeholder: 'e.g. Site inspection' },
+      { key: 'date', label: 'Date', type: 'date' },
+      { key: 'location', label: 'Location', type: 'text', placeholder: 'e.g. Building B' },
+    ],
+    dailyTasks: [{ key: 'title', label: 'Task', type: 'text', placeholder: 'e.g. Sign the requisition forms' }],
+  };
+  let officeHead = loadJSON('pastelplan.officeHead.v1', null) || { meetings: [], field: [], dailyTasks: [] };
+  let activeOfficeTab = 'meetings';
+  let officeAdding = false;
+  function saveOfficeHead(){ saveJSON('pastelplan.officeHead.v1', officeHead); }
+  function fmtShortDate(dateStr){
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+  function officeItemSubtext(tabKey, item){
+    const parts = [];
+    if (item.date) parts.push(fmtShortDate(item.date));
+    if (tabKey === 'meetings' && item.time) parts.push(fmtTime(item.time).num + ' ' + fmtTime(item.time).ampm);
+    if (item.location) parts.push(item.location);
+    return parts.join(' · ');
+  }
+
+  const officeTabsBox = document.getElementById('officeTabsBox');
+  const officeListBox = document.getElementById('officeList');
+  const officeAddForm = document.getElementById('officeAddForm');
+  const officeAddBtn = document.getElementById('officeAddBtn');
+
+  function renderOfficeTabs(){
+    officeTabsBox.innerHTML = OFFICE_HEAD_TABS.map(t => {
+      const sw = swatchByKey(t.accent);
+      const active = t.key === activeOfficeTab;
+      const style = active ? `background:${sw.fill};border-color:${sw.fill};color:${sw.ink}` : '';
+      return `<button type="button" class="outline-tab" data-tab="${t.key}" style="${style}">${ICONS[t.icon]} ${t.label}</button>`;
+    }).join('');
+    officeTabsBox.querySelectorAll('.outline-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeOfficeTab = btn.dataset.tab;
+        officeAdding = false;
+        renderOfficeTabs();
+        renderOfficeList();
+        renderOfficeAddForm();
+      });
+    });
+  }
+
+  function renderOfficeList(){
+    const items = officeHead[activeOfficeTab] || [];
+    if (!items.length) {
+      officeListBox.innerHTML = '<li class="empty-note">Nothing here yet.</li>';
+      return;
+    }
+    officeListBox.innerHTML = '';
+    items.forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'todo-item office-item' + (item.done ? ' checked' : '');
+      const subtext = officeItemSubtext(activeOfficeTab, item);
+      li.innerHTML = `<span class="chk">${ICONS.check}</span><p>${escapeHTML(item.title)}${subtext ? `<span class="due">${escapeHTML(subtext)}</span>` : ''}</p><button type="button" class="office-del" aria-label="Delete">${ICONS.x}</button>`;
+      li.querySelector('.chk').addEventListener('click', () => {
+        item.done = !item.done;
+        saveOfficeHead();
+        renderOfficeList();
+      });
+      li.querySelector('.office-del').addEventListener('click', (e) => {
+        e.stopPropagation();
+        officeHead[activeOfficeTab] = officeHead[activeOfficeTab].filter(it => it.id !== item.id);
+        saveOfficeHead();
+        renderOfficeList();
+      });
+      officeListBox.appendChild(li);
+    });
+  }
+
+  function renderOfficeAddForm(){
+    if (!officeAdding) {
+      officeAddForm.style.display = 'none';
+      officeAddForm.innerHTML = '';
+      officeAddBtn.style.display = 'flex';
+      const tabDef = OFFICE_HEAD_TABS.find(t => t.key === activeOfficeTab);
+      officeAddBtn.innerHTML = `${ICONS.plus} Add ${tabDef.singular}`;
+      return;
+    }
+    officeAddBtn.style.display = 'none';
+    officeAddForm.style.display = 'block';
+    const fields = OFFICE_TAB_FIELDS[activeOfficeTab];
+    officeAddForm.innerHTML = fields.map(f => `
+      <label class="t-edit-caption">${f.label}</label>
+      <input type="${f.type}" class="t-input-title" id="officeField-${f.key}" placeholder="${f.placeholder || ''}">
+    `).join('') + `
+      <div class="t-edit-actions" style="margin-top:2px">
+        <button type="button" class="t-btn-cancel" id="officeCancelBtn">Cancel</button>
+        <button type="button" class="t-btn-save" id="officeSaveBtn" style="margin-left:auto">Add</button>
+      </div>`;
+    document.getElementById('officeCancelBtn').addEventListener('click', () => {
+      officeAdding = false;
+      renderOfficeAddForm();
+    });
+    document.getElementById('officeSaveBtn').addEventListener('click', () => {
+      const titleEl = document.getElementById('officeField-title');
+      if (!titleEl.value.trim()) return;
+      const item = { id: 'off_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), done: false };
+      fields.forEach(f => { item[f.key] = document.getElementById(`officeField-${f.key}`).value; });
+      item.title = item.title.trim();
+      officeHead[activeOfficeTab] = [...(officeHead[activeOfficeTab] || []), item];
+      saveOfficeHead();
+      officeAdding = false;
+      renderOfficeList();
+      renderOfficeAddForm();
+    });
+  }
+
+  officeAddBtn.addEventListener('click', () => {
+    officeAdding = true;
+    renderOfficeAddForm();
+  });
+
+  renderOfficeTabs();
+  renderOfficeList();
+  renderOfficeAddForm();
 
   // CUSTOMIZE SHEET
   const MAX_BG_BYTES = 4 * 1024 * 1024; // 4MB cap
