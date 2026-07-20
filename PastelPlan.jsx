@@ -25,6 +25,18 @@ import {
   ChevronRight,
   ArrowUp,
   BarChart3,
+  User,
+  Briefcase,
+  AlignLeft,
+  Target,
+  Layers,
+  Ruler,
+  FlaskConical,
+  MessageSquare,
+  PenLine,
+  UploadCloud,
+  MapPin,
+  Folder,
 } from "lucide-react";
 
 /**
@@ -127,6 +139,80 @@ const QUOTES = [
 
 const WATER_GOAL = 8;
 const WEEKDAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
+
+const WORK_ROLES = [
+  { key: "select", label: "Select a Role" },
+  { key: "teacher", label: "Teacher" },
+  { key: "office-head", label: "Office Head" },
+  { key: "executive-assistant", label: "Executive Assistant" },
+  { key: "staff", label: "Staff" },
+  { key: "coordinator", label: "Coordinator" },
+  { key: "laboratory-incharge", label: "Laboratory In-Charge" },
+  { key: "others", label: "Others" },
+];
+
+const MAX_COURSE_FILE_BYTES = 5 * 1024 * 1024; // 5MB cap
+
+const OUTLINE_TABS = [
+  { key: "desc", label: "Description", accent: "lavender", Icon: AlignLeft },
+  { key: "topic", label: "Topic / Lesson", accent: "sky", Icon: BookOpen },
+  { key: "outcomes", label: "Learning Outcomes", accent: "gold", Icon: Target },
+  { key: "fiveEs", label: "5E's Activities", accent: "seafoam", Icon: Layers },
+  { key: "assessments", label: "Assessments", accent: "blush", Icon: Ruler },
+  { key: "labs", label: "Laboratory Activities", accent: "mint", Icon: FlaskConical },
+  { key: "date", label: "Date", accent: "peach", Icon: Calendar },
+  { key: "remarks", label: "Remarks", accent: "lilac", Icon: MessageSquare },
+];
+
+const FIVE_ES = [
+  { key: "engage", label: "Engage", placeholder: "Hooks, warm-ups, diagnostic queries..." },
+  { key: "explore", label: "Explore", placeholder: "Hands-on observation, guided inquiry..." },
+  { key: "explain", label: "Explain", placeholder: "Direct instruction, key terminology..." },
+  { key: "elaborate", label: "Elaborate", placeholder: "Application, case studies, extended problems..." },
+  { key: "evaluate", label: "Evaluate", placeholder: "Exit tickets, reflection, self-assessment..." },
+];
+
+const DEFAULT_OUTLINE = {
+  mode: "manual",
+  desc: "",
+  topic: "",
+  outcomes: "",
+  assessments: "",
+  labs: "",
+  date: "",
+  remarks: "",
+  fiveEs: { engage: "", explore: "", explain: "", elaborate: "", evaluate: "" },
+  uploadedFile: null,
+};
+
+const OFFICE_HEAD_TABS = [
+  { key: "meetings", label: "Meetings", singular: "meeting", accent: "lavender", Icon: Users },
+  { key: "field", label: "Field", singular: "field entry", accent: "mint", Icon: MapPin },
+  { key: "dailyTasks", label: "Daily Tasks", singular: "task", accent: "blush", Icon: ClipboardList },
+];
+
+const OFFICE_TAB_FIELDS = {
+  meetings: [
+    { key: "title", label: "Title", type: "text", placeholder: "e.g. Budget review" },
+    { key: "date", label: "Date", type: "date" },
+    { key: "time", label: "Time", type: "time" },
+    { key: "location", label: "Location", type: "text", placeholder: "e.g. Conference room" },
+  ],
+  field: [
+    { key: "title", label: "Title", type: "text", placeholder: "e.g. Site inspection" },
+    { key: "date", label: "Date", type: "date" },
+    { key: "location", label: "Location", type: "text", placeholder: "e.g. Building B" },
+  ],
+  dailyTasks: [{ key: "title", label: "Task", type: "text", placeholder: "e.g. Sign the requisition forms" }],
+};
+
+const DEFAULT_OFFICE_HEAD = { meetings: [], field: [], dailyTasks: [] };
+
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+function freshOutline() {
+  return { ...DEFAULT_OUTLINE, fiveEs: { ...DEFAULT_OUTLINE.fiveEs } };
+}
 
 function fmtTime(time24) {
   const [hh, mm] = time24.split(":").map(Number);
@@ -238,6 +324,15 @@ export default function PastelPlan() {
   const [showCustomize, setShowCustomize] = useState(false);
   const fontStack = FONT_STACKS[customize.fontStyle] || FONT_STACKS.warm;
   const zoom = (FONT_SIZES.find((f) => f.key === customize.fontSize) || FONT_SIZES[1]).zoom;
+
+  const [mainPage, setMainPage] = useState("personal");
+  const [workRole, setWorkRole] = useLocalStorageState("pastelplan.role.v1", "select");
+  const [classSchedule, setClassSchedule] = useLocalStorageState("pastelplan.classSchedule.v1", []);
+  const [courseOutlines, setCourseOutlines] = useLocalStorageState("pastelplan.courseOutlines.v1", {});
+  const [activeClassId, setActiveClassId] = useState(null);
+  const [activeOutlineTab, setActiveOutlineTab] = useState("desc");
+  const [officeHead, setOfficeHead] = useLocalStorageState("pastelplan.officeHead.v1", () => ({ ...DEFAULT_OFFICE_HEAD }));
+  const [activeOfficeTab, setActiveOfficeTab] = useState("meetings");
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30000);
@@ -467,6 +562,36 @@ export default function PastelPlan() {
           </div>
         </header>
 
+        {/* personal / work switcher */}
+        <div className="flex gap-2 px-4.5 pt-3.5">
+          <button
+            type="button"
+            onClick={() => setMainPage("personal")}
+            className="flex-1 rounded-xl py-2 text-[0.76rem] font-bold"
+            style={
+              mainPage === "personal"
+                ? { background: "var(--pp-ink)", color: "var(--pp-surface)" }
+                : { background: "transparent", color: "var(--pp-ink-soft)", border: "1.5px solid var(--pp-line)" }
+            }
+          >
+            Personal
+          </button>
+          <button
+            type="button"
+            onClick={() => setMainPage("work")}
+            className="flex-1 rounded-xl py-2 text-[0.76rem] font-bold"
+            style={
+              mainPage === "work"
+                ? { background: "var(--pp-ink)", color: "var(--pp-surface)" }
+                : { background: "transparent", color: "var(--pp-ink-soft)", border: "1.5px solid var(--pp-line)" }
+            }
+          >
+            Work
+          </button>
+        </div>
+
+        {mainPage === "personal" && (
+        <>
         {/* view tabs */}
         <div className="flex gap-2 px-4.5 pt-4">
           <button
@@ -655,6 +780,27 @@ export default function PastelPlan() {
             todayStats={todayStats}
             water={waterFilled}
             catCounts={catCounts}
+          />
+        )}
+        </>
+        )}
+
+        {mainPage === "work" && (
+          <WorkView
+            workRole={workRole}
+            setWorkRole={setWorkRole}
+            classSchedule={classSchedule}
+            setClassSchedule={setClassSchedule}
+            courseOutlines={courseOutlines}
+            setCourseOutlines={setCourseOutlines}
+            activeClassId={activeClassId}
+            setActiveClassId={setActiveClassId}
+            activeOutlineTab={activeOutlineTab}
+            setActiveOutlineTab={setActiveOutlineTab}
+            officeHead={officeHead}
+            setOfficeHead={setOfficeHead}
+            activeOfficeTab={activeOfficeTab}
+            setActiveOfficeTab={setActiveOfficeTab}
           />
         )}
 
@@ -922,6 +1068,570 @@ function DashboardView({ upNext, weekDays, selectedDate, todayIso, computeDaySta
         </div>
       </section>
     </div>
+  );
+}
+
+function WorkView({
+  workRole,
+  setWorkRole,
+  classSchedule,
+  setClassSchedule,
+  courseOutlines,
+  setCourseOutlines,
+  activeClassId,
+  setActiveClassId,
+  activeOutlineTab,
+  setActiveOutlineTab,
+  officeHead,
+  setOfficeHead,
+  activeOfficeTab,
+  setActiveOfficeTab,
+}) {
+  const roleLabel = (WORK_ROLES.find((r) => r.key === workRole) || WORK_ROLES[0]).label;
+
+  return (
+    <main className="flex flex-col gap-5 px-4.5 pb-1.5 pt-4.5">
+      <section>
+        <SectionTitle icon={Briefcase} fill="var(--pp-lavender)" ink="var(--pp-lavender-ink)" title="Work Role" />
+        <div className="pp-card">
+          <label className="mb-1.5 block text-[0.72rem] font-bold text-[var(--pp-ink-soft)]">Choose your role</label>
+          <select
+            value={workRole}
+            onChange={(e) => setWorkRole(e.target.value)}
+            className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2.5 text-[0.85rem] font-semibold text-[var(--pp-ink)]"
+          >
+            {WORK_ROLES.map((r) => (
+              <option key={r.key} value={r.key}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </section>
+
+      {workRole === "teacher" ? (
+        <TeacherWorkspace
+          classSchedule={classSchedule}
+          setClassSchedule={setClassSchedule}
+          courseOutlines={courseOutlines}
+          setCourseOutlines={setCourseOutlines}
+          activeClassId={activeClassId}
+          setActiveClassId={setActiveClassId}
+          activeOutlineTab={activeOutlineTab}
+          setActiveOutlineTab={setActiveOutlineTab}
+        />
+      ) : workRole === "office-head" ? (
+        <OfficeHeadDashboard
+          officeHead={officeHead}
+          setOfficeHead={setOfficeHead}
+          activeOfficeTab={activeOfficeTab}
+          setActiveOfficeTab={setActiveOfficeTab}
+        />
+      ) : (
+        <section>
+          <div className="pp-card flex flex-col items-center gap-2 py-8 text-center">
+            <User size={30} strokeWidth={1.6} className="text-[var(--pp-ink-soft)]" />
+            <p className="pp-font-display text-[1.05rem] font-semibold text-[var(--pp-ink)]">
+              {workRole === "select" ? "Select a Role" : `${roleLabel} Dashboard`}
+            </p>
+            <p className="max-w-[26ch] text-[0.78rem] leading-[1.4] text-[var(--pp-ink-soft)]">
+              {workRole === "select"
+                ? "Choose a role above to unlock tailored tools and workflows."
+                : `Custom workspace tools for ${roleLabel} will appear here.`}
+            </p>
+          </div>
+        </section>
+      )}
+    </main>
+  );
+}
+
+function OutlineTextarea({ value, onChange, placeholder }) {
+  return (
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={5}
+      className="w-full resize-none rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2.5 text-[0.82rem] leading-[1.45] text-[var(--pp-ink)]"
+    />
+  );
+}
+
+function ClassAddForm({ onAdd, onCancel }) {
+  const [draft, setDraft] = useState({ className: "", day: WEEKDAYS[0], time: "" });
+
+  const submit = () => {
+    if (!draft.className.trim()) return;
+    onAdd({ id: uid(), className: draft.className.trim(), day: draft.day, time: draft.time });
+  };
+
+  return (
+    <div className="pp-card flex flex-col gap-2.5">
+      <div>
+        <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">Class</label>
+        <input
+          type="text"
+          value={draft.className}
+          placeholder="e.g. Grade 10 Biology"
+          onChange={(e) => setDraft((d) => ({ ...d, className: e.target.value }))}
+          className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.82rem] font-medium text-[var(--pp-ink)]"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">Day</label>
+        <select
+          value={draft.day}
+          onChange={(e) => setDraft((d) => ({ ...d, day: e.target.value }))}
+          className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.82rem] font-medium text-[var(--pp-ink)]"
+        >
+          {WEEKDAYS.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">Time</label>
+        <input
+          type="time"
+          value={draft.time}
+          onChange={(e) => setDraft((d) => ({ ...d, time: e.target.value }))}
+          className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.82rem] font-medium text-[var(--pp-ink)]"
+        />
+      </div>
+      <div className="mt-1 flex gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 rounded-xl border-[1.5px] border-[var(--pp-line)] py-2 text-[0.78rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={submit}
+          className="flex-1 rounded-xl py-2 text-[0.78rem] font-bold text-[var(--pp-surface)]"
+          style={{ background: "var(--pp-ink)" }}
+        >
+          Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ClassRow({ cls, onOpenOutline, onDelete }) {
+  const timeLabel = cls.time ? `${fmtTime(cls.time).num} ${fmtTime(cls.time).ampm}` : "";
+  const subtext = [cls.day, timeLabel].filter(Boolean).join(" · ");
+  return (
+    <div className="flex items-center gap-2.5 border-b border-[var(--pp-line)] py-2.5 last:border-b-0">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[0.83rem] font-semibold text-[var(--pp-ink)]">{cls.className}</p>
+        {subtext && <p className="truncate text-[0.68rem] text-[var(--pp-ink-soft)]">{subtext}</p>}
+      </div>
+      <button
+        type="button"
+        onClick={onOpenOutline}
+        className="flex shrink-0 items-center gap-1 rounded-full border-[1.5px] border-[var(--pp-line)] px-2.5 py-1.5 text-[0.68rem] font-bold text-[var(--pp-ink-soft)]"
+      >
+        <Folder size={13} strokeWidth={2} /> Outline
+      </button>
+      <button type="button" onClick={onDelete} aria-label="Delete class" className="shrink-0 text-[var(--pp-ink-soft)]">
+        <X size={15} strokeWidth={2} />
+      </button>
+    </div>
+  );
+}
+
+function ClassScheduleList({ classSchedule, setClassSchedule, setCourseOutlines, onOpenOutline }) {
+  const [adding, setAdding] = useState(false);
+
+  const addClass = (cls) => {
+    setClassSchedule((prev) => [...prev, cls]);
+    setAdding(false);
+  };
+  const deleteClass = (id) => {
+    setClassSchedule((prev) => prev.filter((c) => c.id !== id));
+    setCourseOutlines((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  return (
+    <section>
+      <SectionTitle icon={Calendar} fill="var(--pp-sky)" ink="var(--pp-sky-ink)" title="Class Schedule" />
+      {adding ? (
+        <ClassAddForm onAdd={addClass} onCancel={() => setAdding(false)} />
+      ) : (
+        <>
+          <div className="pp-card">
+            {classSchedule.length === 0 ? (
+              <p className="py-3 text-center text-[0.78rem] text-[var(--pp-ink-soft)]">No classes yet.</p>
+            ) : (
+              classSchedule.map((cls) => (
+                <ClassRow key={cls.id} cls={cls} onOpenOutline={() => onOpenOutline(cls.id)} onDelete={() => deleteClass(cls.id)} />
+              ))
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-[var(--pp-line)] py-3 text-[0.8rem] font-bold text-[var(--pp-ink-soft)]"
+          >
+            <Plus size={16} strokeWidth={2.2} /> Add class
+          </button>
+        </>
+      )}
+    </section>
+  );
+}
+
+function TeacherWorkspace({
+  classSchedule,
+  setClassSchedule,
+  courseOutlines,
+  setCourseOutlines,
+  activeClassId,
+  setActiveClassId,
+  activeOutlineTab,
+  setActiveOutlineTab,
+}) {
+  const activeClass = classSchedule.find((c) => c.id === activeClassId);
+
+  if (activeClass) {
+    const outline = courseOutlines[activeClassId] || freshOutline();
+    const setOutline = (updater) =>
+      setCourseOutlines((prev) => ({
+        ...prev,
+        [activeClassId]: typeof updater === "function" ? updater(prev[activeClassId] || freshOutline()) : updater,
+      }));
+    const timeLabel = activeClass.time ? `${fmtTime(activeClass.time).num} ${fmtTime(activeClass.time).ampm}` : "";
+
+    return (
+      <section>
+        <button
+          type="button"
+          onClick={() => setActiveClassId(null)}
+          className="mb-3 flex items-center gap-1 text-[0.76rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          <ChevronLeft size={14} strokeWidth={2.2} /> Back to Class Schedule
+        </button>
+        <p className="mb-3 -mt-1 text-[0.9rem] font-semibold text-[var(--pp-ink)]">
+          {activeClass.className}
+          <span className="ml-1.5 text-[0.72rem] font-medium text-[var(--pp-ink-soft)]">
+            {[activeClass.day, timeLabel].filter(Boolean).join(" · ")}
+          </span>
+        </p>
+        <TeacherOutline outline={outline} setOutline={setOutline} activeOutlineTab={activeOutlineTab} setActiveOutlineTab={setActiveOutlineTab} />
+      </section>
+    );
+  }
+
+  return (
+    <ClassScheduleList
+      classSchedule={classSchedule}
+      setClassSchedule={setClassSchedule}
+      setCourseOutlines={setCourseOutlines}
+      onOpenOutline={(id) => {
+        setActiveOutlineTab("desc");
+        setActiveClassId(id);
+      }}
+    />
+  );
+}
+
+function TeacherOutline({ outline, setOutline, activeOutlineTab, setActiveOutlineTab }) {
+  const fileInputRef = useRef(null);
+  const tab = OUTLINE_TABS.find((t) => t.key === activeOutlineTab) || OUTLINE_TABS[0];
+  const swatch = swatchByKey(tab.accent);
+
+  const setField = (key, val) => setOutline((prev) => ({ ...prev, [key]: val }));
+  const setFiveE = (key, val) => setOutline((prev) => ({ ...prev, fiveEs: { ...prev.fiveEs, [key]: val } }));
+
+  const handleFile = (file) => {
+    if (!file) return;
+    if (file.size > MAX_COURSE_FILE_BYTES) {
+      alert("That file is too large (max 5MB).");
+      return;
+    }
+    setField("uploadedFile", { name: file.name, size: file.size });
+  };
+
+  return (
+    <section>
+      <SectionTitle icon={BookOpen} fill="var(--pp-seafoam)" ink="var(--pp-seafoam-ink)" title="Course Outline" />
+
+      <div className="mb-3 flex gap-2">
+        <button
+          type="button"
+          onClick={() => setField("mode", "manual")}
+          className="flex-1 rounded-xl border-[1.5px] py-2 text-[0.76rem] font-bold"
+          style={
+            outline.mode === "manual"
+              ? { background: "var(--pp-seafoam)", borderColor: "var(--pp-seafoam)", color: "var(--pp-seafoam-ink)" }
+              : { background: "var(--pp-surface)", borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }
+          }
+        >
+          <PenLine size={13} strokeWidth={2.2} className="mr-1 inline-block align-[-2px]" /> Manual
+        </button>
+        <button
+          type="button"
+          onClick={() => setField("mode", "upload")}
+          className="flex-1 rounded-xl border-[1.5px] py-2 text-[0.76rem] font-bold"
+          style={
+            outline.mode === "upload"
+              ? { background: "var(--pp-seafoam)", borderColor: "var(--pp-seafoam)", color: "var(--pp-seafoam-ink)" }
+              : { background: "var(--pp-surface)", borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }
+          }
+        >
+          <UploadCloud size={13} strokeWidth={2.2} className="mr-1 inline-block align-[-2px]" /> Upload
+        </button>
+      </div>
+
+      {outline.mode === "upload" ? (
+        <div className="pp-card">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex w-full flex-col items-center gap-2 rounded-xl border-[1.5px] border-dashed border-[var(--pp-line)] py-7 text-[var(--pp-ink-soft)]"
+          >
+            <UploadCloud size={22} strokeWidth={1.7} />
+            <span className="text-[0.78rem] font-bold">Tap to upload a course outline file</span>
+            <span className="text-[0.68rem]">Max 5MB</span>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            onChange={(e) => handleFile(e.target.files?.[0])}
+          />
+          {outline.uploadedFile && (
+            <div className="mt-2.5 flex items-center justify-between rounded-lg bg-[var(--pp-paper)] px-3 py-2">
+              <span className="truncate text-[0.76rem] font-semibold text-[var(--pp-ink)]">{outline.uploadedFile.name}</span>
+              <button type="button" onClick={() => setField("uploadedFile", null)} aria-label="Remove file">
+                <X size={15} strokeWidth={2} className="text-[var(--pp-ink-soft)]" />
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {OUTLINE_TABS.map((t) => {
+              const active = t.key === activeOutlineTab;
+              const s = swatchByKey(t.accent);
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setActiveOutlineTab(t.key)}
+                  className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[0.68rem] font-bold"
+                  style={
+                    active
+                      ? { background: s.fill, color: s.ink }
+                      : { background: "var(--pp-surface)", border: "1.5px solid var(--pp-line)", color: "var(--pp-ink-soft)" }
+                  }
+                >
+                  <t.Icon size={12} strokeWidth={2.2} /> {t.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="pp-card">
+            {tab.key === "fiveEs" ? (
+              <div className="flex flex-col gap-3">
+                {FIVE_ES.map((e) => (
+                  <div key={e.key}>
+                    <label className="mb-1 block text-[0.72rem] font-bold" style={{ color: swatch.ink }}>
+                      {e.label}
+                    </label>
+                    <OutlineTextarea
+                      value={outline.fiveEs[e.key]}
+                      onChange={(val) => setFiveE(e.key, val)}
+                      placeholder={e.placeholder}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : tab.key === "date" ? (
+              <input
+                type="date"
+                value={outline.date}
+                onChange={(e) => setField("date", e.target.value)}
+                className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2.5 text-[0.85rem] font-semibold text-[var(--pp-ink)]"
+              />
+            ) : (
+              <OutlineTextarea
+                value={outline[tab.key]}
+                onChange={(val) => setField(tab.key, val)}
+                placeholder={`Add ${tab.label.toLowerCase()}...`}
+              />
+            )}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function fmtShortDate(dateStr) {
+  if (!dateStr) return "";
+  return dateFromISO(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function officeItemSubtext(tabKey, item) {
+  const parts = [];
+  if (item.date) parts.push(fmtShortDate(item.date));
+  if (tabKey === "meetings" && item.time) parts.push(fmtTime(item.time).num + " " + fmtTime(item.time).ampm);
+  if (item.location) parts.push(item.location);
+  return parts.join(" · ");
+}
+
+function OfficeAddForm({ tabKey, onAdd, onCancel }) {
+  const fields = OFFICE_TAB_FIELDS[tabKey];
+  const [draft, setDraft] = useState(() => Object.fromEntries(fields.map((f) => [f.key, ""])));
+
+  const submit = () => {
+    if (!draft.title.trim()) return;
+    onAdd({ id: uid(), done: false, ...draft, title: draft.title.trim() });
+  };
+
+  return (
+    <div className="pp-card flex flex-col gap-2.5">
+      {fields.map((f) => (
+        <div key={f.key}>
+          <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">{f.label}</label>
+          <input
+            type={f.type}
+            value={draft[f.key]}
+            placeholder={f.placeholder}
+            onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
+            className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.82rem] font-medium text-[var(--pp-ink)]"
+          />
+        </div>
+      ))}
+      <div className="mt-1 flex gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 rounded-xl border-[1.5px] border-[var(--pp-line)] py-2 text-[0.78rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={submit}
+          className="flex-1 rounded-xl py-2 text-[0.78rem] font-bold text-[var(--pp-surface)]"
+          style={{ background: "var(--pp-ink)" }}
+        >
+          Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function OfficeItemRow({ tabKey, item, onToggle, onDelete }) {
+  const subtext = officeItemSubtext(tabKey, item);
+  return (
+    <div className="flex items-center gap-2.5 border-b border-[var(--pp-line)] py-2.5 last:border-b-0">
+      <CheckBox checked={item.done} onClick={onToggle} size={20} />
+      <div className="min-w-0 flex-1">
+        <p className={"truncate text-[0.83rem] font-semibold text-[var(--pp-ink)]" + (item.done ? " line-through opacity-50" : "")}>
+          {item.title}
+        </p>
+        {subtext && <p className="truncate text-[0.68rem] text-[var(--pp-ink-soft)]">{subtext}</p>}
+      </div>
+      <button type="button" onClick={onDelete} aria-label="Delete" className="shrink-0 text-[var(--pp-ink-soft)]">
+        <X size={15} strokeWidth={2} />
+      </button>
+    </div>
+  );
+}
+
+function OfficeHeadDashboard({ officeHead, setOfficeHead, activeOfficeTab, setActiveOfficeTab }) {
+  const [adding, setAdding] = useState(false);
+  const tab = OFFICE_HEAD_TABS.find((t) => t.key === activeOfficeTab) || OFFICE_HEAD_TABS[0];
+  const swatch = swatchByKey(tab.accent);
+  const items = officeHead[activeOfficeTab] || [];
+
+  const selectTab = (key) => {
+    setActiveOfficeTab(key);
+    setAdding(false);
+  };
+  const addItem = (item) => {
+    setOfficeHead((prev) => ({ ...prev, [activeOfficeTab]: [...(prev[activeOfficeTab] || []), item] }));
+    setAdding(false);
+  };
+  const toggleItem = (id) =>
+    setOfficeHead((prev) => ({
+      ...prev,
+      [activeOfficeTab]: (prev[activeOfficeTab] || []).map((it) => (it.id === id ? { ...it, done: !it.done } : it)),
+    }));
+  const deleteItem = (id) =>
+    setOfficeHead((prev) => ({ ...prev, [activeOfficeTab]: (prev[activeOfficeTab] || []).filter((it) => it.id !== id) }));
+
+  return (
+    <section>
+      <SectionTitle icon={Briefcase} fill="var(--pp-seafoam)" ink="var(--pp-seafoam-ink)" title="Office Head Workspace" />
+
+      <div className="mb-3 flex gap-1.5">
+        {OFFICE_HEAD_TABS.map((t) => {
+          const active = t.key === activeOfficeTab;
+          const s = swatchByKey(t.accent);
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => selectTab(t.key)}
+              className="flex flex-1 items-center justify-center gap-1 rounded-xl py-2 text-[0.72rem] font-bold"
+              style={
+                active
+                  ? { background: s.fill, color: s.ink }
+                  : { background: "var(--pp-surface)", border: "1.5px solid var(--pp-line)", color: "var(--pp-ink-soft)" }
+              }
+            >
+              <t.Icon size={13} strokeWidth={2.2} /> {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {adding ? (
+        <OfficeAddForm tabKey={activeOfficeTab} onAdd={addItem} onCancel={() => setAdding(false)} />
+      ) : (
+        <>
+          <div className="pp-card">
+            {items.length === 0 ? (
+              <p className="py-3 text-center text-[0.78rem] text-[var(--pp-ink-soft)]">Nothing here yet.</p>
+            ) : (
+              items.map((item) => (
+                <OfficeItemRow
+                  key={item.id}
+                  tabKey={activeOfficeTab}
+                  item={item}
+                  onToggle={() => toggleItem(item.id)}
+                  onDelete={() => deleteItem(item.id)}
+                />
+              ))
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-[var(--pp-line)] py-3 text-[0.8rem] font-bold text-[var(--pp-ink-soft)]"
+            style={{ color: swatch.ink }}
+          >
+            <Plus size={16} strokeWidth={2.2} /> Add {tab.singular}
+          </button>
+        </>
+      )}
+    </section>
   );
 }
 
