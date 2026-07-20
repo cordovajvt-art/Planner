@@ -278,31 +278,26 @@
 
   /* ---------- sign-up ---------- */
   .signup-overlay {
-    position: fixed; inset: 0; z-index: 70;
-    background: var(--paper);
-    background-image:
-      radial-gradient(480px 320px at 8% -6%, color-mix(in srgb, var(--lavender) 38%, transparent), transparent),
-      radial-gradient(420px 300px at 96% 8%, color-mix(in srgb, var(--gold) 30%, transparent), transparent);
-    display: flex; align-items: center; justify-content: center; padding: 24px;
+    position: fixed; inset: 0; z-index: 70; padding: 24px;
+    background: linear-gradient(155deg, var(--lavender) 0%, var(--blush) 45%, var(--sky) 100%);
+    display: flex; align-items: center; justify-content: center;
   }
   .signup-overlay.hidden { display: none; }
-  .signup-card {
-    width: 100%; max-width: 360px; background: var(--surface); border-radius: 28px;
-    padding: 34px 24px 26px; box-shadow: 0 18px 40px -12px hsl(var(--shadow-color) / 0.35); text-align: center;
-  }
-  .signup-badge { font-size: 36px; margin-bottom: 12px; }
-  .signup-title { font-family: var(--font-display); font-weight: 650; font-size: 1.3rem; color: var(--ink); margin: 0 0 8px; }
-  .signup-sub { font-size: 0.82rem; color: var(--ink-soft); line-height: 1.45; margin: 0 0 22px; }
+  .signup-sub { font-size: 0.82rem; font-style: italic; color: var(--ink-soft); line-height: 1.45; margin: 0 0 22px; }
   .signup-label { display: block; text-align: left; font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); margin: 0 0 6px; }
   .signup-input {
-    width: 100%; font-family: var(--font-body); font-size: 0.88rem; border: 1.5px solid var(--line);
-    border-radius: 12px; padding: 11px 13px; background: var(--paper); color: var(--ink); margin-bottom: 14px;
+    width: 100%; font-family: var(--font-body); font-size: 0.88rem; border: none;
+    border-radius: 12px; padding: 11px 13px; background: var(--surface-alt); color: var(--ink); margin-bottom: 14px;
+    box-shadow: inset 0 2px 4px hsl(var(--shadow-color) / 0.22);
   }
   .signup-btn {
-    width: 100%; border: none; border-radius: 14px; padding: 14px; margin-top: 4px;
-    background: var(--mint-ink); color: var(--surface); font-family: var(--font-body);
-    font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    width: 100%; border: none; border-radius: 16px; padding: 14px; margin-top: 4px;
+    background: linear-gradient(135deg, var(--lavender-ink), var(--blush-ink)); color: var(--surface);
+    font-family: var(--font-body); font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    box-shadow: 0 10px 20px -6px hsl(var(--shadow-color) / 0.4);
+    transition: transform .12s ease;
   }
+  .signup-btn:active { transform: scale(0.98); }
 
   /* ---------- welcome back (clay pastel) ---------- */
   .welcome-overlay {
@@ -311,15 +306,13 @@
     display: flex; align-items: center; justify-content: center;
   }
   .welcome-overlay.hidden { display: none; }
-  .welcome-wrap { position: relative; width: 100%; max-width: 360px; padding: 56px 8px 0; }
+  .welcome-wrap { position: relative; width: 100%; max-width: 360px; padding: 40px 8px 0; }
   .welcome-sticky {
     position: absolute; display: flex; align-items: center; justify-content: center;
     border-radius: 16px; box-shadow: 0 10px 18px -8px hsl(var(--shadow-color) / 0.4); font-size: 20px;
   }
-  .welcome-mascot-wrap { position: relative; z-index: 2; margin-bottom: -44px; display: flex; justify-content: center; }
-  .welcome-mascot-wrap svg { filter: drop-shadow(0 10px 14px hsl(var(--shadow-color) / 0.3)); }
   .welcome-card {
-    position: relative; border-radius: 30px; padding: 56px 24px 28px; text-align: center;
+    position: relative; margin-top: 64px; border-radius: 30px; padding: 28px 24px; text-align: center;
     background: linear-gradient(165deg, var(--surface), color-mix(in srgb, var(--lavender) 25%, var(--surface)));
     box-shadow: 0 20px 44px -14px hsl(var(--shadow-color) / 0.45);
   }
@@ -1195,62 +1188,34 @@
 </div>
 
 <div class="signup-overlay hidden" id="signupOverlay">
-  <div class="signup-card">
-    <div class="signup-badge">🌷</div>
-    <h2 class="signup-title">Welcome to PastelPlan</h2>
-    <p class="signup-sub">A calmer way to plan your teaching day. Let's get your planner set up.</p>
-    <label class="signup-label" for="signupName">Your name</label>
-    <input type="text" id="signupName" class="signup-input" placeholder="e.g. Jess Cordova">
-    <label class="signup-label" for="signupEmail">Email (optional)</label>
-    <input type="email" id="signupEmail" class="signup-input" placeholder="you@school.edu">
-    <button type="button" class="signup-btn" id="signupBtn">Get Started</button>
+  <div class="welcome-wrap" style="padding-top:0">
+    <div class="welcome-card" style="margin-top:0">
+      <h2 class="welcome-title">Welcome to<br>Daily GIYA!</h2>
+      <p class="signup-sub">"Small steps every day lead to big changes."</p>
+      <label class="signup-label" for="signupName">Your name</label>
+      <input type="text" id="signupName" class="signup-input" placeholder="e.g. Jess Cordova">
+      <label class="signup-label" for="signupEmail">Email (optional)</label>
+      <input type="email" id="signupEmail" class="signup-input" placeholder="you@school.edu">
+      <button type="button" class="signup-btn" id="signupBtn">Get Started</button>
+    </div>
   </div>
 </div>
 
 <div class="welcome-overlay hidden" id="welcomeOverlay">
   <div class="welcome-wrap">
-    <div class="welcome-sticky" style="width:56px;height:56px;top:-8px;left:-4px;transform:rotate(-14deg);background:radial-gradient(circle at 30% 25%,#fff8,transparent 55%),var(--mint)">📎</div>
-    <div class="welcome-sticky" style="width:48px;height:48px;top:6px;right:-2px;transform:rotate(10deg);background:radial-gradient(circle at 30% 25%,#fff8,transparent 55%),var(--lilac)">📌</div>
-    <div class="welcome-sticky" style="width:64px;height:64px;top:-2px;left:68%;font-size:13px;font-weight:700;color:var(--blush-ink);transform:rotate(8deg);background:radial-gradient(circle at 30% 25%,#fff9,transparent 55%),var(--blush)">✎‿✎</div>
-    <div class="welcome-sticky" style="width:44px;height:44px;top:56px;left:2px;transform:rotate(-8deg);background:radial-gradient(circle at 30% 25%,#fff8,transparent 55%),var(--sky)">🌱</div>
-
-    <div class="welcome-mascot-wrap">
-      <svg width="120" height="100" viewBox="0 0 120 100" fill="none">
-        <defs>
-          <radialGradient id="dogEar" cx="35%" cy="25%" r="80%">
-            <stop offset="0%" stop-color="var(--peach)"/><stop offset="100%" stop-color="var(--gold-ink)" stop-opacity="0.85"/>
-          </radialGradient>
-          <radialGradient id="dogHead" cx="32%" cy="24%" r="80%">
-            <stop offset="0%" stop-color="#fff" stop-opacity="0.85"/>
-            <stop offset="35%" stop-color="var(--gold)" stop-opacity="0"/>
-            <stop offset="100%" stop-color="var(--gold)" stop-opacity="0"/>
-          </radialGradient>
-          <radialGradient id="dogPaw" cx="35%" cy="25%" r="80%">
-            <stop offset="0%" stop-color="var(--peach)"/><stop offset="100%" stop-color="var(--gold-ink)" stop-opacity="0.55"/>
-          </radialGradient>
-        </defs>
-        <path d="M36 22C18 26 8 46 16 64C20 72 32 74 38 62C42 54 40 34 36 22Z" fill="url(#dogEar)"/>
-        <path d="M84 22C102 26 112 46 104 64C100 72 88 74 82 62C78 54 80 34 84 22Z" fill="url(#dogEar)"/>
-        <ellipse cx="30" cy="92" rx="16" ry="10" fill="url(#dogPaw)"/>
-        <ellipse cx="90" cy="92" rx="16" ry="10" fill="url(#dogPaw)"/>
-        <circle cx="60" cy="44" r="34" fill="var(--gold)"/>
-        <circle cx="60" cy="44" r="34" fill="url(#dogHead)"/>
-        <ellipse cx="48" cy="20" rx="8" ry="5" fill="#fff" opacity="0.22" transform="rotate(-20 48 20)"/>
-        <ellipse cx="74" cy="22" rx="7" ry="4" fill="#fff" opacity="0.18" transform="rotate(15 74 22)"/>
-        <ellipse cx="60" cy="56" rx="16" ry="13" fill="var(--peach)"/>
-        <circle cx="48" cy="38" r="4" fill="var(--ink)"/>
-        <circle cx="72" cy="38" r="4" fill="var(--ink)"/>
-        <circle cx="49.2" cy="36.5" r="1.2" fill="#fff"/>
-        <circle cx="73.2" cy="36.5" r="1.2" fill="#fff"/>
-        <ellipse cx="60" cy="47" rx="5" ry="3.6" fill="var(--ink)"/>
-        <path d="M48 60Q60 67 72 60" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" fill="none"/>
-        <path d="M55 61C55 66 57 73 60 73C63 73 65 66 65 61C65 58 55 58 55 61Z" fill="var(--blush-ink)"/>
-      </svg>
-    </div>
+    <div class="welcome-sticky" style="width:56px;height:56px;top:-8px;left:-4px;font-size:22px;transform:rotate(-14deg);background:radial-gradient(circle at 30% 25%,#fff8,transparent 55%),var(--mint)">📎</div>
+    <div class="welcome-sticky" style="width:48px;height:48px;top:6px;right:-2px;font-size:20px;transform:rotate(10deg);background:radial-gradient(circle at 30% 25%,#fff8,transparent 55%),var(--lilac)">📌</div>
+    <div class="welcome-sticky" style="width:56px;height:56px;top:-4px;left:36%;font-size:22px;transform:rotate(8deg);background:radial-gradient(circle at 30% 25%,#fff9,transparent 55%),var(--blush)">📝</div>
+    <div class="welcome-sticky" style="width:44px;height:44px;top:52px;left:4px;font-size:19px;transform:rotate(-8deg);background:radial-gradient(circle at 30% 25%,#fff8,transparent 55%),var(--sky)">✏️</div>
+    <div class="welcome-sticky" style="width:40px;height:40px;top:36px;right:8px;font-size:17px;transform:rotate(14deg);background:radial-gradient(circle at 30% 25%,#fff8,transparent 55%),var(--peach)">✏️</div>
+    <div class="welcome-sticky" style="width:42px;height:42px;top:112px;left:-8px;font-size:18px;transform:rotate(-16deg);background:radial-gradient(circle at 30% 25%,#fff8,transparent 55%),var(--gold)">📌</div>
+    <div class="welcome-sticky" style="width:44px;height:44px;top:100px;right:22%;font-size:18px;transform:rotate(18deg);background:radial-gradient(circle at 30% 25%,#fff8,transparent 55%),var(--seafoam)">📎</div>
+    <div class="welcome-sticky" style="width:46px;height:46px;top:126px;left:66%;font-size:19px;transform:rotate(-10deg);background:radial-gradient(circle at 30% 25%,#fff9,transparent 55%),var(--lavender)">📝</div>
+    <div class="welcome-sticky" style="width:40px;height:40px;top:140px;left:14%;font-size:17px;transform:rotate(10deg);background:radial-gradient(circle at 30% 25%,#fff8,transparent 55%),var(--mint)">✅</div>
 
     <div class="welcome-card">
       <div class="welcome-spiral"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-      <h2 class="welcome-title" id="welcomeTitle">Welcome Back,<br>to your Daily GIYA</h2>
+      <h2 class="welcome-title" id="welcomeTitle">Welcome Back!<br>to your Daily GIYA!</h2>
       <p class="welcome-date" id="welcomeDate"></p>
       <p class="welcome-quote" id="welcomeQuote"></p>
       <button type="button" class="welcome-btn" id="welcomeEnterBtn">Enter Planner</button>
@@ -1906,11 +1871,17 @@
   const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const QUOTES = [
-    "You don't have to finish the whole list today — just the next right thing.",
-    "A calm teacher makes a calm room. Breathe before period one.",
-    "Progress, not a perfect lesson plan.",
-    "Small steps, every period.",
-    "You already know more than the to-do list gives you credit for.",
+    "I'm not late, I'm running on 'teacher time.'",
+    "My to-do list called. It wants a raise.",
+    "Behind every tired teacher is a lesson plan that lied about the timing.",
+    "Monday, we need to talk. This isn't working out.",
+    "I graded papers so you don't have to. You're welcome.",
+    "My planner is organized. My life is a rough draft.",
+    "Dili ko ma-stress sa akong trabaho. Ang akong trabaho ang ma-stress sa akong ka-relax.",
+    "Naa kay workmate nga mura'g 'calculator'? Mo-function lang kung naay i-divide o i-multiply nga OT pay.",
+    "Bawal ka kapuyon, timan-e gastador kaayo ka.",
+    "Gipakilig pero wa gihigugma, OK ra na uy, ako man gani nagpa-alarm pero wala naka mata.",
+    "Ayaw kabalaka nga itom ka kay kung balihon ang itom 'moti'.",
   ];
   function pad(n){ return n < 10 ? '0' + n : n; }
   function renderClock(){
