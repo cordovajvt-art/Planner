@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-<title>PastelPlan — Daily Teacher Planner</title>
+<title>DailyGiya — Daily Teacher Planner</title>
 <style>
   @font-face {
     font-family: 'Figtree Var';
@@ -304,6 +304,38 @@
     font-size: 0.9rem; font-weight: 700; cursor: pointer;
   }
 
+  /* ---------- welcome back (clay pastel) ---------- */
+  .welcome-overlay {
+    position: fixed; inset: 0; z-index: 71; padding: 24px;
+    background: linear-gradient(155deg, var(--lavender) 0%, var(--blush) 45%, var(--sky) 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .welcome-overlay.hidden { display: none; }
+  .welcome-wrap { position: relative; width: 100%; max-width: 360px; padding: 56px 8px 0; }
+  .welcome-sticky {
+    position: absolute; display: flex; align-items: center; justify-content: center;
+    border-radius: 16px; box-shadow: 0 10px 18px -8px hsl(var(--shadow-color) / 0.4); font-size: 20px;
+  }
+  .welcome-mascot-wrap { position: relative; z-index: 2; margin-bottom: -44px; display: flex; justify-content: center; }
+  .welcome-mascot-wrap svg { filter: drop-shadow(0 10px 14px hsl(var(--shadow-color) / 0.3)); }
+  .welcome-card {
+    position: relative; border-radius: 30px; padding: 56px 24px 28px; text-align: center;
+    background: linear-gradient(165deg, var(--surface), color-mix(in srgb, var(--lavender) 25%, var(--surface)));
+    box-shadow: 0 20px 44px -14px hsl(var(--shadow-color) / 0.45);
+  }
+  .welcome-spiral { position: absolute; top: 24px; bottom: 24px; left: 12px; width: 8px; display: flex; flex-direction: column; justify-content: space-between; }
+  .welcome-spiral span { width: 8px; height: 8px; border-radius: 50%; background: color-mix(in srgb, var(--ink) 12%, transparent); display: block; }
+  .welcome-title { font-family: var(--font-display); font-weight: 650; font-size: 1.35rem; color: var(--ink); margin: 0 0 6px; line-height: 1.2; }
+  .welcome-date { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); margin: 0 0 12px; }
+  .welcome-quote { font-size: 0.82rem; font-style: italic; color: var(--ink-soft); line-height: 1.45; margin: 0 0 22px; }
+  .welcome-btn {
+    width: 100%; border: none; border-radius: 16px; padding: 14px; cursor: pointer;
+    background: linear-gradient(135deg, var(--lavender-ink), var(--blush-ink)); color: var(--surface);
+    font-family: var(--font-body); font-size: 0.9rem; font-weight: 700;
+    box-shadow: 0 10px 20px -6px hsl(var(--shadow-color) / 0.4); transition: transform .12s ease;
+  }
+  .welcome-btn:active { transform: scale(0.98); }
+
   /* ---------- personal / work switcher ---------- */
   .main-page-tabs { display: flex; gap: 8px; padding: 16px 18px 0; }
   .main-page-tab {
@@ -478,14 +510,16 @@
   .t-color-swatch {
     width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent;
     cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--ink-soft); font-size: 12px;
+    box-shadow: 0 3px 7px -3px hsl(var(--shadow-color) / 0.45), inset 0 1px 0 rgba(255,255,255,.5);
   }
   .t-color-swatch.selected { border-color: var(--ink); }
   .t-color-swatch svg { width: 11px; height: 11px; }
-  .t-color-clear { background: var(--paper) !important; border: 1.5px dashed var(--line) !important; }
+  .t-color-clear { background: var(--paper) !important; border: 1.5px dashed var(--line) !important; box-shadow: none !important; }
   .t-icon-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .t-icon-current {
-    width: 34px; height: 34px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--paper);
+    width: 36px; height: 36px; border-radius: 13px; border: none; background: var(--surface-alt);
     display: flex; align-items: center; justify-content: center; font-size: 17px; cursor: pointer;
+    box-shadow: inset 0 2px 4px hsl(var(--shadow-color) / 0.18), inset 0 -1px 0 rgba(255,255,255,.4);
   }
   .t-icon-current svg { width: 17px; height: 17px; }
   .t-icon-clear-btn {
@@ -513,24 +547,37 @@
     margin: 0 0 10px;
   }
   .section-title .icon-chip {
-    width: 26px; height: 26px; border-radius: 9px;
+    width: 30px; height: 30px; border-radius: 13px;
     display:flex; align-items:center; justify-content:center;
-    flex-shrink:0;
+    flex-shrink:0; font-size: 15px; line-height: 1;
+    box-shadow:
+      0 6px 12px -6px hsl(var(--shadow-color) / 0.45),
+      inset 0 1px 0 rgba(255,255,255,.55),
+      inset 0 -4px 7px -4px rgba(0,0,0,.14);
   }
   .section-title small {
     margin-left: auto;
     font-family: var(--font-body);
-    font-weight: 600;
-    font-size: 0.72rem;
+    font-weight: 800;
+    font-size: 0.7rem;
     color: var(--ink-soft);
     letter-spacing: 0.02em;
+    background: var(--surface-alt);
+    border-radius: 999px;
+    padding: 3px 10px;
+    box-shadow: inset 0 1px 3px hsl(var(--shadow-color) / 0.2);
   }
 
   .card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 20px;
+    position: relative;
+    background: linear-gradient(165deg, color-mix(in srgb, var(--surface) 97%, #fff), var(--surface));
+    border: none;
+    border-radius: 22px;
     padding: 14px;
+    box-shadow:
+      0 12px 22px -14px hsl(var(--shadow-color) / 0.4),
+      inset 0 1px 0 rgba(255,255,255,.5),
+      inset 0 -8px 14px -10px rgba(0,0,0,.05);
   }
 
   /* ---------- timeline ---------- */
@@ -558,21 +605,31 @@
   .t-row:last-child .t-rail::before { bottom: 50%; }
   .t-dot {
     position: relative; z-index: 1; margin-top: 4px;
-    width: 11px; height: 11px; border-radius: 50%;
+    width: 12px; height: 12px; border-radius: 50%;
     border: 2px solid var(--surface);
-    box-shadow: 0 0 0 1.5px currentColor;
+    background: currentColor;
+    box-shadow: 0 2px 5px -1px hsl(var(--shadow-color) / 0.5), inset 0 1px 0 rgba(255,255,255,.5);
   }
   .t-card {
     display: flex; align-items: center; gap: 10px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 14px;
+    background: linear-gradient(165deg, color-mix(in srgb, var(--surface) 97%, #fff), var(--surface));
+    border: none;
+    border-radius: 18px;
     padding: 9px 10px;
+    box-shadow:
+      0 8px 16px -12px hsl(var(--shadow-color) / 0.4),
+      inset 0 1px 0 rgba(255,255,255,.5),
+      inset 0 -5px 10px -8px rgba(0,0,0,.05);
     transition: background .15s ease, opacity .15s ease, transform .1s ease;
   }
   .t-card .t-icon {
-    width: 30px; height: 30px; border-radius: 10px; flex-shrink: 0;
+    width: 32px; height: 32px; border-radius: 13px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
+    font-size: 16px; line-height: 1;
+    box-shadow:
+      0 5px 10px -5px hsl(var(--shadow-color) / 0.5),
+      inset 0 1px 0 rgba(255,255,255,.55),
+      inset 0 -3px 6px -3px rgba(0,0,0,.14);
   }
   .t-card .t-body { min-width: 0; flex: 1; }
   .t-card .t-title {
@@ -583,16 +640,20 @@
     font-size: 0.66rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
   }
   .t-check {
-    flex-shrink: 0; width: 24px; height: 24px; border-radius: 8px;
-    border: 1.75px solid var(--line); background: transparent;
+    flex-shrink: 0; width: 25px; height: 25px; border-radius: 10px;
+    border: none; background: var(--surface-alt);
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; padding: 0; color: transparent;
+    box-shadow: inset 0 2px 4px hsl(var(--shadow-color) / 0.22), inset 0 -1px 0 rgba(255,255,255,.5);
     transition: all .15s cubic-bezier(.34,1.56,.64,1);
   }
   .t-check svg { width: 14px; height: 14px; transform: scale(.4); transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
   .t-row.done .t-card { opacity: .55; }
   .t-row.done .t-title { text-decoration: line-through; text-decoration-color: var(--ink-soft); }
-  .t-row.done .t-check { background: var(--mint-ink); border-color: var(--mint-ink); color: var(--surface); }
+  .t-row.done .t-check {
+    background: var(--mint-ink); color: var(--surface);
+    box-shadow: 0 4px 10px -5px hsl(var(--shadow-color) / 0.5), inset 0 1px 0 rgba(255,255,255,.4);
+  }
   .t-row.done .t-check svg { transform: scale(1); }
   .t-col { display: flex; flex-direction: column; gap: 6px; }
   .t-sub {
@@ -695,9 +756,10 @@
   }
   .t-cat-pills { display: flex; gap: 6px; flex: 1; }
   .t-cat-pill {
-    flex: 1; border: 1.5px solid var(--line); background: transparent; border-radius: 999px;
-    padding: 6px 4px; font-family: var(--font-body); font-size: 0.66rem; font-weight: 700;
+    flex: 1; border: none; background: var(--surface-alt); border-radius: 999px;
+    padding: 7px 4px; font-family: var(--font-body); font-size: 0.66rem; font-weight: 800;
     text-transform: uppercase; letter-spacing: .02em; color: var(--ink-soft); cursor: pointer;
+    box-shadow: inset 0 1px 3px hsl(var(--shadow-color) / 0.18);
     transition: all .15s ease;
   }
   .t-input-title {
@@ -720,9 +782,10 @@
   }
   .t-add-block {
     display: flex; align-items: center; justify-content: center; gap: 6px;
-    margin-top: 4px; padding: 12px; border-radius: 14px; border: 1.5px dashed var(--line);
-    background: transparent; color: var(--ink-soft); font-family: var(--font-body);
-    font-size: 0.8rem; font-weight: 700; cursor: pointer; width: 100%; transition: transform .12s ease;
+    margin-top: 4px; padding: 13px; border-radius: 18px; border: none;
+    background: var(--surface-alt); color: var(--ink-soft); font-family: var(--font-body);
+    font-size: 0.8rem; font-weight: 800; cursor: pointer; width: 100%; transition: transform .12s ease;
+    box-shadow: inset 0 2px 5px hsl(var(--shadow-color) / 0.16), inset 0 -1px 0 rgba(255,255,255,.4);
   }
   .t-add-block svg { width: 15px; height: 15px; flex-shrink: 0; }
   .t-add-block:active { transform: scale(0.98); }
@@ -737,19 +800,24 @@
     cursor: pointer; user-select: none;
   }
   .prep-item .chk {
-    width: 19px; height: 19px; border-radius: 7px; flex-shrink: 0;
-    border: 1.75px solid var(--sky-ink); background: transparent;
+    width: 20px; height: 20px; border-radius: 8px; flex-shrink: 0;
+    border: none; background: color-mix(in srgb, var(--sky) 55%, var(--surface-alt));
     display:flex; align-items:center; justify-content:center; color: transparent;
+    box-shadow: inset 0 2px 4px hsl(var(--shadow-color) / 0.2);
     transition: all .15s cubic-bezier(.34,1.56,.64,1);
   }
   .prep-item .chk svg { width: 12px; height: 12px; transform: scale(.4); transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
   .prep-item.checked { color: var(--ink-soft); text-decoration: line-through; text-decoration-color: var(--ink-soft); }
-  .prep-item.checked .chk { background: var(--sky-ink); border-color: var(--sky-ink); color: var(--surface); }
+  .prep-item.checked .chk {
+    background: var(--sky-ink); color: var(--surface);
+    box-shadow: 0 4px 10px -5px hsl(var(--shadow-color) / 0.5), inset 0 1px 0 rgba(255,255,255,.4);
+  }
   .prep-item.checked .chk svg { transform: scale(1); }
   .hook-box {
     display: flex; gap: 10px; align-items: flex-start;
-    background: var(--gold);
-    border-radius: 14px; padding: 11px 12px;
+    background: linear-gradient(165deg, color-mix(in srgb, var(--gold) 85%, #fff), var(--gold));
+    border-radius: 16px; padding: 11px 12px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -6px 12px -8px rgba(0,0,0,.1);
   }
   .hook-box svg { flex-shrink: 0; margin-top: 1px; color: var(--gold-ink); }
   .hook-box .hook-label { font-size: 0.66rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--gold-ink); margin: 0 0 3px; }
@@ -758,34 +826,50 @@
   /* ---------- todo matrix ---------- */
   .matrix-group + .matrix-group { margin-top: 14px; }
   .matrix-head { display: flex; align-items: center; gap: 7px; margin: 0 0 8px; }
-  .matrix-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .matrix-head span { font-size: 0.72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); }
+  .matrix-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    box-shadow: 0 2px 4px -1px hsl(var(--shadow-color) / 0.5), inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  .matrix-head span {
+    font-size: 0.7rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft);
+    background: var(--surface-alt); border-radius: 999px; padding: 2px 9px;
+    box-shadow: inset 0 1px 2px hsl(var(--shadow-color) / 0.16);
+  }
   .todo-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
   .todo-item { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; user-select: none; }
   .todo-item .chk {
-    margin-top: 1px; width: 20px; height: 20px; border-radius: 7px; flex-shrink: 0;
-    border: 1.75px solid var(--line); background: transparent;
+    margin-top: 1px; width: 21px; height: 21px; border-radius: 8px; flex-shrink: 0;
+    border: none; background: var(--surface-alt);
     display:flex; align-items:center; justify-content:center; color: transparent;
+    box-shadow: inset 0 2px 4px hsl(var(--shadow-color) / 0.2);
     transition: all .15s cubic-bezier(.34,1.56,.64,1);
   }
   .todo-item .chk svg { width: 12px; height: 12px; transform: scale(.4); transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
   .todo-item p { margin: 0; font-size: 0.83rem; font-weight: 500; color: var(--ink); line-height: 1.38; }
   .todo-item span.due { display:block; font-size: 0.7rem; color: var(--ink-soft); font-weight: 600; margin-top: 1px; }
-  .todo-item.checked .chk { background: var(--mint-ink); border-color: var(--mint-ink); color: var(--surface); }
+  .todo-item.checked .chk {
+    background: var(--mint-ink); color: var(--surface);
+    box-shadow: 0 4px 10px -5px hsl(var(--shadow-color) / 0.5), inset 0 1px 0 rgba(255,255,255,.4);
+  }
   .todo-item.checked .chk svg { transform: scale(1); }
   .todo-item.checked p { color: var(--ink-soft); text-decoration: line-through; }
   .empty-note { font-size: 0.8rem; color: var(--ink-soft); font-style: italic; list-style: none; padding: 2px 0; }
 
   /* ---------- wellness ---------- */
-  .wellness-card { background: linear-gradient(165deg, var(--surface), var(--surface-alt)); }
+  .wellness-card { background: linear-gradient(165deg, color-mix(in srgb, var(--surface) 96%, #fff), var(--surface-alt)); }
   .wellness-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .wellness-label { font-size: 0.78rem; font-weight: 650; color: var(--ink); }
-  .wellness-count { font-size: 0.78rem; font-weight: 700; color: var(--sky-ink); font-variant-numeric: tabular-nums; }
+  .wellness-count {
+    font-size: 0.76rem; font-weight: 800; color: var(--sky-ink); font-variant-numeric: tabular-nums;
+    background: var(--surface); border-radius: 999px; padding: 3px 10px;
+    box-shadow: 0 3px 8px -4px hsl(var(--shadow-color) / 0.4), inset 0 1px 0 rgba(255,255,255,.5);
+  }
   .drops { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 16px; }
   .drop {
     width: 30px; height: 34px; border: none; padding: 0; cursor: pointer;
     background: transparent; color: var(--line);
     transition: transform .15s cubic-bezier(.34,1.56,.64,1), color .2s ease;
+    filter: drop-shadow(0 2px 3px hsl(var(--shadow-color) / 0.3));
   }
   .drop svg { width: 100%; height: 100%; }
   .drop.filled { color: var(--sky-ink); transform: scale(1.06); }
@@ -803,9 +887,10 @@
   }
   .breathe-ring .core {
     position: relative; width: 40px; height: 40px; border-radius: 50%;
-    background: var(--mint-ink); color: var(--surface);
+    background: linear-gradient(165deg, color-mix(in srgb, var(--mint-ink) 80%, #fff), var(--mint-ink));
+    color: var(--surface);
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 10px -3px hsl(var(--shadow-color) / 0.5);
+    box-shadow: 0 4px 10px -3px hsl(var(--shadow-color) / 0.5), inset 0 1px 0 rgba(255,255,255,.4);
   }
   @keyframes breathe {
     0%, 100% { transform: scale(0.72); opacity: .55; }
@@ -819,13 +904,15 @@
   .breather-copy .btitle { font-size: 0.83rem; font-weight: 700; color: var(--ink); margin: 0 0 2px; }
   .breather-copy .bstate { font-size: 0.76rem; color: var(--ink-soft); margin: 0 0 8px; font-weight: 500; }
   .breather-btn {
-    border: none; border-radius: 10px; padding: 7px 14px;
-    font-family: var(--font-body); font-size: 0.76rem; font-weight: 700;
-    background: var(--mint-ink); color: var(--surface); cursor: pointer;
+    border: none; border-radius: 12px; padding: 7px 14px;
+    font-family: var(--font-body); font-size: 0.76rem; font-weight: 800;
+    background: linear-gradient(165deg, color-mix(in srgb, var(--mint-ink) 80%, #fff), var(--mint-ink));
+    color: var(--surface); cursor: pointer;
+    box-shadow: 0 6px 12px -6px hsl(var(--shadow-color) / 0.5), inset 0 1px 0 rgba(255,255,255,.4);
     transition: transform .12s ease, filter .15s ease;
   }
   .breather-btn:active { transform: scale(0.96); }
-  .breather-btn.stop { background: transparent; color: var(--ink-soft); border: 1.5px solid var(--line); }
+  .breather-btn.stop { background: var(--surface-alt); color: var(--ink-soft); box-shadow: inset 0 2px 4px hsl(var(--shadow-color) / 0.18); }
 
   footer.foot {
     text-align: center; padding: 14px 20px 4px;
@@ -892,9 +979,7 @@
     <!-- TIMELINE -->
     <section>
       <h2 class="section-title">
-        <span class="icon-chip" style="background:var(--lavender);color:var(--lavender-ink)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7V12L15.5 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
+        <span class="icon-chip" style="background:var(--lavender);color:var(--lavender-ink)">⏰</span>
         Today's Timeline
         <small id="timelineLeft">9 left</small>
       </h2>
@@ -906,16 +991,14 @@
     <!-- PREP -->
     <section>
       <h2 class="section-title">
-        <span class="icon-chip" style="background:var(--gold);color:var(--gold-ink)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M14 4L20 10L9 21H4V16L14 4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12.5 6.5L17.5 11.5" stroke="currentColor" stroke-width="2"/></svg>
-        </span>
+        <span class="icon-chip" style="background:var(--gold);color:var(--gold-ink)">📝</span>
         Rush Prep &amp; Hook
       </h2>
       <div class="card">
         <p class="prep-obj"><b>No lesson selected yet</b><br>Add today's objective here once you've planned it.</p>
         <ul class="prep-list" id="prepList"></ul>
         <div class="hook-box">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3L13.8 9.2L20 11L13.8 12.8L12 19L10.2 12.8L4 11L10.2 9.2L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          <span style="font-size:18px;line-height:1;flex-shrink:0;margin-top:1px">💡</span>
           <div>
             <p class="hook-label">Warm-up hook</p>
             <p>No hook added yet.</p>
@@ -927,9 +1010,7 @@
     <!-- TODO MATRIX -->
     <section>
       <h2 class="section-title">
-        <span class="icon-chip" style="background:var(--blush);color:var(--blush-ink)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" stroke-width="2"/><path d="M9 3.5H15V6H9V3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 12H15.5M8.5 15.5H13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </span>
+        <span class="icon-chip" style="background:var(--blush);color:var(--blush-ink)">✅</span>
         To-Do Matrix
       </h2>
       <div class="card">
@@ -947,9 +1028,7 @@
     <!-- WELLNESS -->
     <section>
       <h2 class="section-title">
-        <span class="icon-chip" style="background:var(--mint);color:var(--mint-ink)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3C12 3 6 10.5 6 15A6 6 0 0018 15C18 10.5 12 3 12 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-        </span>
+        <span class="icon-chip" style="background:var(--mint);color:var(--mint-ink)">💧</span>
         Wellness Break
       </h2>
       <div class="card wellness-card">
@@ -962,7 +1041,7 @@
           <div class="breathe-ring">
             <div class="pulse" id="pulse"></div>
             <div class="core">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 3C12 3 6 10.5 6 15A6 6 0 0018 15C18 10.5 12 3 12 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+              <span style="font-size:17px;line-height:1">🧘</span>
             </div>
           </div>
           <div class="breather-copy">
@@ -1111,7 +1190,7 @@
     </section>
   </div>
 
-  <footer class="foot">PastelPlan · made for the space between periods</footer>
+  <footer class="foot">DailyGiya · made for the space between periods</footer>
   <p class="foot-credit">jvtcordova@2026</p>
 </div>
 
@@ -1125,6 +1204,57 @@
     <label class="signup-label" for="signupEmail">Email (optional)</label>
     <input type="email" id="signupEmail" class="signup-input" placeholder="you@school.edu">
     <button type="button" class="signup-btn" id="signupBtn">Get Started</button>
+  </div>
+</div>
+
+<div class="welcome-overlay hidden" id="welcomeOverlay">
+  <div class="welcome-wrap">
+    <div class="welcome-sticky" style="width:56px;height:56px;top:-8px;left:-4px;transform:rotate(-14deg);background:radial-gradient(circle at 30% 25%,#fff8,transparent 55%),var(--mint)">📎</div>
+    <div class="welcome-sticky" style="width:48px;height:48px;top:6px;right:-2px;transform:rotate(10deg);background:radial-gradient(circle at 30% 25%,#fff8,transparent 55%),var(--lilac)">📌</div>
+    <div class="welcome-sticky" style="width:64px;height:64px;top:-2px;left:68%;font-size:13px;font-weight:700;color:var(--blush-ink);transform:rotate(8deg);background:radial-gradient(circle at 30% 25%,#fff9,transparent 55%),var(--blush)">✎‿✎</div>
+    <div class="welcome-sticky" style="width:44px;height:44px;top:56px;left:2px;transform:rotate(-8deg);background:radial-gradient(circle at 30% 25%,#fff8,transparent 55%),var(--sky)">🌱</div>
+
+    <div class="welcome-mascot-wrap">
+      <svg width="120" height="100" viewBox="0 0 120 100" fill="none">
+        <defs>
+          <radialGradient id="dogEar" cx="35%" cy="25%" r="80%">
+            <stop offset="0%" stop-color="var(--peach)"/><stop offset="100%" stop-color="var(--gold-ink)" stop-opacity="0.85"/>
+          </radialGradient>
+          <radialGradient id="dogHead" cx="32%" cy="24%" r="80%">
+            <stop offset="0%" stop-color="#fff" stop-opacity="0.85"/>
+            <stop offset="35%" stop-color="var(--gold)" stop-opacity="0"/>
+            <stop offset="100%" stop-color="var(--gold)" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="dogPaw" cx="35%" cy="25%" r="80%">
+            <stop offset="0%" stop-color="var(--peach)"/><stop offset="100%" stop-color="var(--gold-ink)" stop-opacity="0.55"/>
+          </radialGradient>
+        </defs>
+        <path d="M36 22C18 26 8 46 16 64C20 72 32 74 38 62C42 54 40 34 36 22Z" fill="url(#dogEar)"/>
+        <path d="M84 22C102 26 112 46 104 64C100 72 88 74 82 62C78 54 80 34 84 22Z" fill="url(#dogEar)"/>
+        <ellipse cx="30" cy="92" rx="16" ry="10" fill="url(#dogPaw)"/>
+        <ellipse cx="90" cy="92" rx="16" ry="10" fill="url(#dogPaw)"/>
+        <circle cx="60" cy="44" r="34" fill="var(--gold)"/>
+        <circle cx="60" cy="44" r="34" fill="url(#dogHead)"/>
+        <ellipse cx="48" cy="20" rx="8" ry="5" fill="#fff" opacity="0.22" transform="rotate(-20 48 20)"/>
+        <ellipse cx="74" cy="22" rx="7" ry="4" fill="#fff" opacity="0.18" transform="rotate(15 74 22)"/>
+        <ellipse cx="60" cy="56" rx="16" ry="13" fill="var(--peach)"/>
+        <circle cx="48" cy="38" r="4" fill="var(--ink)"/>
+        <circle cx="72" cy="38" r="4" fill="var(--ink)"/>
+        <circle cx="49.2" cy="36.5" r="1.2" fill="#fff"/>
+        <circle cx="73.2" cy="36.5" r="1.2" fill="#fff"/>
+        <ellipse cx="60" cy="47" rx="5" ry="3.6" fill="var(--ink)"/>
+        <path d="M48 60Q60 67 72 60" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" fill="none"/>
+        <path d="M55 61C55 66 57 73 60 73C63 73 65 66 65 61C65 58 55 58 55 61Z" fill="var(--blush-ink)"/>
+      </svg>
+    </div>
+
+    <div class="welcome-card">
+      <div class="welcome-spiral"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <h2 class="welcome-title" id="welcomeTitle">Welcome Back,<br>to your Daily GIYA</h2>
+      <p class="welcome-date" id="welcomeDate"></p>
+      <p class="welcome-quote" id="welcomeQuote"></p>
+      <button type="button" class="welcome-btn" id="welcomeEnterBtn">Enter Planner</button>
+    </div>
   </div>
 </div>
 
@@ -1213,9 +1343,9 @@
   };
 
   const CATS = {
-    class: { fill: 'var(--lavender)', ink: 'var(--lavender-ink)', label: 'Class', icon: 'book' },
-    duty:  { fill: 'var(--blush)',    ink: 'var(--blush-ink)',    label: 'Task',  icon: 'users' },
-    prep:  { fill: 'var(--sky)',      ink: 'var(--sky-ink)',      label: 'Prep',  icon: 'pencil' },
+    class: { fill: 'var(--lavender)', ink: 'var(--lavender-ink)', label: 'Class', icon: 'book', emoji: '📚' },
+    duty:  { fill: 'var(--blush)',    ink: 'var(--blush-ink)',    label: 'Task',  icon: 'users', emoji: '🗂️' },
+    prep:  { fill: 'var(--sky)',      ink: 'var(--sky-ink)',      label: 'Prep',  icon: 'pencil', emoji: '✏️' },
   };
   const CAT_ORDER = ['class', 'duty', 'prep'];
 
@@ -1294,7 +1424,7 @@
   let editingId = null;
   const timeline = document.getElementById('timeline');
   const addBlockBtn = document.getElementById('addBlockBtn');
-  addBlockBtn.innerHTML = ICONS.plus + ' Add block';
+  addBlockBtn.innerHTML = '<span style="font-size:15px;line-height:1">➕</span> Add block';
 
   function saveSchedule(){ saveJSON(scheduleKey(selectedDate), schedule); }
 
@@ -1361,9 +1491,11 @@
     row.querySelectorAll('.t-cat-pill').forEach(btn => {
       const c = CATS[btn.dataset.cat];
       const active = btn.dataset.cat === selectedCat;
-      btn.style.background = active ? c.fill : 'transparent';
+      btn.style.background = active ? c.fill : 'var(--surface-alt)';
       btn.style.color = active ? c.ink : 'var(--ink-soft)';
-      btn.style.borderColor = active ? c.fill : 'var(--line)';
+      btn.style.boxShadow = active
+        ? '0 4px 10px -5px hsl(var(--shadow-color) / .5), inset 0 1px 0 rgba(255,255,255,.5)'
+        : 'inset 0 1px 3px hsl(var(--shadow-color) / 0.18)';
     });
   }
 
@@ -1456,7 +1588,7 @@
 
     const iconBtn = row.querySelector('#iconPickerBtn');
     function paintIconPreview(){
-      iconBtn.innerHTML = selectedEmoji ? selectedEmoji : ICONS[CATS[selectedCat].icon];
+      iconBtn.innerHTML = selectedEmoji ? selectedEmoji : CATS[selectedCat].emoji;
     }
     paintIconPreview();
     const emojiPanel = row.querySelector('#emojiPanel');
@@ -1595,7 +1727,7 @@
       const custom = item.color ? swatchByKey(item.color) : null;
       const fillColor = custom ? custom.fill : cat.fill;
       const inkColor = custom ? custom.ink : cat.ink;
-      const iconInner = item.emoji ? `<span style="font-size:16px;line-height:1">${item.emoji}</span>` : ICONS[cat.icon];
+      const iconInner = `<span style="font-size:16px;line-height:1">${item.emoji || cat.emoji}</span>`;
       const t = fmtTime(item.time24);
       const subs = item.subs || [];
       const atts = item.attachments || [];
@@ -1813,10 +1945,20 @@
   }
   document.getElementById('jumpTodayBtn').addEventListener('click', () => switchDate(TODAY_ISO));
 
-  // SIGN-UP
+  // SIGN-UP / WELCOME BACK
   const signupOverlay = document.getElementById('signupOverlay');
+  const welcomeOverlay = document.getElementById('welcomeOverlay');
+  function showWelcomeBack(){
+    const d = dateFromISO(selectedDate);
+    document.getElementById('welcomeDate').textContent = MONTH_NAMES[d.getMonth()] + ' ' + d.getDate();
+    const dayOfYear = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+    document.getElementById('welcomeQuote').textContent = '"' + QUOTES[dayOfYear % QUOTES.length] + '"';
+    welcomeOverlay.classList.remove('hidden');
+  }
   if (!userProfile || !userProfile.name) {
     signupOverlay.classList.remove('hidden');
+  } else {
+    showWelcomeBack();
   }
   document.getElementById('signupBtn').addEventListener('click', () => {
     const nameInput = document.getElementById('signupName');
@@ -1827,6 +1969,9 @@
     saveJSON('pastelplan.user.v1', userProfile);
     signupOverlay.classList.add('hidden');
     renderHeaderDate();
+  });
+  document.getElementById('welcomeEnterBtn').addEventListener('click', () => {
+    welcomeOverlay.classList.add('hidden');
   });
 
   // CALENDAR

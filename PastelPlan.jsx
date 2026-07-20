@@ -308,6 +308,7 @@ function CheckBox({ checked, onClick, size = 22, tone = "var(--pp-line)", label 
 
 export default function PastelPlan() {
   const [userProfile, setUserProfile] = useLocalStorageState("pastelplan.user.v1", null);
+  const [showWelcome, setShowWelcome] = useState(true);
   const [now, setNow] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(() => todayISO());
   const [schedule, setSchedule] = useState(() => loadScheduleFor(todayISO()));
@@ -491,7 +492,24 @@ export default function PastelPlan() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--pp-paper)] p-6">
         <PastelPlanStyles />
-        <SignUpCard onSubmit={setUserProfile} />
+        <SignUpCard
+          onSubmit={(profile) => {
+            setUserProfile(profile);
+            setShowWelcome(false);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (showWelcome) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center p-6"
+        style={{ background: "linear-gradient(155deg, var(--pp-lavender) 0%, var(--pp-blush) 45%, var(--pp-sky) 100%)" }}
+      >
+        <PastelPlanStyles />
+        <WelcomeSplash dateLabel={dateLabel} quote={quote} onContinue={() => setShowWelcome(false)} />
       </div>
     );
   }
@@ -805,7 +823,7 @@ export default function PastelPlan() {
         )}
 
         <footer className="px-5 pb-1 pt-3.5 text-center text-[0.68rem] font-semibold tracking-[.02em] text-[var(--pp-ink-soft)]">
-          PastelPlan · made for the space between periods
+          DailyGiya · made for the space between periods
         </footer>
         <p className="px-5 pb-5.5 text-center text-[0.62rem] font-bold tracking-[.04em] text-[var(--pp-ink-soft)] opacity-60">jvtcordova@2026</p>
       </div>
@@ -861,6 +879,121 @@ function SignUpCard({ onSubmit }) {
       <button type="button" onClick={submit} className="mt-1 w-full rounded-2xl bg-[var(--pp-mint-ink)] py-3.5 text-[0.9rem] font-bold text-[var(--pp-surface)]">
         Get Started
       </button>
+    </div>
+  );
+}
+
+function ClayShape({ className = "", style, children }) {
+  return (
+    <div
+      className={"absolute flex items-center justify-center rounded-2xl shadow-[0_10px_18px_-8px_rgba(30,20,40,.4)] " + className}
+      style={style}
+    >
+      {children}
+    </div>
+  );
+}
+
+function ClayMascot() {
+  return (
+    <svg width="120" height="100" viewBox="0 0 120 100" fill="none" className="relative z-10 drop-shadow-[0_10px_14px_rgba(30,20,40,.3)]">
+      <defs>
+        <radialGradient id="dogEar" cx="35%" cy="25%" r="80%">
+          <stop offset="0%" stopColor="var(--pp-peach)" />
+          <stop offset="100%" stopColor="var(--pp-gold-ink)" stopOpacity="0.85" />
+        </radialGradient>
+        <radialGradient id="dogHead" cx="32%" cy="24%" r="80%">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0.85" />
+          <stop offset="35%" stopColor="var(--pp-gold)" stopOpacity="0" />
+          <stop offset="100%" stopColor="var(--pp-gold)" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="dogPaw" cx="35%" cy="25%" r="80%">
+          <stop offset="0%" stopColor="var(--pp-peach)" />
+          <stop offset="100%" stopColor="var(--pp-gold-ink)" stopOpacity="0.55" />
+        </radialGradient>
+      </defs>
+      <path d="M36 22C18 26 8 46 16 64C20 72 32 74 38 62C42 54 40 34 36 22Z" fill="url(#dogEar)" />
+      <path d="M84 22C102 26 112 46 104 64C100 72 88 74 82 62C78 54 80 34 84 22Z" fill="url(#dogEar)" />
+      <ellipse cx="30" cy="92" rx="16" ry="10" fill="url(#dogPaw)" />
+      <ellipse cx="90" cy="92" rx="16" ry="10" fill="url(#dogPaw)" />
+      <circle cx="60" cy="44" r="34" fill="var(--pp-gold)" />
+      <circle cx="60" cy="44" r="34" fill="url(#dogHead)" />
+      <ellipse cx="48" cy="20" rx="8" ry="5" fill="#fff" opacity="0.22" transform="rotate(-20 48 20)" />
+      <ellipse cx="74" cy="22" rx="7" ry="4" fill="#fff" opacity="0.18" transform="rotate(15 74 22)" />
+      <ellipse cx="60" cy="56" rx="16" ry="13" fill="var(--pp-peach)" />
+      <circle cx="48" cy="38" r="4" fill="var(--pp-ink)" />
+      <circle cx="72" cy="38" r="4" fill="var(--pp-ink)" />
+      <circle cx="49.2" cy="36.5" r="1.2" fill="#fff" />
+      <circle cx="73.2" cy="36.5" r="1.2" fill="#fff" />
+      <ellipse cx="60" cy="47" rx="5" ry="3.6" fill="var(--pp-ink)" />
+      <path d="M48 60Q60 67 72 60" stroke="var(--pp-ink)" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M55 61C55 66 57 73 60 73C63 73 65 66 65 61C65 58 55 58 55 61Z" fill="var(--pp-blush-ink)" />
+    </svg>
+  );
+}
+
+function WelcomeSplash({ dateLabel, quote, onContinue }) {
+  return (
+    <div className="relative w-full max-w-[360px] px-2 pt-14">
+      <ClayShape
+        className="h-14 w-14 -rotate-[14deg] text-[22px]"
+        style={{ top: "-8px", left: "-4px", background: "radial-gradient(circle at 30% 25%, #fff8, transparent 55%), var(--pp-mint)" }}
+      >
+        📎
+      </ClayShape>
+      <ClayShape
+        className="h-12 w-12 rotate-[10deg] text-[20px]"
+        style={{ top: "6px", right: "-2px", background: "radial-gradient(circle at 30% 25%, #fff8, transparent 55%), var(--pp-lilac)" }}
+      >
+        📌
+      </ClayShape>
+      <ClayShape
+        className="h-16 w-16 rotate-[8deg] text-[13px] font-bold text-[var(--pp-blush-ink)]"
+        style={{ top: "-2px", left: "68%", background: "radial-gradient(circle at 30% 25%, #fff9, transparent 55%), var(--pp-blush)" }}
+      >
+        ✎‿✎
+      </ClayShape>
+      <ClayShape
+        className="h-11 w-11 -rotate-[8deg] text-[18px]"
+        style={{ top: "56px", left: "2px", background: "radial-gradient(circle at 30% 25%, #fff8, transparent 55%), var(--pp-sky)" }}
+      >
+        🌱
+      </ClayShape>
+
+      <div className="relative z-10 -mb-11 flex justify-center">
+        <ClayMascot />
+      </div>
+
+      <div
+        className="relative rounded-[30px] px-6 pb-7 pt-14 text-center shadow-[0_20px_44px_-14px_rgba(30,20,40,.45)]"
+        style={{ background: "linear-gradient(165deg, var(--pp-surface), color-mix(in srgb, var(--pp-lavender) 25%, var(--pp-surface)))" }}
+      >
+        <div
+          className="absolute bottom-6 top-6 left-3 flex w-2 flex-col justify-between"
+          aria-hidden="true"
+        >
+          {Array.from({ length: 7 }).map((_, i) => (
+            <span key={i} className="h-2 w-2 rounded-full" style={{ background: "color-mix(in srgb, var(--pp-ink) 12%, transparent)" }} />
+          ))}
+        </div>
+
+        <h2 className="pp-font-display mb-1.5 text-[1.35rem] font-semibold leading-tight text-[var(--pp-ink)]">
+          Welcome Back,
+          <br />
+          to your Daily GIYA
+        </h2>
+        <p className="mb-3 text-[0.72rem] font-bold uppercase tracking-[.05em] text-[var(--pp-ink-soft)]">{dateLabel}</p>
+        <p className="mb-6 text-[0.82rem] italic leading-[1.45] text-[var(--pp-ink-soft)]">"{quote}"</p>
+
+        <button
+          type="button"
+          onClick={onContinue}
+          className="w-full rounded-2xl py-3.5 text-[0.9rem] font-bold text-[var(--pp-surface)] shadow-[0_10px_20px_-6px_rgba(30,20,40,.4)] transition-transform active:scale-[0.98]"
+          style={{ background: "linear-gradient(135deg, var(--pp-lavender-ink), var(--pp-blush-ink))" }}
+        >
+          Enter Planner
+        </button>
+      </div>
     </div>
   );
 }
