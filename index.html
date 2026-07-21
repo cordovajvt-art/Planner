@@ -425,6 +425,26 @@
   .active-class-label { font-family: var(--font-display); font-size: 0.9rem; font-weight: 650; color: var(--ink); margin: -4px 0 12px; }
   .active-class-label span { margin-left: 6px; font-family: var(--font-body); font-size: 0.72rem; font-weight: 500; color: var(--ink-soft); }
 
+  .day-checkbox-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
+  .day-checkbox {
+    display: flex; align-items: center; gap: 4px; font-size: 0.68rem; font-weight: 700; color: var(--ink-soft);
+    background: var(--paper); border: 1.5px solid var(--line); border-radius: 999px; padding: 5px 9px; cursor: pointer;
+  }
+  .day-checkbox input { accent-color: var(--lavender-ink); }
+  .log-day-hint { margin: 4px 0 0; font-size: 0.68rem; color: var(--ink-soft); font-weight: 600; }
+  .log-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .log-entry { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .log-entry:last-child { border-bottom: none; }
+  .log-entry .log-type {
+    flex-shrink: 0; font-size: 0.6rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase;
+    border-radius: 999px; padding: 4px 8px; background: var(--sky); color: var(--sky-ink); white-space: nowrap;
+  }
+  .log-entry .log-body { flex: 1; min-width: 0; }
+  .log-entry .log-date { margin: 0; font-size: 0.68rem; font-weight: 700; color: var(--ink-soft); }
+  .log-entry .log-notes { margin: 2px 0 0; font-size: 0.78rem; color: var(--ink); line-height: 1.4; white-space: pre-wrap; }
+  .log-entry .log-del { border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; flex-shrink: 0; padding: 2px; }
+  .log-entry .log-del svg { width: 14px; height: 14px; }
+
   /* ---------- view tabs + dashboard ---------- */
   .view-tabs { display: flex; gap: 8px; padding: 16px 18px 0; }
   .view-tab {
@@ -620,6 +640,12 @@
   .t-card .t-tag {
     font-size: 0.66rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
   }
+  .t-card-synced { border: 1.5px dashed var(--line); cursor: pointer; }
+  .t-synced-badge {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; color: var(--ink-soft);
+  }
+  .t-synced-badge svg { width: 14px; height: 14px; }
   .t-check {
     flex-shrink: 0; width: 25px; height: 25px; border-radius: 10px;
     border: none; background: var(--surface-alt);
@@ -942,11 +968,11 @@
   <div class="main-page-tabs">
     <button type="button" class="main-page-tab active" data-mainpage="personal">
       <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8.5" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M5 20C5 16.5 8 14 12 14C16 14 19 16.5 19 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      Personal
+      Personal Notes
     </button>
     <button type="button" class="main-page-tab" data-mainpage="work">
       <svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="7.5" width="17" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 7.5V6C8.5 4.9 9.4 4 10.5 4H13.5C14.6 4 15.5 4.9 15.5 6V7.5" stroke="currentColor" stroke-width="1.8"/></svg>
-      Work
+      Work Notes
     </button>
   </div>
 
@@ -1146,11 +1172,59 @@
             <button type="button" class="outline-dropzone" id="outlineDropzoneBtn">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 15V4M12 4L8 8M12 4L16 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 16V17.5C5 18.9 6.1 20 7.5 20H16.5C17.9 20 19 18.9 19 17.5V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
               <span class="outline-dropzone-title">Click to upload</span>
-              <span class="outline-dropzone-sub">PDF, DOCX, XLSX (max 5MB)</span>
+              <span class="outline-dropzone-sub">PDF, DOCX, XLSX, TXT (max 5MB) — .txt syllabi auto-fill the outline</span>
             </button>
-            <input type="file" id="outlineFileInput" accept=".pdf,.doc,.docx,.xls,.xlsx" style="display:none">
+            <input type="file" id="outlineFileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" style="display:none">
             <div id="outlineFileChip"></div>
           </div>
+        </div>
+      </div>
+
+      <div id="classSectionsBox" style="display:none">
+        <button type="button" class="back-to-classes-btn" id="backToClassesFromSectionsBtn">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Back to Class Schedule
+        </button>
+        <p class="active-class-label" id="activeSectionsClassLabel"></p>
+
+        <h2 class="section-title">
+          <span class="icon-chip" style="background:var(--seafoam);color:var(--seafoam-ink)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19C3.5 15.7 6 13.5 9 13.5C12 13.5 14.5 15.7 14.5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15 14C17.3 14.3 19 16.1 19 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M14 8.3C15 8 15.7 7.1 15.7 6C15.7 4.7 14.6 3.6 13.3 3.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </span>
+          Sections
+        </h2>
+        <div class="card">
+          <ul class="class-list" id="sectionList"></ul>
+          <div id="sectionAddForm" style="display:none"></div>
+        </div>
+        <button class="t-add-block" id="sectionAddBtn" type="button" style="margin-top:10px"></button>
+      </div>
+
+      <div id="sectionLogBox" style="display:none">
+        <button type="button" class="back-to-classes-btn" id="backToSectionsBtn">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Back to Sections
+        </button>
+        <p class="active-class-label" id="activeSectionLabel"></p>
+
+        <h2 class="section-title">
+          <span class="icon-chip" style="background:var(--blush);color:var(--blush-ink)">✅</span>
+          Activity Log
+        </h2>
+
+        <div class="card">
+          <label class="t-edit-caption">Action</label>
+          <select class="role-select" id="logActionType" style="margin-bottom:9px;"></select>
+          <label class="t-edit-caption">Date</label>
+          <input type="date" class="outline-date-input" id="logDate">
+          <p class="log-day-hint" id="logDayHint"></p>
+          <label class="t-edit-caption" style="margin-top:9px;">Notes</label>
+          <textarea class="outline-textarea" id="logNotes" rows="3" placeholder="Add notes for this entry..."></textarea>
+          <button type="button" class="t-btn-save" id="logAddBtn" style="width:100%;margin-top:10px;">Add Entry</button>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <ul class="log-list" id="logList"></ul>
         </div>
       </div>
     </section>
@@ -1361,6 +1435,65 @@
 
   let schedule = loadScheduleFor(selectedDate);
   let editingId = null;
+
+  // Needed early by dayOfWeekFromDate below (used by the sync helpers at page load).
+  const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  // Loaded early (before Timeline/Dashboard/Calendar render) so the Personal-side
+  // sync helpers below can read Work Notes data on first render.
+  let classSchedule = loadJSON('pastelplan.classSchedule.v1', []);
+  let classSections = loadJSON('pastelplan.classSections.v1', {}); // { classId: [{id, name}] }
+  let sectionLogs = loadJSON('pastelplan.sectionLogs.v1', {}); // { sectionId: [{id, type, date, notes}] }
+  const PREP_LOG_TYPES = ['LECTURE', 'LAB ACTIVITY', 'GROUP ACTIVITY'];
+
+  function getSyncedClassBlocksForDate(dateStr){
+    const weekday = dayOfWeekFromDate(dateStr);
+    if (!weekday) return [];
+    return classSchedule
+      .filter(cls => (cls.days || []).includes(weekday))
+      .map(cls => ({
+        id: 'class-' + cls.id,
+        time24: cls.timeIn || '00:00',
+        title: cls.className,
+        cat: 'class',
+        emoji: CATS.class.emoji,
+        synced: true,
+        sourceClassId: cls.id,
+      }));
+  }
+
+  function getSyncedLogEntriesForDate(dateStr){
+    const results = [];
+    Object.keys(classSections).forEach(classId => {
+      (classSections[classId] || []).forEach(sec => {
+        (sectionLogs[sec.id] || []).forEach(entry => {
+          if (entry.date === dateStr) {
+            const cls = classSchedule.find(c => c.id === classId);
+            results.push({ ...entry, classId, className: cls ? cls.className : '', sectionId: sec.id, sectionName: sec.name });
+          }
+        });
+      });
+    });
+    return results;
+  }
+
+  function goToSyncedClass(classId){
+    switchMainPage('work');
+    workRole = 'teacher';
+    saveJSON('pastelplan.role.v1', workRole);
+    applyRole();
+    openSectionsFolder(classId);
+  }
+
+  function goToSyncedLogEntry(classId, sectionId){
+    switchMainPage('work');
+    workRole = 'teacher';
+    saveJSON('pastelplan.role.v1', workRole);
+    applyRole();
+    openSectionsFolder(classId);
+    openSectionLog(sectionId);
+  }
+
   const timeline = document.getElementById('timeline');
   const addBlockBtn = document.getElementById('addBlockBtn');
   addBlockBtn.innerHTML = '<span style="font-size:15px;line-height:1">➕</span> Add block';
@@ -1649,11 +1782,33 @@
   }
 
   function render(){
-    const sorted = [...schedule].sort((a, b) => a.time24.localeCompare(b.time24));
+    const syncedBlocks = getSyncedClassBlocksForDate(selectedDate);
+    const sorted = [...schedule, ...syncedBlocks].sort((a, b) => a.time24.localeCompare(b.time24));
     timeline.innerHTML = '';
     sorted.forEach(item => {
       const row = document.createElement('div');
       row.className = 't-row' + (item.done ? ' done' : '');
+
+      if (item.synced) {
+        const cat = CATS[item.cat];
+        const t = fmtTime(item.time24);
+        row.innerHTML = `
+          <div class="t-time">${t.num}<br>${t.ampm}</div>
+          <div class="t-rail"><span class="t-dot" style="color:${cat.ink}"></span></div>
+          <div class="t-col">
+            <div class="t-card t-card-synced">
+              <span class="t-icon" style="background:${cat.fill};color:${cat.ink}"><span style="font-size:16px;line-height:1">${cat.emoji}</span></span>
+              <span class="t-body">
+                <span class="t-title">${escapeHTML(item.title)}</span><br>
+                <span class="t-tag" style="color:${cat.ink}">Work Notes</span>
+              </span>
+              <span class="t-synced-badge" title="From Work Notes">${ICONS.file}</span>
+            </div>
+          </div>`;
+        row.querySelector('.t-card').addEventListener('click', () => goToSyncedClass(item.sourceClassId));
+        timeline.appendChild(row);
+        return;
+      }
 
       if (editingId === item.id) {
         row.innerHTML = editFormHTML(item);
@@ -1745,50 +1900,74 @@
     });
   });
 
-  // PREP checklist
-  const PREP_ITEMS = [];
+  // PREP checklist — synced from today's Work Notes activity log (LECTURE / LAB ACTIVITY / GROUP ACTIVITY)
   let prepChecked = loadJSON('pastelplan.prep.v1', []);
   const prepList = document.getElementById('prepList');
-  if (!PREP_ITEMS.length) {
-    prepList.innerHTML = '<li class="empty-note">No prep items yet.</li>';
-  }
-  PREP_ITEMS.forEach(text => {
-    const li = document.createElement('li');
-    li.className = 'prep-item' + (prepChecked.includes(text) ? ' checked' : '');
-    li.innerHTML = `<span class="chk">${ICONS.check}</span><span>${escapeHTML(text)}</span>`;
-    li.addEventListener('click', () => {
-      li.classList.toggle('checked');
-      prepChecked = li.classList.contains('checked')
-        ? [...new Set([...prepChecked, text])]
-        : prepChecked.filter(t => t !== text);
-      saveJSON('pastelplan.prep.v1', prepChecked);
+  function renderPrepList(){
+    const entries = getSyncedLogEntriesForDate(selectedDate).filter(e => PREP_LOG_TYPES.includes(e.type));
+    if (!entries.length) {
+      prepList.innerHTML = '<li class="empty-note">No prep items yet.</li>';
+      return;
+    }
+    prepList.innerHTML = '';
+    entries.forEach(entry => {
+      const label = `${entry.type} — ${entry.className} / ${entry.sectionName}${entry.notes ? ': ' + entry.notes : ''}`;
+      const li = document.createElement('li');
+      li.className = 'prep-item' + (prepChecked.includes(entry.id) ? ' checked' : '');
+      li.innerHTML = `<span class="chk">${ICONS.check}</span><span>${escapeHTML(label)}</span>`;
+      li.querySelector('.chk').addEventListener('click', (e) => {
+        e.stopPropagation();
+        li.classList.toggle('checked');
+        prepChecked = li.classList.contains('checked')
+          ? [...new Set([...prepChecked, entry.id])]
+          : prepChecked.filter(t => t !== entry.id);
+        saveJSON('pastelplan.prep.v1', prepChecked);
+      });
+      li.querySelector('span:last-child').addEventListener('click', () => goToSyncedLogEntry(entry.classId, entry.sectionId));
+      prepList.appendChild(li);
     });
-    prepList.appendChild(li);
-  });
+  }
+  renderPrepList();
 
-  // TODO matrix
+  // TODO matrix — synced from today's Work Notes activity log (everything else)
   let todoChecked = loadJSON('pastelplan.todo.v1', []);
   function buildTodo(container, items){
     if (!items.length) {
       container.innerHTML = '<li class="empty-note">Nothing here yet.</li>';
       return;
     }
+    container.innerHTML = '';
     items.forEach(item => {
       const li = document.createElement('li');
       li.className = 'todo-item' + (todoChecked.includes(item.id) ? ' checked' : '');
       li.innerHTML = `<span class="chk">${ICONS.check}</span><p>${escapeHTML(item.text)}${item.due ? `<span class="due">${escapeHTML(item.due)}</span>` : ''}</p>`;
-      li.addEventListener('click', () => {
+      li.querySelector('.chk').addEventListener('click', (e) => {
+        e.stopPropagation();
         li.classList.toggle('checked');
         todoChecked = li.classList.contains('checked')
           ? [...new Set([...todoChecked, item.id])]
           : todoChecked.filter(t => t !== item.id);
         saveJSON('pastelplan.todo.v1', todoChecked);
       });
+      if (item.sourceClassId) {
+        li.style.cursor = 'pointer';
+        li.querySelector('p').addEventListener('click', () => goToSyncedLogEntry(item.sourceClassId, item.sourceSectionId));
+      }
       container.appendChild(li);
     });
   }
-  buildTodo(document.getElementById('todoUrgent'), []);
-  buildTodo(document.getElementById('todoLater'), []);
+  function renderTodoLists(){
+    const entries = getSyncedLogEntriesForDate(selectedDate).filter(e => !PREP_LOG_TYPES.includes(e.type));
+    const items = entries.map(entry => ({
+      id: entry.id,
+      text: `${entry.type} — ${entry.className} / ${entry.sectionName}${entry.notes ? ': ' + entry.notes : ''}`,
+      sourceClassId: entry.classId,
+      sourceSectionId: entry.sectionId,
+    }));
+    buildTodo(document.getElementById('todoUrgent'), items);
+    buildTodo(document.getElementById('todoLater'), []);
+  }
+  renderTodoLists();
 
   // WATER TRACKER
   const GOAL = 8;
@@ -1842,7 +2021,7 @@
   });
 
   // live clock (real time, independent of the date being viewed)
-  const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  // DAY_NAMES is declared earlier in the script (see note above); MONTH_NAMES only needed here.
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const QUOTES = [
     "I'm not late, I'm running on 'teacher time.'",
@@ -1887,6 +2066,8 @@
     schedule = loadScheduleFor(selectedDate);
     renderHeaderDate();
     render();
+    renderPrepList();
+    renderTodoLists();
   }
   document.getElementById('jumpTodayBtn').addEventListener('click', () => switchDate(TODAY_ISO));
 
@@ -1946,7 +2127,9 @@
     calGrid.innerHTML = cells.map(c => {
       const cellDate = new Date(calViewYear, c.month, c.day);
       const iso = todayISO(cellDate);
-      const hasData = !!loadJSON(scheduleKey(iso), null);
+      const hasData = !!loadJSON(scheduleKey(iso), null)
+        || getSyncedClassBlocksForDate(iso).length > 0
+        || getSyncedLogEntriesForDate(iso).length > 0;
       const isToday = iso === TODAY_ISO;
       const isSelected = iso === selectedDate;
       const cls = ['cal-day'];
@@ -1993,11 +2176,12 @@
   const mainEl = document.querySelector('main');
   const dashboardView = document.getElementById('dashboardView');
   function computeDayStats(dateStr){
-    if (dateStr === selectedDate) return { total: schedule.length, done: schedule.filter(s => s.done).length };
+    const syncedCount = getSyncedClassBlocksForDate(dateStr).length;
+    if (dateStr === selectedDate) return { total: schedule.length + syncedCount, done: schedule.filter(s => s.done).length };
     const arr = loadJSON(scheduleKey(dateStr), null);
-    if (arr) return { total: arr.length, done: arr.filter(s => s.done).length };
-    if (dateStr === TODAY_ISO) return { total: DEFAULT_SCHEDULE.length, done: 0 };
-    return null;
+    if (arr) return { total: arr.length + syncedCount, done: arr.filter(s => s.done).length };
+    if (dateStr === TODAY_ISO) return { total: DEFAULT_SCHEDULE.length + syncedCount, done: 0 };
+    return syncedCount ? { total: syncedCount, done: 0 } : null;
   }
   function startOfWeek(d){
     const day = d.getDay();
@@ -2038,6 +2222,7 @@
     const arr = (TODAY_ISO === selectedDate) ? schedule : (loadJSON(scheduleKey(TODAY_ISO), null) || DEFAULT_SCHEDULE);
     const catCounts = { class: 0, duty: 0, prep: 0 };
     arr.forEach(s => { catCounts[s.cat] = (catCounts[s.cat] || 0) + 1; });
+    catCounts.class += getSyncedClassBlocksForDate(TODAY_ISO).length;
     document.getElementById('dashSnapshot').innerHTML = `
       <div class="dash-stat-row">
         <div class="dash-stat"><span class="dash-stat-num">${stats.done}/${stats.total}</span><span class="dash-stat-label">Blocks done</span></div>
@@ -2055,7 +2240,8 @@
     const now = new Date();
     const nowMins = now.getHours() * 60 + now.getMinutes();
     const arr = (TODAY_ISO === selectedDate) ? schedule : (loadJSON(scheduleKey(TODAY_ISO), null) || []);
-    const upcoming = arr
+    const merged = [...arr, ...getSyncedClassBlocksForDate(TODAY_ISO)];
+    const upcoming = merged
       .filter(s => !s.done)
       .map(s => {
         const [hh, mm] = s.time24.split(':').map(Number);
@@ -2078,13 +2264,16 @@
     const inText = diff <= 0 ? 'Starting now' : diff < 60 ? `In ${diff} min` : `In ${Math.floor(diff / 60)}h ${diff % 60}m`;
     const t = fmtTime(next.time24);
     box.innerHTML = `
-      <div class="dash-upnext-row">
+      <div class="dash-upnext-row"${next.synced ? ' style="cursor:pointer"' : ''}>
         <span class="dash-upnext-icon${soon ? ' soon' : ''}" style="background:${fill};color:${ink}">${next.emoji ? `<span style="font-size:20px;line-height:1">${next.emoji}</span>` : ICONS.bell}</span>
         <div class="dash-upnext-body">
-          <p class="dash-upnext-time">${inText} · ${t.num} ${t.ampm}</p>
+          <p class="dash-upnext-time">${inText} · ${t.num} ${t.ampm}${next.synced ? ' · Work Notes' : ''}</p>
           <p class="dash-upnext-title">${escapeHTML(next.title)}</p>
         </div>
       </div>`;
+    if (next.synced) {
+      box.querySelector('.dash-upnext-row').addEventListener('click', () => goToSyncedClass(next.sourceClassId));
+    }
   }
 
   function switchView(view){
@@ -2104,6 +2293,15 @@
     personalPage.style.display = page === 'personal' ? 'block' : 'none';
     workPage.style.display = page === 'work' ? 'block' : 'none';
     document.querySelectorAll('.main-page-tab').forEach(b => b.classList.toggle('active', b.dataset.mainpage === page));
+    if (page === 'personal') {
+      // Work Notes data (classes/sections/logs) may have changed while we were away — refresh every synced view.
+      render();
+      renderPrepList();
+      renderTodoLists();
+      renderUpNext();
+      renderSnapshot();
+      renderDashboardWeek();
+    }
   }
   document.querySelectorAll('.main-page-tab').forEach(b => b.addEventListener('click', () => switchMainPage(b.dataset.mainpage)));
 
@@ -2148,10 +2346,29 @@
   });
 
   // WORK: CLASS SCHEDULE (Teacher)
+  // classSchedule / classSections / sectionLogs are loaded earlier in the script
+  // (see "Loaded early" note above) so Personal-side sync can read them on first render.
   const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  let classSchedule = loadJSON('pastelplan.classSchedule.v1', []);
+  const ACTION_TYPES = ['QUIZ', 'LECTURE', 'GROUP ACTIVITY', 'LAB ACTIVITY', 'REMINDERS', 'ASSIGNMENT', 'GRADE', 'ABSENT', 'EXCUSE', 'PRESENT', 'OTHERS'];
   let classAdding = false;
+  let sectionAdding = false;
+  let activeSectionsClassId = null;
+  let activeSectionId = null;
   function saveClassSchedule(){ saveJSON('pastelplan.classSchedule.v1', classSchedule); }
+  function saveClassSections(){ saveJSON('pastelplan.classSections.v1', classSections); }
+  function saveSectionLogs(){ saveJSON('pastelplan.sectionLogs.v1', sectionLogs); }
+
+  function fmtDaysTime(cls){
+    const days = (cls.days || []).map(d => d.slice(0, 3)).join(', ');
+    const inLabel = cls.timeIn ? (fmtTime(cls.timeIn).num + ' ' + fmtTime(cls.timeIn).ampm) : '';
+    const outLabel = cls.timeOut ? (fmtTime(cls.timeOut).num + ' ' + fmtTime(cls.timeOut).ampm) : '';
+    const timeRange = inLabel && outLabel ? `${inLabel}–${outLabel}` : (inLabel || outLabel);
+    return [days, timeRange].filter(Boolean).join(' · ');
+  }
+  function dayOfWeekFromDate(dateStr){
+    if (!dateStr) return '';
+    return DAY_NAMES[new Date(dateStr + 'T00:00:00').getDay()];
+  }
 
   const classListBox = document.getElementById('classList');
   const classAddForm = document.getElementById('classAddForm');
@@ -2160,6 +2377,23 @@
   const classOutlineBox = document.getElementById('classOutlineBox');
   const activeClassLabel = document.getElementById('activeClassLabel');
   const backToClassesBtn = document.getElementById('backToClassesBtn');
+
+  const classSectionsBox = document.getElementById('classSectionsBox');
+  const sectionListBox = document.getElementById('sectionList');
+  const sectionAddForm = document.getElementById('sectionAddForm');
+  const sectionAddBtn = document.getElementById('sectionAddBtn');
+  const activeSectionsClassLabel = document.getElementById('activeSectionsClassLabel');
+  const backToClassesFromSectionsBtn = document.getElementById('backToClassesFromSectionsBtn');
+
+  const sectionLogBox = document.getElementById('sectionLogBox');
+  const activeSectionLabel = document.getElementById('activeSectionLabel');
+  const backToSectionsBtn = document.getElementById('backToSectionsBtn');
+  const logActionType = document.getElementById('logActionType');
+  const logDate = document.getElementById('logDate');
+  const logDayHint = document.getElementById('logDayHint');
+  const logNotes = document.getElementById('logNotes');
+  const logAddBtn = document.getElementById('logAddBtn');
+  const logListBox = document.getElementById('logList');
 
   function renderClassList(){
     if (!classSchedule.length) {
@@ -2170,23 +2404,32 @@
     classSchedule.forEach(cls => {
       const li = document.createElement('li');
       li.className = 'class-row';
-      const meta = [cls.day, cls.time ? (fmtTime(cls.time).num + ' ' + fmtTime(cls.time).ampm) : ''].filter(Boolean).join(' · ');
+      const meta = fmtDaysTime(cls);
       li.innerHTML = `<div class="class-info">
           <p class="class-name">${escapeHTML(cls.className)}</p>
           ${meta ? `<p class="class-meta">${escapeHTML(meta)}</p>` : ''}
         </div>
-        <button type="button" class="class-outline-btn" data-id="${cls.id}">
+        <button type="button" class="class-outline-btn" data-action="sections" data-id="${cls.id}">
+          ${ICONS.users}
+          Sections
+        </button>
+        <button type="button" class="class-outline-btn" data-action="outline" data-id="${cls.id}">
           <svg viewBox="0 0 24 24" fill="none"><path d="M3.5 8C3.5 6.9 4.4 6 5.5 6H9.5L11.5 8H18.5C19.6 8 20.5 8.9 20.5 10V17C20.5 18.1 19.6 19 18.5 19H5.5C4.4 19 3.5 18.1 3.5 17V8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
           Outline
         </button>
         <button type="button" class="class-del" data-id="${cls.id}" aria-label="Delete class">${ICONS.x}</button>`;
-      li.querySelector('.class-outline-btn').addEventListener('click', () => openClassFolder(cls.id));
+      li.querySelector('[data-action="outline"]').addEventListener('click', () => openClassFolder(cls.id));
+      li.querySelector('[data-action="sections"]').addEventListener('click', () => openSectionsFolder(cls.id));
       li.querySelector('.class-del').addEventListener('click', (e) => {
         e.stopPropagation();
         classSchedule = classSchedule.filter(c => c.id !== cls.id);
         delete courseOutlines[cls.id];
+        (classSections[cls.id] || []).forEach(sec => delete sectionLogs[sec.id]);
+        delete classSections[cls.id];
         saveClassSchedule();
         saveJSON('pastelplan.courseOutlines.v1', courseOutlines);
+        saveClassSections();
+        saveSectionLogs();
         renderClassList();
       });
       classListBox.appendChild(li);
@@ -2206,12 +2449,14 @@
     classAddForm.innerHTML = `
       <label class="t-edit-caption">Class</label>
       <input type="text" class="t-input-title" id="classFieldName" placeholder="e.g. Grade 10 Biology">
-      <label class="t-edit-caption">Day</label>
-      <select class="role-select" id="classFieldDay" style="margin-bottom:9px;">
-        ${WEEKDAYS.map(d => `<option value="${d}">${d}</option>`).join('')}
-      </select>
-      <label class="t-edit-caption">Time</label>
-      <input type="time" class="t-input-title" id="classFieldTime">
+      <label class="t-edit-caption">Days</label>
+      <div class="day-checkbox-row" id="classFieldDays">
+        ${WEEKDAYS.map(d => `<label class="day-checkbox"><input type="checkbox" value="${d}"> ${d.slice(0, 3)}</label>`).join('')}
+      </div>
+      <label class="t-edit-caption">Time In</label>
+      <input type="time" class="t-input-title" id="classFieldTimeIn">
+      <label class="t-edit-caption">Time Out</label>
+      <input type="time" class="t-input-title" id="classFieldTimeOut">
       <div class="t-edit-actions" style="margin-top:2px">
         <button type="button" class="t-btn-cancel" id="classCancelBtn">Cancel</button>
         <button type="button" class="t-btn-save" id="classSaveBtn" style="margin-left:auto">Add</button>
@@ -2223,11 +2468,13 @@
     document.getElementById('classSaveBtn').addEventListener('click', () => {
       const nameEl = document.getElementById('classFieldName');
       if (!nameEl.value.trim()) return;
+      const days = [...classAddForm.querySelectorAll('#classFieldDays input:checked')].map(el => el.value);
       classSchedule = [...classSchedule, {
         id: uid(),
         className: nameEl.value.trim(),
-        day: document.getElementById('classFieldDay').value,
-        time: document.getElementById('classFieldTime').value,
+        days,
+        timeIn: document.getElementById('classFieldTimeIn').value,
+        timeOut: document.getElementById('classFieldTimeOut').value,
       }];
       saveClassSchedule();
       classAdding = false;
@@ -2246,7 +2493,7 @@
     outline = courseOutlines[classId] || freshOutline();
     activeOutlineTab = 'desc';
     const cls = classSchedule.find(c => c.id === classId);
-    const meta = cls ? [cls.day, cls.time ? (fmtTime(cls.time).num + ' ' + fmtTime(cls.time).ampm) : ''].filter(Boolean).join(' · ') : '';
+    const meta = cls ? fmtDaysTime(cls) : '';
     activeClassLabel.innerHTML = `${escapeHTML(cls ? cls.className : '')}${meta ? `<span>${escapeHTML(meta)}</span>` : ''}`;
     classScheduleBox.style.display = 'none';
     classOutlineBox.style.display = 'block';
@@ -2259,6 +2506,176 @@
     activeClassId = null;
     classOutlineBox.style.display = 'none';
     classScheduleBox.style.display = 'block';
+  });
+
+  // SECTIONS (per class)
+  function renderSectionList(){
+    const sections = classSections[activeSectionsClassId] || [];
+    if (!sections.length) {
+      sectionListBox.innerHTML = '<li class="empty-note">No sections yet.</li>';
+      return;
+    }
+    sectionListBox.innerHTML = '';
+    sections.forEach(sec => {
+      const li = document.createElement('li');
+      li.className = 'class-row';
+      const count = (sectionLogs[sec.id] || []).length;
+      const schedMeta = fmtDaysTime(sec);
+      const meta = [schedMeta, `${count} ${count === 1 ? 'entry' : 'entries'}`].filter(Boolean).join(' · ');
+      li.innerHTML = `<div class="class-info">
+          <p class="class-name">${escapeHTML(sec.name)}</p>
+          <p class="class-meta">${escapeHTML(meta)}</p>
+        </div>
+        <button type="button" class="class-outline-btn" data-id="${sec.id}">
+          ${ICONS.file}
+          Open
+        </button>
+        <button type="button" class="class-del" data-id="${sec.id}" aria-label="Delete section">${ICONS.x}</button>`;
+      li.querySelector('.class-outline-btn').addEventListener('click', () => openSectionLog(sec.id));
+      li.querySelector('.class-del').addEventListener('click', (e) => {
+        e.stopPropagation();
+        classSections[activeSectionsClassId] = (classSections[activeSectionsClassId] || []).filter(s => s.id !== sec.id);
+        delete sectionLogs[sec.id];
+        saveClassSections();
+        saveSectionLogs();
+        renderSectionList();
+      });
+      sectionListBox.appendChild(li);
+    });
+  }
+
+  function renderSectionAddForm(){
+    if (!sectionAdding) {
+      sectionAddForm.style.display = 'none';
+      sectionAddForm.innerHTML = '';
+      sectionAddBtn.style.display = 'flex';
+      sectionAddBtn.innerHTML = `${ICONS.plus} Add section`;
+      return;
+    }
+    sectionAddBtn.style.display = 'none';
+    sectionAddForm.style.display = 'block';
+    sectionAddForm.innerHTML = `
+      <label class="t-edit-caption">Section name</label>
+      <input type="text" class="t-input-title" id="sectionFieldName" placeholder="e.g. Section A">
+      <label class="t-edit-caption">Days</label>
+      <div class="day-checkbox-row" id="sectionFieldDays">
+        ${WEEKDAYS.map(d => `<label class="day-checkbox"><input type="checkbox" value="${d}"> ${d.slice(0, 3)}</label>`).join('')}
+      </div>
+      <label class="t-edit-caption">Time In</label>
+      <input type="time" class="t-input-title" id="sectionFieldTimeIn">
+      <label class="t-edit-caption">Time Out</label>
+      <input type="time" class="t-input-title" id="sectionFieldTimeOut">
+      <div class="t-edit-actions" style="margin-top:2px">
+        <button type="button" class="t-btn-cancel" id="sectionCancelBtn">Cancel</button>
+        <button type="button" class="t-btn-save" id="sectionSaveBtn" style="margin-left:auto">Add</button>
+      </div>`;
+    document.getElementById('sectionCancelBtn').addEventListener('click', () => {
+      sectionAdding = false;
+      renderSectionAddForm();
+    });
+    document.getElementById('sectionSaveBtn').addEventListener('click', () => {
+      const nameEl = document.getElementById('sectionFieldName');
+      if (!nameEl.value.trim()) return;
+      const days = [...sectionAddForm.querySelectorAll('#sectionFieldDays input:checked')].map(el => el.value);
+      const list = classSections[activeSectionsClassId] || [];
+      classSections[activeSectionsClassId] = [...list, {
+        id: uid(),
+        name: nameEl.value.trim(),
+        days,
+        timeIn: document.getElementById('sectionFieldTimeIn').value,
+        timeOut: document.getElementById('sectionFieldTimeOut').value,
+      }];
+      saveClassSections();
+      sectionAdding = false;
+      renderSectionList();
+      renderSectionAddForm();
+    });
+  }
+
+  sectionAddBtn.addEventListener('click', () => {
+    sectionAdding = true;
+    renderSectionAddForm();
+  });
+
+  function openSectionsFolder(classId){
+    activeSectionsClassId = classId;
+    const cls = classSchedule.find(c => c.id === classId);
+    activeSectionsClassLabel.textContent = cls ? cls.className : '';
+    sectionAdding = false;
+    classScheduleBox.style.display = 'none';
+    classSectionsBox.style.display = 'block';
+    renderSectionList();
+    renderSectionAddForm();
+  }
+  backToClassesFromSectionsBtn.addEventListener('click', () => {
+    activeSectionsClassId = null;
+    classSectionsBox.style.display = 'none';
+    classScheduleBox.style.display = 'block';
+  });
+
+  // ACTIVITY LOG (per section)
+  logActionType.innerHTML = ACTION_TYPES.map(t => `<option value="${t}">${t}</option>`).join('');
+  logDate.addEventListener('change', () => {
+    logDayHint.textContent = logDate.value ? dayOfWeekFromDate(logDate.value) : '';
+  });
+
+  function renderLogList(){
+    const entries = sectionLogs[activeSectionId] || [];
+    if (!entries.length) {
+      logListBox.innerHTML = '<li class="empty-note">No entries yet.</li>';
+      return;
+    }
+    logListBox.innerHTML = '';
+    [...entries].reverse().forEach(entry => {
+      const li = document.createElement('li');
+      li.className = 'log-entry';
+      const dateLabel = entry.date ? `${fmtShortDate(entry.date)} · ${dayOfWeekFromDate(entry.date)}` : '';
+      li.innerHTML = `
+        <span class="log-type">${escapeHTML(entry.type)}</span>
+        <div class="log-body">
+          ${dateLabel ? `<p class="log-date">${escapeHTML(dateLabel)}</p>` : ''}
+          ${entry.notes ? `<p class="log-notes">${escapeHTML(entry.notes)}</p>` : ''}
+        </div>
+        <button type="button" class="log-del" data-id="${entry.id}" aria-label="Delete entry">${ICONS.x}</button>`;
+      li.querySelector('.log-del').addEventListener('click', () => {
+        sectionLogs[activeSectionId] = (sectionLogs[activeSectionId] || []).filter(e => e.id !== entry.id);
+        saveSectionLogs();
+        renderLogList();
+      });
+      logListBox.appendChild(li);
+    });
+  }
+
+  logAddBtn.addEventListener('click', () => {
+    const entry = { id: uid(), type: logActionType.value, date: logDate.value, notes: logNotes.value.trim() };
+    const list = sectionLogs[activeSectionId] || [];
+    sectionLogs[activeSectionId] = [...list, entry];
+    saveSectionLogs();
+    logDate.value = '';
+    logDayHint.textContent = '';
+    logNotes.value = '';
+    renderLogList();
+  });
+
+  function openSectionLog(sectionId){
+    activeSectionId = sectionId;
+    let sectionName = '';
+    for (const classId of Object.keys(classSections)) {
+      const found = (classSections[classId] || []).find(s => s.id === sectionId);
+      if (found) { sectionName = found.name; break; }
+    }
+    activeSectionLabel.textContent = sectionName;
+    logDate.value = '';
+    logDayHint.textContent = '';
+    logNotes.value = '';
+    classSectionsBox.style.display = 'none';
+    sectionLogBox.style.display = 'block';
+    renderLogList();
+  }
+  backToSectionsBtn.addEventListener('click', () => {
+    activeSectionId = null;
+    sectionLogBox.style.display = 'none';
+    classSectionsBox.style.display = 'block';
   });
 
   renderClassList();
@@ -2372,6 +2789,49 @@
   modeManualBtn.addEventListener('click', () => { outline.mode = 'manual'; saveOutline(); applyOutlineMode(); });
   modeUploadBtn.addEventListener('click', () => { outline.mode = 'upload'; saveOutline(); applyOutlineMode(); });
 
+  // Heading-keyword matcher: scans plain-text syllabus content for recognizable
+  // section headings and buckets the text under each heading into the matching
+  // outline field. No AI involved — purely pattern matching, so results are only
+  // as good as how closely the syllabus follows common heading conventions.
+  const OUTLINE_FIELD_KEYWORDS = {
+    desc: ['course description', 'description', 'course overview', 'overview', 'introduction'],
+    topic: ['course outline', 'syllabus outline', 'topics', 'topic', 'lessons', 'lesson', 'units', 'modules'],
+    outcomes: ['intended learning outcomes', 'learning outcomes', 'course objectives', 'objectives', 'outcomes'],
+    assessments: ['assessment methods', 'assessments', 'assessment', 'evaluation', 'grading', 'requirements'],
+    labs: ['laboratory activities', 'laboratory', 'lab activities', 'practical work', 'experiments'],
+    remarks: ['remarks', 'additional notes', 'notes'],
+  };
+  function extractOutlineFromText(text){
+    const allKeywords = [];
+    Object.keys(OUTLINE_FIELD_KEYWORDS).forEach(field => {
+      OUTLINE_FIELD_KEYWORDS[field].forEach(keyword => allKeywords.push({ field, keyword }));
+    });
+    allKeywords.sort((a, b) => b.keyword.length - a.keyword.length);
+
+    function matchHeading(line){
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.length > 70) return null;
+      const cleaned = trimmed.replace(/^[\dIVXivx]+[.)]\s*/, '').replace(/:$/, '').trim().toLowerCase();
+      for (const { field, keyword } of allKeywords) {
+        if (cleaned === keyword || cleaned === keyword + ':' || cleaned.startsWith(keyword + ' ')) return field;
+      }
+      return null;
+    }
+
+    const result = {};
+    let current = null;
+    text.split(/\r?\n/).forEach(line => {
+      const field = matchHeading(line);
+      if (field) {
+        current = { field, lines: [] };
+      } else if (current) {
+        current.lines.push(line);
+        result[current.field] = current.lines.join('\n').trim();
+      }
+    });
+    return result;
+  }
+
   const outlineDropzoneBtn = document.getElementById('outlineDropzoneBtn');
   const outlineFileInput = document.getElementById('outlineFileInput');
   const outlineFileChip = document.getElementById('outlineFileChip');
@@ -2401,6 +2861,29 @@
       renderOutlineFileChip();
     };
     reader.readAsDataURL(file);
+
+    const isTxt = /\.txt$/i.test(file.name) || file.type === 'text/plain';
+    if (isTxt) {
+      const textReader = new FileReader();
+      textReader.onload = () => {
+        const extracted = extractOutlineFromText(String(textReader.result || ''));
+        const filledFields = Object.keys(extracted);
+        if (!filledFields.length) {
+          alert(`Couldn't find recognizable section headings in "${file.name}" — fill in the outline manually.`);
+          return;
+        }
+        filledFields.forEach(field => { outline[field] = extracted[field]; });
+        outline.mode = 'manual';
+        saveOutline();
+        activeOutlineTab = 'desc';
+        applyOutlineMode();
+        renderOutlineTabs();
+        renderOutlinePanel();
+        alert(`Filled in ${filledFields.length} field(s) from "${file.name}": ${filledFields.map(f => OUTLINE_TABS.find(t => t.key === f).label).join(', ')}.`);
+      };
+      textReader.readAsText(file);
+    }
+
     outlineFileInput.value = '';
   });
 

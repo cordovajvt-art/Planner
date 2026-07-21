@@ -191,6 +191,54 @@ const DEFAULT_OUTLINE = {
   uploadedFile: null,
 };
 
+// Heading-keyword matcher: scans plain-text syllabus content for recognizable
+// section headings and buckets the text under each heading into the matching
+// outline field. No AI involved — purely pattern matching, so results are only
+// as good as how closely the syllabus follows common heading conventions.
+const OUTLINE_FIELD_KEYWORDS = {
+  desc: ["course description", "description", "course overview", "overview", "introduction"],
+  topic: ["course outline", "syllabus outline", "topics", "topic", "lessons", "lesson", "units", "modules"],
+  outcomes: ["intended learning outcomes", "learning outcomes", "course objectives", "objectives", "outcomes"],
+  assessments: ["assessment methods", "assessments", "assessment", "evaluation", "grading", "requirements"],
+  labs: ["laboratory activities", "laboratory", "lab activities", "practical work", "experiments"],
+  remarks: ["remarks", "additional notes", "notes"],
+};
+
+function extractOutlineFromText(text) {
+  const allKeywords = [];
+  Object.keys(OUTLINE_FIELD_KEYWORDS).forEach((field) => {
+    OUTLINE_FIELD_KEYWORDS[field].forEach((keyword) => allKeywords.push({ field, keyword }));
+  });
+  allKeywords.sort((a, b) => b.keyword.length - a.keyword.length);
+
+  function matchHeading(line) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.length > 70) return null;
+    const cleaned = trimmed
+      .replace(/^[\dIVXivx]+[.)]\s*/, "")
+      .replace(/:$/, "")
+      .trim()
+      .toLowerCase();
+    for (const { field, keyword } of allKeywords) {
+      if (cleaned === keyword || cleaned === keyword + ":" || cleaned.startsWith(keyword + " ")) return field;
+    }
+    return null;
+  }
+
+  const result = {};
+  let current = null;
+  text.split(/\r?\n/).forEach((line) => {
+    const field = matchHeading(line);
+    if (field) {
+      current = { field, lines: [] };
+    } else if (current) {
+      current.lines.push(line);
+      result[current.field] = current.lines.join("\n").trim();
+    }
+  });
+  return result;
+}
+
 const OFFICE_HEAD_TABS = [
   { key: "meetings", label: "Meetings", singular: "meeting", accent: "lavender", Icon: Users },
   { key: "field", label: "Field", singular: "field entry", accent: "mint", Icon: MapPin },
@@ -215,6 +263,57 @@ const OFFICE_TAB_FIELDS = {
 const DEFAULT_OFFICE_HEAD = { meetings: [], field: [], dailyTasks: [] };
 
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const ACTION_TYPES = ["QUIZ", "LECTURE", "GROUP ACTIVITY", "LAB ACTIVITY", "REMINDERS", "ASSIGNMENT", "GRADE", "ABSENT", "EXCUSE", "PRESENT", "OTHERS"];
+
+function fmtDaysTime(item) {
+  const days = (item.days || []).map((d) => d.slice(0, 3)).join(", ");
+  const inLabel = item.timeIn ? `${fmtTime(item.timeIn).num} ${fmtTime(item.timeIn).ampm}` : "";
+  const outLabel = item.timeOut ? `${fmtTime(item.timeOut).num} ${fmtTime(item.timeOut).ampm}` : "";
+  const timeRange = inLabel && outLabel ? `${inLabel}–${outLabel}` : inLabel || outLabel;
+  return [days, timeRange].filter(Boolean).join(" · ");
+}
+
+function dayOfWeekFromDate(dateStr) {
+  if (!dateStr) return "";
+  return dateFromISO(dateStr).toLocaleDateString("en-US", { weekday: "long" });
+}
+
+const PREP_LOG_TYPES = ["LECTURE", "LAB ACTIVITY", "GROUP ACTIVITY"];
+
+// Work Notes → Personal Notes sync: recurring class meetings show up as read-only
+// Timeline/Calendar/Dashboard blocks; activity log entries feed Rush Prep & Hook
+// (lecture/lab/group types) and the To-Do Matrix (everything else). Nothing here
+// is persisted — it's recomputed live from classSchedule/classSections/sectionLogs
+// so Work Notes stays the single source of truth.
+function getSyncedClassBlocksForDate(classSchedule, dateStr) {
+  const weekday = dayOfWeekFromDate(dateStr);
+  if (!weekday) return [];
+  return classSchedule
+    .filter((cls) => (cls.days || []).includes(weekday))
+    .map((cls) => ({
+      id: "class-" + cls.id,
+      time24: cls.timeIn || "00:00",
+      title: cls.className,
+      cat: "class",
+      synced: true,
+      sourceClassId: cls.id,
+    }));
+}
+
+function getSyncedLogEntriesForDate(classSchedule, classSections, sectionLogs, dateStr) {
+  const results = [];
+  Object.keys(classSections).forEach((classId) => {
+    (classSections[classId] || []).forEach((sec) => {
+      (sectionLogs[sec.id] || []).forEach((entry) => {
+        if (entry.date === dateStr) {
+          const cls = classSchedule.find((c) => c.id === classId);
+          results.push({ ...entry, classId, className: cls ? cls.className : "", sectionId: sec.id, sectionName: sec.name });
+        }
+      });
+    });
+  });
+  return results;
+}
 
 function freshOutline() {
   return { ...DEFAULT_OUTLINE, fiveEs: { ...DEFAULT_OUTLINE.fiveEs } };
@@ -336,7 +435,11 @@ export default function PastelPlan() {
   const [workRole, setWorkRole] = useLocalStorageState("pastelplan.role.v1", "select");
   const [classSchedule, setClassSchedule] = useLocalStorageState("pastelplan.classSchedule.v1", []);
   const [courseOutlines, setCourseOutlines] = useLocalStorageState("pastelplan.courseOutlines.v1", {});
+  const [classSections, setClassSections] = useLocalStorageState("pastelplan.classSections.v1", {});
+  const [sectionLogs, setSectionLogs] = useLocalStorageState("pastelplan.sectionLogs.v1", {});
   const [activeClassId, setActiveClassId] = useState(null);
+  const [activeSectionsClassId, setActiveSectionsClassId] = useState(null);
+  const [activeSectionId, setActiveSectionId] = useState(null);
   const [activeOutlineTab, setActiveOutlineTab] = useState("desc");
   const [officeHead, setOfficeHead] = useLocalStorageState("pastelplan.officeHead.v1", () => ({ ...DEFAULT_OFFICE_HEAD }));
   const [activeOfficeTab, setActiveOfficeTab] = useState("meetings");
@@ -377,7 +480,24 @@ export default function PastelPlan() {
   const clock = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   const firstName = userProfile?.name ? userProfile.name.trim().split(/\s+/)[0] : "";
   const namePart = firstName ? `Hi ${firstName}` : isToday ? "Sample day" : "";
-  const sortedSchedule = [...schedule].sort((a, b) => a.time24.localeCompare(b.time24));
+  const syncedClassBlocksSelected = getSyncedClassBlocksForDate(classSchedule, selectedDate);
+  const syncedLogEntriesSelected = getSyncedLogEntriesForDate(classSchedule, classSections, sectionLogs, selectedDate);
+  const syncedPrepEntries = syncedLogEntriesSelected.filter((e) => PREP_LOG_TYPES.includes(e.type));
+  const syncedTodoEntries = syncedLogEntriesSelected.filter((e) => !PREP_LOG_TYPES.includes(e.type));
+  const sortedSchedule = [...schedule, ...syncedClassBlocksSelected].sort((a, b) => a.time24.localeCompare(b.time24));
+
+  function goToWorkClass(classId) {
+    setMainPage("work");
+    setWorkRole("teacher");
+    setActiveSectionsClassId(classId);
+    setActiveSectionId(null);
+  }
+  function goToWorkSection(classId, sectionId) {
+    setMainPage("work");
+    setWorkRole("teacher");
+    setActiveSectionsClassId(classId);
+    setActiveSectionId(sectionId);
+  }
   const leftCount = schedule.filter((s) => !s.done).length;
 
   function switchDate(dateStr) {
@@ -436,13 +556,14 @@ export default function PastelPlan() {
 
   // ---- Dashboard data (computed here so it can read live `schedule` for the selected day) ----
   function computeDayStats(dateStr) {
-    if (dateStr === selectedDate) return { total: schedule.length, done: schedule.filter((s) => s.done).length };
+    const syncedCount = getSyncedClassBlocksForDate(classSchedule, dateStr).length;
+    if (dateStr === selectedDate) return { total: schedule.length + syncedCount, done: schedule.filter((s) => s.done).length };
     try {
       const raw = localStorage.getItem(scheduleKeyFor(dateStr));
       const arr = raw ? JSON.parse(raw) : [];
-      return { total: arr.length, done: arr.filter((s) => s.done).length };
+      return { total: arr.length + syncedCount, done: arr.filter((s) => s.done).length };
     } catch {
-      return { total: 0, done: 0 };
+      return { total: syncedCount, done: 0 };
     }
   }
   function getTodaySchedule() {
@@ -454,7 +575,7 @@ export default function PastelPlan() {
       return [];
     }
   }
-  const todaySchedule = getTodaySchedule();
+  const todaySchedule = [...getTodaySchedule(), ...getSyncedClassBlocksForDate(classSchedule, todayIso)];
   const nowMins = now.getHours() * 60 + now.getMinutes();
   const upNextRaw = todaySchedule
     .filter((s) => !s.done)
@@ -594,7 +715,7 @@ export default function PastelPlan() {
                 : { background: "transparent", color: "var(--pp-ink-soft)", border: "1.5px solid var(--pp-line)" }
             }
           >
-            Personal
+            Personal Notes
           </button>
           <button
             type="button"
@@ -606,7 +727,7 @@ export default function PastelPlan() {
                 : { background: "transparent", color: "var(--pp-ink-soft)", border: "1.5px solid var(--pp-line)" }
             }
           >
-            Work
+            Work Notes
           </button>
         </div>
 
@@ -647,21 +768,31 @@ export default function PastelPlan() {
               <SectionTitle icon={Clock} fill="var(--pp-lavender)" ink="var(--pp-lavender-ink)" title="Today's Timeline" trailing={`${leftCount} left`} />
               <p className="-mt-1.5 mb-2.5 text-[0.72rem] font-medium text-[var(--pp-ink-soft)]">Tap a block to edit it</p>
               <div className="flex flex-col">
-                {sortedSchedule.map((item, i) => (
-                  <TimelineRow
-                    key={item.id}
-                    item={item}
-                    isFirst={i === 0}
-                    isLast={i === sortedSchedule.length - 1}
-                    editing={editingId === item.id}
-                    onToggleDone={() => toggleDone(item.id)}
-                    onToggleSub={(subId) => toggleSub(item.id, subId)}
-                    onStartEdit={() => setEditingId(item.id)}
-                    onSave={(patch) => saveEdit(item.id, patch)}
-                    onCancel={() => cancelEdit(item.id, item.title.trim() === "")}
-                    onDelete={() => deleteItem(item.id)}
-                  />
-                ))}
+                {sortedSchedule.map((item, i) =>
+                  item.synced ? (
+                    <SyncedTimelineRow
+                      key={item.id}
+                      item={item}
+                      isFirst={i === 0}
+                      isLast={i === sortedSchedule.length - 1}
+                      onOpen={() => goToWorkClass(item.sourceClassId)}
+                    />
+                  ) : (
+                    <TimelineRow
+                      key={item.id}
+                      item={item}
+                      isFirst={i === 0}
+                      isLast={i === sortedSchedule.length - 1}
+                      editing={editingId === item.id}
+                      onToggleDone={() => toggleDone(item.id)}
+                      onToggleSub={(subId) => toggleSub(item.id, subId)}
+                      onStartEdit={() => setEditingId(item.id)}
+                      onSave={(patch) => saveEdit(item.id, patch)}
+                      onCancel={() => cancelEdit(item.id, item.title.trim() === "")}
+                      onDelete={() => deleteItem(item.id)}
+                    />
+                  )
+                )}
               </div>
               <button
                 type="button"
@@ -682,17 +813,19 @@ export default function PastelPlan() {
                   Add today's objective here once you've planned it.
                 </p>
                 <ul className="mb-3 flex flex-col gap-1.5">
-                  {PREP_ITEMS.length === 0 && <li className="text-[0.8rem] italic text-[var(--pp-ink-soft)]">No prep items yet.</li>}
-                  {PREP_ITEMS.map((text) => {
-                    const checked = prepChecked.has(text);
+                  {syncedPrepEntries.length === 0 && <li className="text-[0.8rem] italic text-[var(--pp-ink-soft)]">No prep items yet.</li>}
+                  {syncedPrepEntries.map((entry) => {
+                    const checked = prepChecked.has(entry.id);
+                    const label = `${entry.type} — ${entry.className} / ${entry.sectionName}${entry.notes ? ": " + entry.notes : ""}`;
                     return (
-                      <li key={text} className="flex cursor-pointer select-none items-center gap-2.5" onClick={() => togglePrep(text)}>
-                        <CheckBox checked={checked} onClick={() => togglePrep(text)} size={19} tone="var(--pp-sky-ink)" label={text} />
+                      <li key={entry.id} className="flex select-none items-center gap-2.5">
+                        <CheckBox checked={checked} onClick={() => togglePrep(entry.id)} size={19} tone="var(--pp-sky-ink)" label={label} />
                         <span
-                          className="text-[0.82rem] font-medium text-[var(--pp-ink)]"
+                          className="cursor-pointer text-[0.82rem] font-medium text-[var(--pp-ink)]"
                           style={checked ? { color: "var(--pp-ink-soft)", textDecoration: "line-through" } : undefined}
+                          onClick={() => goToWorkSection(entry.classId, entry.sectionId)}
                         >
-                          {text}
+                          {label}
                         </span>
                       </li>
                     );
@@ -714,7 +847,19 @@ export default function PastelPlan() {
             <section>
               <SectionTitle icon={ClipboardList} fill="var(--pp-blush)" ink="var(--pp-blush-ink)" title="To-Do Matrix" />
               <div className="pp-card">
-                <TodoGroup label="Handle today" dotColor="var(--pp-blush-ink)" items={TODO_URGENT} checked={todoChecked} onToggle={toggleTodo} />
+                <TodoGroup
+                  label="Handle today"
+                  dotColor="var(--pp-blush-ink)"
+                  items={syncedTodoEntries.map((entry) => ({
+                    id: entry.id,
+                    text: `${entry.type} — ${entry.className} / ${entry.sectionName}${entry.notes ? ": " + entry.notes : ""}`,
+                    sourceClassId: entry.classId,
+                    sourceSectionId: entry.sectionId,
+                  }))}
+                  checked={todoChecked}
+                  onToggle={toggleTodo}
+                  onOpenSource={goToWorkSection}
+                />
                 <div className="mt-3.5">
                   <TodoGroup label="Can wait this week" dotColor="var(--pp-ink-soft)" items={TODO_LATER} checked={todoChecked} onToggle={toggleTodo} />
                 </div>
@@ -800,6 +945,7 @@ export default function PastelPlan() {
             todayStats={todayStats}
             water={waterFilled}
             catCounts={catCounts}
+            onOpenSyncedClass={goToWorkClass}
           />
         )}
         </>
@@ -813,8 +959,16 @@ export default function PastelPlan() {
             setClassSchedule={setClassSchedule}
             courseOutlines={courseOutlines}
             setCourseOutlines={setCourseOutlines}
+            classSections={classSections}
+            setClassSections={setClassSections}
+            sectionLogs={sectionLogs}
+            setSectionLogs={setSectionLogs}
             activeClassId={activeClassId}
             setActiveClassId={setActiveClassId}
+            activeSectionsClassId={activeSectionsClassId}
+            setActiveSectionsClassId={setActiveSectionsClassId}
+            activeSectionId={activeSectionId}
+            setActiveSectionId={setActiveSectionId}
             activeOutlineTab={activeOutlineTab}
             setActiveOutlineTab={setActiveOutlineTab}
             officeHead={officeHead}
@@ -834,7 +988,14 @@ export default function PastelPlan() {
         <CustomizeSheet customize={customize} setCustomize={setCustomize} onClose={() => setShowCustomize(false)} onReset={resetAllData} />
       )}
       {showCalendar && (
-        <CalendarSheet selectedDate={selectedDate} onSelect={switchDate} onClose={() => setShowCalendar(false)} />
+        <CalendarSheet
+          selectedDate={selectedDate}
+          onSelect={switchDate}
+          onClose={() => setShowCalendar(false)}
+          classSchedule={classSchedule}
+          classSections={classSections}
+          sectionLogs={sectionLogs}
+        />
       )}
     </div>
   );
@@ -919,7 +1080,7 @@ function SignUpCard({ userProfile, firstName, dateLabel, quote, onSubmit, onCont
   );
 }
 
-function CalendarSheet({ selectedDate, onSelect, onClose }) {
+function CalendarSheet({ selectedDate, onSelect, onClose, classSchedule, classSections, sectionLogs }) {
   const initial = dateFromISO(selectedDate);
   const [viewYear, setViewYear] = useState(initial.getFullYear());
   const [viewMonth, setViewMonth] = useState(initial.getMonth());
@@ -982,6 +1143,11 @@ function CalendarSheet({ selectedDate, onSelect, onClose }) {
             } catch {
               /* ignore */
             }
+            if (!hasData) {
+              hasData =
+                getSyncedClassBlocksForDate(classSchedule, iso).length > 0 ||
+                getSyncedLogEntriesForDate(classSchedule, classSections, sectionLogs, iso).length > 0;
+            }
             const isToday = iso === todayIso;
             const isSelected = iso === selectedDate;
             return (
@@ -1021,12 +1187,14 @@ function CalendarSheet({ selectedDate, onSelect, onClose }) {
   );
 }
 
-function DashboardView({ upNext, weekDays, selectedDate, todayIso, computeDayStats, onSelectDay, todayStats, water, catCounts }) {
+function DashboardView({ upNext, weekDays, selectedDate, todayIso, computeDayStats, onSelectDay, todayStats, water, catCounts, onOpenSyncedClass }) {
   let upNextVisual = null;
+  let UpNextIcon = Bell;
   if (upNext) {
     const cat = CATS[upNext.cat];
     const custom = upNext.color ? swatchByKey(upNext.color) : null;
     upNextVisual = { fill: custom ? custom.fill : cat.fill, ink: custom ? custom.ink : cat.ink };
+    if (upNext.synced) UpNextIcon = cat.Icon;
   }
   const t = upNext ? fmtTime(upNext.time24) : null;
 
@@ -1036,16 +1204,20 @@ function DashboardView({ upNext, weekDays, selectedDate, todayIso, computeDaySta
         <SectionTitle icon={Bell} fill="var(--pp-gold)" ink="var(--pp-gold-ink)" title="Up Next" />
         <div className="pp-card">
           {upNext && upNextVisual ? (
-            <div className="flex items-center gap-3">
+            <div
+              className={"flex items-center gap-3" + (upNext.synced ? " cursor-pointer" : "")}
+              onClick={upNext.synced ? () => onOpenSyncedClass(upNext.sourceClassId) : undefined}
+            >
               <span
                 className={`grid h-[42px] w-[42px] shrink-0 place-items-center rounded-[13px] text-[20px] leading-none ${upNext.soon ? "pp-bell-pulse" : ""}`}
                 style={{ background: upNextVisual.fill, color: upNextVisual.ink }}
               >
-                {upNext.emoji || <Bell size={20} strokeWidth={1.8} />}
+                {upNext.emoji || <UpNextIcon size={20} strokeWidth={1.8} />}
               </span>
               <div className="min-w-0">
                 <p className="mb-0.5 text-[0.72rem] font-extrabold uppercase tracking-[.02em] text-[var(--pp-gold-ink)]">
                   {upNext.inText} · {t.num} {t.ampm}
+                  {upNext.synced ? " · Work Notes" : ""}
                 </p>
                 <p className="text-[0.9rem] font-bold text-[var(--pp-ink)]">{upNext.title}</p>
               </div>
@@ -1132,8 +1304,16 @@ function WorkView({
   setClassSchedule,
   courseOutlines,
   setCourseOutlines,
+  classSections,
+  setClassSections,
+  sectionLogs,
+  setSectionLogs,
   activeClassId,
   setActiveClassId,
+  activeSectionsClassId,
+  setActiveSectionsClassId,
+  activeSectionId,
+  setActiveSectionId,
   activeOutlineTab,
   setActiveOutlineTab,
   officeHead,
@@ -1169,8 +1349,16 @@ function WorkView({
           setClassSchedule={setClassSchedule}
           courseOutlines={courseOutlines}
           setCourseOutlines={setCourseOutlines}
+          classSections={classSections}
+          setClassSections={setClassSections}
+          sectionLogs={sectionLogs}
+          setSectionLogs={setSectionLogs}
           activeClassId={activeClassId}
           setActiveClassId={setActiveClassId}
+          activeSectionsClassId={activeSectionsClassId}
+          setActiveSectionsClassId={setActiveSectionsClassId}
+          activeSectionId={activeSectionId}
+          setActiveSectionId={setActiveSectionId}
           activeOutlineTab={activeOutlineTab}
           setActiveOutlineTab={setActiveOutlineTab}
         />
@@ -1212,12 +1400,61 @@ function OutlineTextarea({ value, onChange, placeholder }) {
   );
 }
 
+function DaysTimeFields({ days, timeIn, timeOut, onChange }) {
+  const toggleDay = (d) => {
+    const next = days.includes(d) ? days.filter((x) => x !== d) : [...days, d];
+    onChange({ days: next, timeIn, timeOut });
+  };
+  return (
+    <>
+      <div>
+        <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">Days</label>
+        <div className="flex flex-wrap gap-1.5">
+          {WEEKDAYS.map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => toggleDay(d)}
+              className="rounded-full border-[1.5px] px-2.5 py-1 text-[0.68rem] font-bold"
+              style={
+                days.includes(d)
+                  ? { background: "var(--pp-lavender)", borderColor: "var(--pp-lavender)", color: "var(--pp-lavender-ink)" }
+                  : { background: "var(--pp-surface)", borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }
+              }
+            >
+              {d.slice(0, 3)}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">Time In</label>
+        <input
+          type="time"
+          value={timeIn}
+          onChange={(e) => onChange({ days, timeIn: e.target.value, timeOut })}
+          className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.82rem] font-medium text-[var(--pp-ink)]"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">Time Out</label>
+        <input
+          type="time"
+          value={timeOut}
+          onChange={(e) => onChange({ days, timeIn, timeOut: e.target.value })}
+          className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.82rem] font-medium text-[var(--pp-ink)]"
+        />
+      </div>
+    </>
+  );
+}
+
 function ClassAddForm({ onAdd, onCancel }) {
-  const [draft, setDraft] = useState({ className: "", day: WEEKDAYS[0], time: "" });
+  const [draft, setDraft] = useState({ className: "", days: [], timeIn: "", timeOut: "" });
 
   const submit = () => {
     if (!draft.className.trim()) return;
-    onAdd({ id: uid(), className: draft.className.trim(), day: draft.day, time: draft.time });
+    onAdd({ id: uid(), className: draft.className.trim(), days: draft.days, timeIn: draft.timeIn, timeOut: draft.timeOut });
   };
 
   return (
@@ -1232,29 +1469,7 @@ function ClassAddForm({ onAdd, onCancel }) {
           className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.82rem] font-medium text-[var(--pp-ink)]"
         />
       </div>
-      <div>
-        <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">Day</label>
-        <select
-          value={draft.day}
-          onChange={(e) => setDraft((d) => ({ ...d, day: e.target.value }))}
-          className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.82rem] font-medium text-[var(--pp-ink)]"
-        >
-          {WEEKDAYS.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">Time</label>
-        <input
-          type="time"
-          value={draft.time}
-          onChange={(e) => setDraft((d) => ({ ...d, time: e.target.value }))}
-          className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.82rem] font-medium text-[var(--pp-ink)]"
-        />
-      </div>
+      <DaysTimeFields days={draft.days} timeIn={draft.timeIn} timeOut={draft.timeOut} onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))} />
       <div className="mt-1 flex gap-2">
         <button
           type="button"
@@ -1276,15 +1491,21 @@ function ClassAddForm({ onAdd, onCancel }) {
   );
 }
 
-function ClassRow({ cls, onOpenOutline, onDelete }) {
-  const timeLabel = cls.time ? `${fmtTime(cls.time).num} ${fmtTime(cls.time).ampm}` : "";
-  const subtext = [cls.day, timeLabel].filter(Boolean).join(" · ");
+function ClassRow({ cls, onOpenOutline, onOpenSections, onDelete }) {
+  const subtext = fmtDaysTime(cls);
   return (
     <div className="flex items-center gap-2.5 border-b border-[var(--pp-line)] py-2.5 last:border-b-0">
       <div className="min-w-0 flex-1">
         <p className="truncate text-[0.83rem] font-semibold text-[var(--pp-ink)]">{cls.className}</p>
         {subtext && <p className="truncate text-[0.68rem] text-[var(--pp-ink-soft)]">{subtext}</p>}
       </div>
+      <button
+        type="button"
+        onClick={onOpenSections}
+        className="flex shrink-0 items-center gap-1 rounded-full border-[1.5px] border-[var(--pp-line)] px-2.5 py-1.5 text-[0.68rem] font-bold text-[var(--pp-ink-soft)]"
+      >
+        <Users size={13} strokeWidth={2} /> Sections
+      </button>
       <button
         type="button"
         onClick={onOpenOutline}
@@ -1299,7 +1520,7 @@ function ClassRow({ cls, onOpenOutline, onDelete }) {
   );
 }
 
-function ClassScheduleList({ classSchedule, setClassSchedule, setCourseOutlines, onOpenOutline }) {
+function ClassScheduleList({ classSchedule, setClassSchedule, setCourseOutlines, classSections, setClassSections, setSectionLogs, onOpenOutline, onOpenSections }) {
   const [adding, setAdding] = useState(false);
 
   const addClass = (cls) => {
@@ -1311,6 +1532,17 @@ function ClassScheduleList({ classSchedule, setClassSchedule, setCourseOutlines,
     setCourseOutlines((prev) => {
       const next = { ...prev };
       delete next[id];
+      return next;
+    });
+    const sections = classSections[id] || [];
+    setClassSections((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setSectionLogs((prev) => {
+      const next = { ...prev };
+      sections.forEach((s) => delete next[s.id]);
       return next;
     });
   };
@@ -1327,7 +1559,13 @@ function ClassScheduleList({ classSchedule, setClassSchedule, setCourseOutlines,
               <p className="py-3 text-center text-[0.78rem] text-[var(--pp-ink-soft)]">No classes yet.</p>
             ) : (
               classSchedule.map((cls) => (
-                <ClassRow key={cls.id} cls={cls} onOpenOutline={() => onOpenOutline(cls.id)} onDelete={() => deleteClass(cls.id)} />
+                <ClassRow
+                  key={cls.id}
+                  cls={cls}
+                  onOpenOutline={() => onOpenOutline(cls.id)}
+                  onOpenSections={() => onOpenSections(cls.id)}
+                  onDelete={() => deleteClass(cls.id)}
+                />
               ))
             )}
           </div>
@@ -1344,13 +1582,234 @@ function ClassScheduleList({ classSchedule, setClassSchedule, setCourseOutlines,
   );
 }
 
+function SectionAddForm({ onAdd, onCancel }) {
+  const [draft, setDraft] = useState({ name: "", days: [], timeIn: "", timeOut: "" });
+
+  const submit = () => {
+    if (!draft.name.trim()) return;
+    onAdd({ id: uid(), name: draft.name.trim(), days: draft.days, timeIn: draft.timeIn, timeOut: draft.timeOut });
+  };
+
+  return (
+    <div className="pp-card flex flex-col gap-2.5">
+      <div>
+        <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">Section name</label>
+        <input
+          type="text"
+          value={draft.name}
+          placeholder="e.g. Section A"
+          onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+          className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.82rem] font-medium text-[var(--pp-ink)]"
+        />
+      </div>
+      <DaysTimeFields days={draft.days} timeIn={draft.timeIn} timeOut={draft.timeOut} onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))} />
+      <div className="mt-1 flex gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 rounded-xl border-[1.5px] border-[var(--pp-line)] py-2 text-[0.78rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={submit}
+          className="flex-1 rounded-xl py-2 text-[0.78rem] font-bold text-[var(--pp-surface)]"
+          style={{ background: "var(--pp-ink)" }}
+        >
+          Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SectionRow({ section, entryCount, onOpen, onDelete }) {
+  const meta = [fmtDaysTime(section), `${entryCount} ${entryCount === 1 ? "entry" : "entries"}`].filter(Boolean).join(" · ");
+  return (
+    <div className="flex items-center gap-2.5 border-b border-[var(--pp-line)] py-2.5 last:border-b-0">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[0.83rem] font-semibold text-[var(--pp-ink)]">{section.name}</p>
+        <p className="truncate text-[0.68rem] text-[var(--pp-ink-soft)]">{meta}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="flex shrink-0 items-center gap-1 rounded-full border-[1.5px] border-[var(--pp-line)] px-2.5 py-1.5 text-[0.68rem] font-bold text-[var(--pp-ink-soft)]"
+      >
+        <FileText size={13} strokeWidth={2} /> Open
+      </button>
+      <button type="button" onClick={onDelete} aria-label="Delete section" className="shrink-0 text-[var(--pp-ink-soft)]">
+        <X size={15} strokeWidth={2} />
+      </button>
+    </div>
+  );
+}
+
+function SectionsList({ classItem, sections, sectionLogs, setClassSections, setSectionLogs, onOpenLog, onBack }) {
+  const [adding, setAdding] = useState(false);
+
+  const addSection = (section) => {
+    setClassSections((prev) => ({ ...prev, [classItem.id]: [...(prev[classItem.id] || []), section] }));
+    setAdding(false);
+  };
+  const deleteSection = (sectionId) => {
+    setClassSections((prev) => ({ ...prev, [classItem.id]: (prev[classItem.id] || []).filter((s) => s.id !== sectionId) }));
+    setSectionLogs((prev) => {
+      const next = { ...prev };
+      delete next[sectionId];
+      return next;
+    });
+  };
+
+  return (
+    <section>
+      <button type="button" onClick={onBack} className="mb-3 flex items-center gap-1 text-[0.76rem] font-bold text-[var(--pp-ink-soft)]">
+        <ChevronLeft size={14} strokeWidth={2.2} /> Back to Class Schedule
+      </button>
+      <p className="mb-3 -mt-1 text-[0.9rem] font-semibold text-[var(--pp-ink)]">{classItem.className}</p>
+      <SectionTitle icon={Users} fill="var(--pp-seafoam)" ink="var(--pp-seafoam-ink)" title="Sections" />
+      {adding ? (
+        <SectionAddForm onAdd={addSection} onCancel={() => setAdding(false)} />
+      ) : (
+        <>
+          <div className="pp-card">
+            {sections.length === 0 ? (
+              <p className="py-3 text-center text-[0.78rem] text-[var(--pp-ink-soft)]">No sections yet.</p>
+            ) : (
+              sections.map((sec) => (
+                <SectionRow
+                  key={sec.id}
+                  section={sec}
+                  entryCount={(sectionLogs[sec.id] || []).length}
+                  onOpen={() => onOpenLog(sec.id)}
+                  onDelete={() => deleteSection(sec.id)}
+                />
+              ))
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-[var(--pp-line)] py-3 text-[0.8rem] font-bold text-[var(--pp-ink-soft)]"
+          >
+            <Plus size={16} strokeWidth={2.2} /> Add section
+          </button>
+        </>
+      )}
+    </section>
+  );
+}
+
+function LogEntryRow({ entry, onDelete }) {
+  const dateLabel = entry.date ? `${fmtShortDate(entry.date)} · ${dayOfWeekFromDate(entry.date)}` : "";
+  return (
+    <div className="flex items-start gap-2.5 border-b border-[var(--pp-line)] py-2.5 last:border-b-0">
+      <span
+        className="shrink-0 rounded-full px-2 py-1 text-[0.6rem] font-extrabold uppercase tracking-[.03em]"
+        style={{ background: "var(--pp-sky)", color: "var(--pp-sky-ink)" }}
+      >
+        {entry.type}
+      </span>
+      <div className="min-w-0 flex-1">
+        {dateLabel && <p className="text-[0.68rem] font-bold text-[var(--pp-ink-soft)]">{dateLabel}</p>}
+        {entry.notes && <p className="whitespace-pre-wrap text-[0.78rem] leading-[1.4] text-[var(--pp-ink)]">{entry.notes}</p>}
+      </div>
+      <button type="button" onClick={onDelete} aria-label="Delete entry" className="shrink-0 text-[var(--pp-ink-soft)]">
+        <X size={14} strokeWidth={2} />
+      </button>
+    </div>
+  );
+}
+
+function SectionLogView({ section, entries, setSectionLogs, onBack }) {
+  const [type, setType] = useState(ACTION_TYPES[0]);
+  const [date, setDate] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const addEntry = () => {
+    const entry = { id: uid(), type, date, notes: notes.trim() };
+    setSectionLogs((prev) => ({ ...prev, [section.id]: [...(prev[section.id] || []), entry] }));
+    setDate("");
+    setNotes("");
+  };
+  const deleteEntry = (entryId) => {
+    setSectionLogs((prev) => ({ ...prev, [section.id]: (prev[section.id] || []).filter((e) => e.id !== entryId) }));
+  };
+
+  return (
+    <section>
+      <button type="button" onClick={onBack} className="mb-3 flex items-center gap-1 text-[0.76rem] font-bold text-[var(--pp-ink-soft)]">
+        <ChevronLeft size={14} strokeWidth={2.2} /> Back to Sections
+      </button>
+      <p className="mb-3 -mt-1 text-[0.9rem] font-semibold text-[var(--pp-ink)]">{section.name}</p>
+      <SectionTitle icon={ClipboardList} fill="var(--pp-blush)" ink="var(--pp-blush-ink)" title="Activity Log" />
+
+      <div className="pp-card mb-3">
+        <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">Action</label>
+        <select
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          className="mb-2.5 w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.82rem] font-medium text-[var(--pp-ink)]"
+        >
+          {ACTION_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+        <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">Date</label>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.82rem] font-medium text-[var(--pp-ink)]"
+        />
+        {date && <p className="mt-1 text-[0.68rem] font-semibold text-[var(--pp-ink-soft)]">{dayOfWeekFromDate(date)}</p>}
+        <label className="mb-1 mt-2.5 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">Notes</label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={3}
+          placeholder="Add notes for this entry..."
+          className="w-full resize-none rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2.5 text-[0.82rem] leading-[1.45] text-[var(--pp-ink)]"
+        />
+        <button
+          type="button"
+          onClick={addEntry}
+          className="mt-2.5 w-full rounded-xl py-2.5 text-[0.82rem] font-bold text-[var(--pp-surface)]"
+          style={{ background: "var(--pp-ink)" }}
+        >
+          Add Entry
+        </button>
+      </div>
+
+      <div className="pp-card">
+        {entries.length === 0 ? (
+          <p className="py-3 text-center text-[0.78rem] text-[var(--pp-ink-soft)]">No entries yet.</p>
+        ) : (
+          [...entries].reverse().map((entry) => <LogEntryRow key={entry.id} entry={entry} onDelete={() => deleteEntry(entry.id)} />)
+        )}
+      </div>
+    </section>
+  );
+}
+
 function TeacherWorkspace({
   classSchedule,
   setClassSchedule,
   courseOutlines,
   setCourseOutlines,
+  classSections,
+  setClassSections,
+  sectionLogs,
+  setSectionLogs,
   activeClassId,
   setActiveClassId,
+  activeSectionsClassId,
+  setActiveSectionsClassId,
+  activeSectionId,
+  setActiveSectionId,
   activeOutlineTab,
   setActiveOutlineTab,
 }) {
@@ -1363,7 +1822,6 @@ function TeacherWorkspace({
         ...prev,
         [activeClassId]: typeof updater === "function" ? updater(prev[activeClassId] || freshOutline()) : updater,
       }));
-    const timeLabel = activeClass.time ? `${fmtTime(activeClass.time).num} ${fmtTime(activeClass.time).ampm}` : "";
 
     return (
       <section>
@@ -1376,12 +1834,36 @@ function TeacherWorkspace({
         </button>
         <p className="mb-3 -mt-1 text-[0.9rem] font-semibold text-[var(--pp-ink)]">
           {activeClass.className}
-          <span className="ml-1.5 text-[0.72rem] font-medium text-[var(--pp-ink-soft)]">
-            {[activeClass.day, timeLabel].filter(Boolean).join(" · ")}
-          </span>
+          <span className="ml-1.5 text-[0.72rem] font-medium text-[var(--pp-ink-soft)]">{fmtDaysTime(activeClass)}</span>
         </p>
         <TeacherOutline outline={outline} setOutline={setOutline} activeOutlineTab={activeOutlineTab} setActiveOutlineTab={setActiveOutlineTab} />
       </section>
+    );
+  }
+
+  const sectionsClass = classSchedule.find((c) => c.id === activeSectionsClassId);
+  if (sectionsClass) {
+    const activeSection = (classSections[activeSectionsClassId] || []).find((s) => s.id === activeSectionId);
+    if (activeSection) {
+      return (
+        <SectionLogView
+          section={activeSection}
+          entries={sectionLogs[activeSectionId] || []}
+          setSectionLogs={setSectionLogs}
+          onBack={() => setActiveSectionId(null)}
+        />
+      );
+    }
+    return (
+      <SectionsList
+        classItem={sectionsClass}
+        sections={classSections[activeSectionsClassId] || []}
+        sectionLogs={sectionLogs}
+        setClassSections={setClassSections}
+        setSectionLogs={setSectionLogs}
+        onOpenLog={(id) => setActiveSectionId(id)}
+        onBack={() => setActiveSectionsClassId(null)}
+      />
     );
   }
 
@@ -1390,9 +1872,16 @@ function TeacherWorkspace({
       classSchedule={classSchedule}
       setClassSchedule={setClassSchedule}
       setCourseOutlines={setCourseOutlines}
+      classSections={classSections}
+      setClassSections={setClassSections}
+      setSectionLogs={setSectionLogs}
       onOpenOutline={(id) => {
         setActiveOutlineTab("desc");
         setActiveClassId(id);
+      }}
+      onOpenSections={(id) => {
+        setActiveSectionsClassId(id);
+        setActiveSectionId(null);
       }}
     />
   );
@@ -1413,6 +1902,27 @@ function TeacherOutline({ outline, setOutline, activeOutlineTab, setActiveOutlin
       return;
     }
     setField("uploadedFile", { name: file.name, size: file.size });
+
+    const isTxt = /\.txt$/i.test(file.name) || file.type === "text/plain";
+    if (isTxt) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const extracted = extractOutlineFromText(String(reader.result || ""));
+        const filledFields = Object.keys(extracted);
+        if (!filledFields.length) {
+          alert(`Couldn't find recognizable section headings in "${file.name}" — fill in the outline manually.`);
+          return;
+        }
+        setOutline((prev) => ({ ...prev, ...extracted, mode: "manual" }));
+        setActiveOutlineTab("desc");
+        alert(
+          `Filled in ${filledFields.length} field(s) from "${file.name}": ${filledFields
+            .map((f) => OUTLINE_TABS.find((t) => t.key === f).label)
+            .join(", ")}.`
+        );
+      };
+      reader.readAsText(file);
+    }
   };
 
   return (
@@ -1455,11 +1965,12 @@ function TeacherOutline({ outline, setOutline, activeOutlineTab, setActiveOutlin
           >
             <UploadCloud size={22} strokeWidth={1.7} />
             <span className="text-[0.78rem] font-bold">Tap to upload a course outline file</span>
-            <span className="text-[0.68rem]">Max 5MB</span>
+            <span className="text-[0.68rem]">Max 5MB — .txt syllabi auto-fill the outline</span>
           </button>
           <input
             ref={fileInputRef}
             type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
             className="hidden"
             onChange={(e) => handleFile(e.target.files?.[0])}
           />
@@ -1814,6 +2325,45 @@ function CustomizeSheet({ customize, setCustomize, onClose, onReset }) {
         >
           Done
         </button>
+      </div>
+    </div>
+  );
+}
+
+function SyncedTimelineRow({ item, isFirst, isLast, onOpen }) {
+  const cat = CATS[item.cat];
+  const t = fmtTime(item.time24);
+  return (
+    <div className="pp-row-grid relative grid gap-x-0.5 px-0.5 py-2.5">
+      <div className="pr-2 text-right text-[0.72rem] font-bold leading-tight text-[var(--pp-ink-soft)] tabular-nums">
+        <div>{t.num}</div>
+        <div>{t.ampm}</div>
+      </div>
+      <div className="relative flex justify-center">
+        <span className={`pp-rail-line ${isFirst ? "first" : ""} ${isLast ? "last" : ""}`} aria-hidden="true" />
+        <span
+          className="relative z-[1] mt-1 h-[11px] w-[11px] rounded-full border-2"
+          style={{ borderColor: "var(--pp-surface)", boxShadow: `0 0 0 1.5px ${cat.ink}` }}
+        />
+      </div>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onOpen}
+        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onOpen()}
+        className="flex cursor-pointer items-center gap-2.5 rounded-[14px] border border-dashed px-2.5 py-2.5"
+        style={{ borderColor: "var(--pp-line)" }}
+      >
+        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[10px] text-[16px] leading-none" style={{ background: cat.fill, color: cat.ink }}>
+          <cat.Icon size={16} strokeWidth={1.9} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[0.83rem] font-semibold text-[var(--pp-ink)]">{item.title}</span>
+          <span className="text-[0.66rem] font-bold uppercase tracking-[.03em]" style={{ color: cat.ink }}>
+            Work Notes
+          </span>
+        </span>
+        <Folder size={14} strokeWidth={2} className="shrink-0 text-[var(--pp-ink-soft)]" />
       </div>
     </div>
   );
@@ -2299,7 +2849,7 @@ function SectionTitle({ icon: Icon, fill, ink, title, trailing }) {
   );
 }
 
-function TodoGroup({ label, dotColor, items, checked, onToggle }) {
+function TodoGroup({ label, dotColor, items, checked, onToggle, onOpenSource }) {
   return (
     <div>
       <div className="mb-2 flex items-center gap-1.5">
@@ -2313,11 +2863,12 @@ function TodoGroup({ label, dotColor, items, checked, onToggle }) {
           {items.map((item) => {
             const isChecked = checked.has(item.id);
             return (
-              <li key={item.id} className="flex cursor-pointer select-none items-start gap-2.5" onClick={() => onToggle(item.id)}>
+              <li key={item.id} className="flex select-none items-start gap-2.5">
                 <CheckBox checked={isChecked} onClick={() => onToggle(item.id)} size={20} tone="var(--pp-mint-ink)" label={item.text} />
                 <p
-                  className="text-[0.83rem] font-medium leading-[1.38] text-[var(--pp-ink)]"
+                  className="cursor-pointer text-[0.83rem] font-medium leading-[1.38] text-[var(--pp-ink)]"
                   style={isChecked ? { color: "var(--pp-ink-soft)", textDecoration: "line-through" } : undefined}
+                  onClick={() => (item.sourceClassId && onOpenSource ? onOpenSource(item.sourceClassId, item.sourceSectionId) : onToggle(item.id))}
                 >
                   {item.text}
                   {item.due && <span className="mt-0.5 block text-[0.7rem] font-semibold text-[var(--pp-ink-soft)]">{item.due}</span>}
