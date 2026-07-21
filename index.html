@@ -1172,7 +1172,7 @@
             <button type="button" class="outline-dropzone" id="outlineDropzoneBtn">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 15V4M12 4L8 8M12 4L16 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 16V17.5C5 18.9 6.1 20 7.5 20H16.5C17.9 20 19 18.9 19 17.5V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
               <span class="outline-dropzone-title">Click to upload</span>
-              <span class="outline-dropzone-sub">PDF, DOCX, XLSX, TXT (max 5MB) — .txt syllabi auto-fill the outline</span>
+              <span class="outline-dropzone-sub">PDF, DOCX, XLSX, TXT (max 5MB) — .txt and .docx syllabi auto-fill the outline</span>
             </button>
             <input type="file" id="outlineFileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" style="display:none">
             <div id="outlineFileChip"></div>
@@ -2832,6 +2832,76 @@
     return result;
   }
 
+  function applyExtractedOutline(extracted, fileName){
+    const filledFields = Object.keys(extracted);
+    if (!filledFields.length) {
+      alert(`Couldn't find recognizable section headings in "${fileName}" — fill in the outline manually.`);
+      return;
+    }
+    filledFields.forEach(field => { outline[field] = extracted[field]; });
+    outline.mode = 'manual';
+    saveOutline();
+    activeOutlineTab = 'desc';
+    applyOutlineMode();
+    renderOutlineTabs();
+    renderOutlinePanel();
+    alert(`Filled in ${filledFields.length} field(s) from "${fileName}": ${filledFields.map(f => OUTLINE_TABS.find(t => t.key === f).label).join(', ')}.`);
+  }
+
+  // .docx files are ZIP archives; word/document.xml holds the body text as a series
+  // of <w:p> paragraphs, each made of one or more <w:t> text runs. We scan the ZIP's
+  // local file headers (no library needed) to find that entry, inflate it with the
+  // browser's native DecompressionStream if it's deflate-compressed, then rebuild
+  // plain text with one line per paragraph so the heading matcher below can work
+  // on it exactly like a .txt file.
+  function docxParagraphsToText(xml){
+    const paragraphs = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
+    return paragraphs
+      .map(p => {
+        const runs = [...p.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)].map(m => m[1]);
+        return runs.join('')
+          .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"').replace(/&apos;/g, "'");
+      })
+      .join('\n');
+  }
+
+  async function extractDocxText(file){
+    if (!window.DecompressionStream) {
+      throw new Error("Your browser can't decompress .docx files. Try a recent Chrome, Edge, or Safari.");
+    }
+    const buffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    const dv = new DataView(buffer);
+    let offset = 0;
+    while (offset < bytes.length - 30) {
+      if (dv.getUint32(offset, true) !== 0x04034b50) { offset++; continue; }
+      const compMethod = dv.getUint16(offset + 8, true);
+      const compSize = dv.getUint32(offset + 18, true);
+      const nameLen = dv.getUint16(offset + 26, true);
+      const extraLen = dv.getUint16(offset + 28, true);
+      const nameStart = offset + 30;
+      const name = new TextDecoder().decode(bytes.slice(nameStart, nameStart + nameLen));
+      const dataStart = nameStart + nameLen + extraLen;
+      if (name === 'word/document.xml') {
+        const compData = bytes.slice(dataStart, dataStart + compSize);
+        let xmlBytes;
+        if (compMethod === 0) {
+          xmlBytes = compData;
+        } else if (compMethod === 8) {
+          const stream = new Blob([compData]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+          xmlBytes = new Uint8Array(await new Response(stream).arrayBuffer());
+        } else {
+          throw new Error('Unsupported compression in this .docx file.');
+        }
+        const xml = new TextDecoder('utf-8').decode(xmlBytes);
+        return docxParagraphsToText(xml);
+      }
+      offset = dataStart + compSize;
+    }
+    throw new Error("Couldn't find document content in this .docx file — it may be corrupted.");
+  }
+
   const outlineDropzoneBtn = document.getElementById('outlineDropzoneBtn');
   const outlineFileInput = document.getElementById('outlineFileInput');
   const outlineFileChip = document.getElementById('outlineFileChip');
@@ -2863,25 +2933,18 @@
     reader.readAsDataURL(file);
 
     const isTxt = /\.txt$/i.test(file.name) || file.type === 'text/plain';
+    const isDocx = /\.docx$/i.test(file.name) || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
     if (isTxt) {
       const textReader = new FileReader();
       textReader.onload = () => {
-        const extracted = extractOutlineFromText(String(textReader.result || ''));
-        const filledFields = Object.keys(extracted);
-        if (!filledFields.length) {
-          alert(`Couldn't find recognizable section headings in "${file.name}" — fill in the outline manually.`);
-          return;
-        }
-        filledFields.forEach(field => { outline[field] = extracted[field]; });
-        outline.mode = 'manual';
-        saveOutline();
-        activeOutlineTab = 'desc';
-        applyOutlineMode();
-        renderOutlineTabs();
-        renderOutlinePanel();
-        alert(`Filled in ${filledFields.length} field(s) from "${file.name}": ${filledFields.map(f => OUTLINE_TABS.find(t => t.key === f).label).join(', ')}.`);
+        applyExtractedOutline(extractOutlineFromText(String(textReader.result || '')), file.name);
       };
       textReader.readAsText(file);
+    } else if (isDocx) {
+      extractDocxText(file)
+        .then(text => applyExtractedOutline(extractOutlineFromText(text), file.name))
+        .catch(err => alert(`Couldn't read "${file.name}": ${err.message}`));
     }
 
     outlineFileInput.value = '';

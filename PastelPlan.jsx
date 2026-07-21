@@ -239,6 +239,67 @@ function extractOutlineFromText(text) {
   return result;
 }
 
+// .docx files are ZIP archives; word/document.xml holds the body text as a series
+// of <w:p> paragraphs, each made of one or more <w:t> text runs. We scan the ZIP's
+// local file headers (no library needed) to find that entry, inflate it with the
+// browser's native DecompressionStream if it's deflate-compressed, then rebuild
+// plain text with one line per paragraph so extractOutlineFromText can work on it
+// exactly like a .txt file.
+function docxParagraphsToText(xml) {
+  const paragraphs = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
+  return paragraphs
+    .map((p) => {
+      const runs = [...p.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)].map((m) => m[1]);
+      return runs
+        .join("")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&apos;/g, "'");
+    })
+    .join("\n");
+}
+
+async function extractDocxText(file) {
+  if (!window.DecompressionStream) {
+    throw new Error("Your browser can't decompress .docx files. Try a recent Chrome, Edge, or Safari.");
+  }
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  const dv = new DataView(buffer);
+  let offset = 0;
+  while (offset < bytes.length - 30) {
+    if (dv.getUint32(offset, true) !== 0x04034b50) {
+      offset++;
+      continue;
+    }
+    const compMethod = dv.getUint16(offset + 8, true);
+    const compSize = dv.getUint32(offset + 18, true);
+    const nameLen = dv.getUint16(offset + 26, true);
+    const extraLen = dv.getUint16(offset + 28, true);
+    const nameStart = offset + 30;
+    const name = new TextDecoder().decode(bytes.slice(nameStart, nameStart + nameLen));
+    const dataStart = nameStart + nameLen + extraLen;
+    if (name === "word/document.xml") {
+      const compData = bytes.slice(dataStart, dataStart + compSize);
+      let xmlBytes;
+      if (compMethod === 0) {
+        xmlBytes = compData;
+      } else if (compMethod === 8) {
+        const stream = new Blob([compData]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+        xmlBytes = new Uint8Array(await new Response(stream).arrayBuffer());
+      } else {
+        throw new Error("Unsupported compression in this .docx file.");
+      }
+      const xml = new TextDecoder("utf-8").decode(xmlBytes);
+      return docxParagraphsToText(xml);
+    }
+    offset = dataStart + compSize;
+  }
+  throw new Error("Couldn't find document content in this .docx file — it may be corrupted.");
+}
+
 const OFFICE_HEAD_TABS = [
   { key: "meetings", label: "Meetings", singular: "meeting", accent: "lavender", Icon: Users },
   { key: "field", label: "Field", singular: "field entry", accent: "mint", Icon: MapPin },
@@ -1895,6 +1956,21 @@ function TeacherOutline({ outline, setOutline, activeOutlineTab, setActiveOutlin
   const setField = (key, val) => setOutline((prev) => ({ ...prev, [key]: val }));
   const setFiveE = (key, val) => setOutline((prev) => ({ ...prev, fiveEs: { ...prev.fiveEs, [key]: val } }));
 
+  const applyExtractedOutline = (extracted, fileName) => {
+    const filledFields = Object.keys(extracted);
+    if (!filledFields.length) {
+      alert(`Couldn't find recognizable section headings in "${fileName}" — fill in the outline manually.`);
+      return;
+    }
+    setOutline((prev) => ({ ...prev, ...extracted, mode: "manual" }));
+    setActiveOutlineTab("desc");
+    alert(
+      `Filled in ${filledFields.length} field(s) from "${fileName}": ${filledFields
+        .map((f) => OUTLINE_TABS.find((t) => t.key === f).label)
+        .join(", ")}.`
+    );
+  };
+
   const handleFile = (file) => {
     if (!file) return;
     if (file.size > MAX_COURSE_FILE_BYTES) {
@@ -1904,24 +1980,18 @@ function TeacherOutline({ outline, setOutline, activeOutlineTab, setActiveOutlin
     setField("uploadedFile", { name: file.name, size: file.size });
 
     const isTxt = /\.txt$/i.test(file.name) || file.type === "text/plain";
+    const isDocx = /\.docx$/i.test(file.name) || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
     if (isTxt) {
       const reader = new FileReader();
       reader.onload = () => {
-        const extracted = extractOutlineFromText(String(reader.result || ""));
-        const filledFields = Object.keys(extracted);
-        if (!filledFields.length) {
-          alert(`Couldn't find recognizable section headings in "${file.name}" — fill in the outline manually.`);
-          return;
-        }
-        setOutline((prev) => ({ ...prev, ...extracted, mode: "manual" }));
-        setActiveOutlineTab("desc");
-        alert(
-          `Filled in ${filledFields.length} field(s) from "${file.name}": ${filledFields
-            .map((f) => OUTLINE_TABS.find((t) => t.key === f).label)
-            .join(", ")}.`
-        );
+        applyExtractedOutline(extractOutlineFromText(String(reader.result || "")), file.name);
       };
       reader.readAsText(file);
+    } else if (isDocx) {
+      extractDocxText(file)
+        .then((text) => applyExtractedOutline(extractOutlineFromText(text), file.name))
+        .catch((err) => alert(`Couldn't read "${file.name}": ${err.message}`));
     }
   };
 
@@ -1965,7 +2035,7 @@ function TeacherOutline({ outline, setOutline, activeOutlineTab, setActiveOutlin
           >
             <UploadCloud size={22} strokeWidth={1.7} />
             <span className="text-[0.78rem] font-bold">Tap to upload a course outline file</span>
-            <span className="text-[0.68rem]">Max 5MB — .txt syllabi auto-fill the outline</span>
+            <span className="text-[0.68rem]">Max 5MB — .txt and .docx syllabi auto-fill the outline</span>
           </button>
           <input
             ref={fileInputRef}
