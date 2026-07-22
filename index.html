@@ -500,6 +500,20 @@
   .class-row .class-del { border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; flex-shrink: 0; padding: 2px; }
   .class-row .class-del svg { width: 15px; height: 15px; }
   .class-row .class-code { color: var(--sky-ink); margin-right: 6px; }
+  .class-color-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+  .class-color-swatch {
+    width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid transparent;
+    cursor: pointer; padding: 0;
+  }
+  .class-color-swatch.selected { border-color: var(--ink); }
+  .class-color-swatch.class-color-clear { background: var(--paper) !important; border: 1.5px dashed var(--line) !important; }
+  .dash-toolbar { display: flex; gap: 8px; margin-bottom: 12px; }
+  .dash-tool-btn {
+    display: flex; align-items: center; justify-content: center; gap: 5px; flex: 1;
+    border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-soft);
+    font-family: var(--font-body); font-size: 0.74rem; font-weight: 700;
+    border-radius: 10px; padding: 8px 10px; cursor: pointer;
+  }
   .cs-view-toggle { display: flex; gap: 6px; margin-bottom: 10px; }
   .cs-view-btn {
     flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -1183,6 +1197,10 @@
   </main>
 
   <div class="dash-view" id="dashboardView" style="display:none">
+    <div class="dash-toolbar">
+      <button type="button" class="dash-tool-btn" id="dashRefreshBtn">🔄 Refresh</button>
+      <button type="button" class="dash-tool-btn" id="dashBackBtn">← Back</button>
+    </div>
     <section>
       <h2 class="section-title">
         <span class="icon-chip" style="background:var(--gold);color:var(--gold-ink)">
@@ -1234,6 +1252,10 @@
     </section>
 
     <section id="roleGenericSection">
+      <div class="dash-toolbar">
+        <button type="button" class="dash-tool-btn" id="genericRefreshBtn">🔄 Refresh</button>
+        <button type="button" class="dash-tool-btn" id="genericBackBtn">← Back</button>
+      </div>
       <div class="card work-generic">
         <span class="work-generic-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="7.5" width="17" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 7.5V6C8.5 4.9 9.4 4 10.5 4H13.5C14.6 4 15.5 4.9 15.5 6V7.5" stroke="currentColor" stroke-width="1.8"/></svg>
@@ -1244,6 +1266,10 @@
     </section>
 
     <section id="teacherWorkspaceSection" style="display:none">
+      <div class="dash-toolbar">
+        <button type="button" class="dash-tool-btn" id="teacherRefreshBtn">🔄 Refresh</button>
+        <button type="button" class="dash-tool-btn" id="teacherBackBtn">← Back</button>
+      </div>
       <div id="classScheduleBox">
         <h2 class="section-title">
           <span class="icon-chip" style="background:var(--sky);color:var(--sky-ink)">
@@ -1339,6 +1365,10 @@
     </section>
 
     <section id="officeHeadSection" style="display:none">
+      <div class="dash-toolbar">
+        <button type="button" class="dash-tool-btn" id="officeRefreshBtn">🔄 Refresh</button>
+        <button type="button" class="dash-tool-btn" id="officeBackBtn">← Back</button>
+      </div>
       <h2 class="section-title">
         <span class="icon-chip" style="background:var(--seafoam);color:var(--seafoam-ink)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19C3.5 15.7 6 13.5 9 13.5C12 13.5 14.5 15.7 14.5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15 14C17.3 14.3 19 16.1 19 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M14 8.3C15 8 15.7 7.1 15.7 6C15.7 4.7 14.6 3.6 13.3 3.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -1354,6 +1384,10 @@
     </section>
 
     <section id="tourismPlannerSection" style="display:none">
+      <div class="dash-toolbar">
+        <button type="button" class="dash-tool-btn" id="tourismRefreshBtn">🔄 Refresh</button>
+        <button type="button" class="dash-tool-btn" id="tourismBackBtn">← Back</button>
+      </div>
       <h2 class="section-title">
         <span class="icon-chip" style="background:var(--gold);color:var(--gold-ink)">📋</span>
         Tourism Officer Planner
@@ -1674,6 +1708,7 @@
         synced: true,
         sourceClassId: cls.id,
         outlineWeek: match ? match.weekNum : null,
+        color: cls.color || null,
       });
     });
     return results;
@@ -2065,16 +2100,19 @@
 
       if (item.synced) {
         const cat = CATS[item.cat];
+        const custom = item.color ? swatchByKey(item.color) : null;
+        const fillColor = custom ? custom.fill : cat.fill;
+        const inkColor = custom ? custom.ink : cat.ink;
         const t = fmtTime(item.time24);
         row.innerHTML = `
           <div class="t-time">${t.num}<br>${t.ampm}</div>
-          <div class="t-rail"><span class="t-dot" style="color:${cat.ink}"></span></div>
+          <div class="t-rail"><span class="t-dot" style="color:${inkColor}"></span></div>
           <div class="t-col">
             <div class="t-card t-card-synced">
-              <span class="t-icon" style="background:${cat.fill};color:${cat.ink}"><span style="font-size:16px;line-height:1">${cat.emoji}</span></span>
+              <span class="t-icon" style="background:${fillColor};color:${inkColor}"><span style="font-size:16px;line-height:1">${cat.emoji}</span></span>
               <span class="t-body">
                 <span class="t-title">${escapeHTML(item.title)}</span><br>
-                <span class="t-tag" style="color:${cat.ink}">Work Notes</span>
+                <span class="t-tag" style="color:${inkColor}">Work Notes</span>
               </span>
               <span class="t-synced-badge" title="From Work Notes">${ICONS.file}</span>
             </div>
@@ -2598,6 +2636,8 @@
   document.querySelectorAll('.view-tab').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
   switchView('dashboard'); // default landing page
   setInterval(() => { if (dashboardView.style.display !== 'none') renderUpNext(); }, 30000);
+  document.getElementById('dashRefreshBtn').addEventListener('click', () => switchView('dashboard'));
+  document.getElementById('dashBackBtn').addEventListener('click', () => switchView('planner'));
 
   // PERSONAL / WORK SWITCHER
   const personalPage = document.getElementById('personalPage');
@@ -2661,6 +2701,16 @@
     saveJSON('pastelplan.role.v1', workRole);
     applyRole();
   });
+  function goBackToRoleSelect(){
+    workRole = 'select';
+    saveJSON('pastelplan.role.v1', workRole);
+    applyRole();
+  }
+  document.getElementById('genericBackBtn').addEventListener('click', goBackToRoleSelect);
+  document.getElementById('genericRefreshBtn').addEventListener('click', applyRole);
+  document.getElementById('teacherBackBtn').addEventListener('click', goBackToRoleSelect);
+  document.getElementById('officeBackBtn').addEventListener('click', goBackToRoleSelect);
+  document.getElementById('tourismBackBtn').addEventListener('click', goBackToRoleSelect);
 
   // WORK: CLASS SCHEDULE (Teacher)
   // classSchedule / classSections / sectionLogs are loaded earlier in the script
@@ -2768,9 +2818,15 @@
     }
     classAddBtn.style.display = 'none';
     classAddForm.style.display = 'block';
+    let selectedClassColor = '';
     classAddForm.innerHTML = `
       <label class="t-edit-caption">Course Code <span style="font-weight:500;font-style:italic;">(optional)</span></label>
       <input type="text" class="t-input-title" id="classFieldCode" placeholder="e.g. MATH 3213">
+      <label class="t-edit-caption">Color <span style="font-weight:500;font-style:italic;">(optional)</span></label>
+      <div class="class-color-row" id="classColorRow">
+        ${COLOR_SWATCHES.map(s => `<button type="button" class="class-color-swatch" data-color="${s.key}" style="background:${s.fill}" aria-label="${s.key}"></button>`).join('')}
+        <button type="button" class="class-color-swatch class-color-clear selected" data-color="" aria-label="No color"></button>
+      </div>
       <label class="t-edit-caption">Class</label>
       <input type="text" class="t-input-title" id="classFieldName" placeholder="e.g. Grade 10 Biology">
       <label class="t-edit-caption">Days</label>
@@ -2785,6 +2841,14 @@
         <button type="button" class="t-btn-cancel" id="classCancelBtn">Cancel</button>
         <button type="button" class="t-btn-save" id="classSaveBtn" style="margin-left:auto">Add</button>
       </div>`;
+    document.querySelectorAll('#classColorRow .class-color-swatch').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedClassColor = btn.dataset.color;
+        document.querySelectorAll('#classColorRow .class-color-swatch').forEach(b => {
+          b.classList.toggle('selected', b.dataset.color === selectedClassColor);
+        });
+      });
+    });
     document.getElementById('classCancelBtn').addEventListener('click', () => {
       classAdding = false;
       renderClassAddForm();
@@ -2797,6 +2861,7 @@
         id: uid(),
         className: nameEl.value.trim(),
         code: document.getElementById('classFieldCode').value.trim(),
+        color: selectedClassColor || null,
         days,
         timeIn: document.getElementById('classFieldTimeIn').value,
         timeOut: document.getElementById('classFieldTimeOut').value,
@@ -2859,7 +2924,7 @@
         const span = Math.max(1, Math.min(hours.length - hIdx, Math.ceil((endM - startM) / 60)));
         for (let s = 1; s < span; s++) occupied[day].add(hIdx + s);
         const idx = classSchedule.findIndex(c => c.id === cls.id);
-        const swatch = COLOR_SWATCHES[idx % COLOR_SWATCHES.length];
+        const swatch = cls.color ? swatchByKey(cls.color) : COLOR_SWATCHES[idx % COLOR_SWATCHES.length];
         return `<td rowspan="${span}">
           <div class="cs-map-block" style="background:${swatch.fill};color:${swatch.ink}">
             ${cls.code ? `<span class="cs-map-code">${escapeHTML(cls.code)}</span>` : ''}
@@ -3082,6 +3147,22 @@
 
   renderClassList();
   renderClassAddForm();
+  document.getElementById('teacherRefreshBtn').addEventListener('click', () => {
+    classSchedule = loadJSON('pastelplan.classSchedule.v1', []);
+    courseOutlines = loadJSON('pastelplan.courseOutlines.v1', {});
+    classSections = loadJSON('pastelplan.classSections.v1', {});
+    sectionLogs = loadJSON('pastelplan.sectionLogs.v1', {});
+    renderClassList();
+    renderClassAddForm();
+    renderClassMap();
+    if (activeClassId) {
+      outline = (courseOutlines[activeClassId] && courseOutlines[activeClassId].weeks) ? courseOutlines[activeClassId] : freshCourseOutline();
+      renderOutlineWeekSelect();
+      renderOutlineWeekPanel();
+    }
+    if (activeSectionsClassId) renderSectionList();
+    if (activeSectionId) renderLogList();
+  });
 
   // WORK: COURSE OUTLINE (Teacher)
   const FIVE_ES = [
@@ -3461,6 +3542,12 @@
   renderOfficeTabs();
   renderOfficeList();
   renderOfficeAddForm();
+  document.getElementById('officeRefreshBtn').addEventListener('click', () => {
+    officeHead = loadJSON('pastelplan.officeHead.v1', null) || { meetings: [], field: [], dailyTasks: [] };
+    renderOfficeTabs();
+    renderOfficeList();
+    renderOfficeAddForm();
+  });
 
   // WORK: TOURISM OFFICER PLANNER
   const TOURISM_MAJOR_EVENTS = [
@@ -3585,6 +3672,10 @@
   document.getElementById('tpAddBtn').addEventListener('click', () => {
     tourismEntries = [...tourismEntries, freshTourismEntry()];
     saveTourismEntries();
+    renderTourismTable();
+  });
+  document.getElementById('tourismRefreshBtn').addEventListener('click', () => {
+    tourismEntries = loadJSON('pastelplan.tourismPlanner.v1', []);
     renderTourismTable();
   });
 

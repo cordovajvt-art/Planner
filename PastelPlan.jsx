@@ -322,6 +322,7 @@ function getSyncedClassBlocksForDate(classSchedule, courseOutlines, dateStr) {
       synced: true,
       sourceClassId: cls.id,
       outlineWeek: match ? match.weekNum : null,
+      color: cls.color || null,
     });
   });
   return results;
@@ -415,6 +416,15 @@ function useLocalStorageState(key, initial) {
     }
   }, [key, value]);
   return [value, setValue];
+}
+
+function refreshFromStorage(key, setValue, fallback) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    setValue(raw ? JSON.parse(raw) : typeof fallback === "function" ? fallback() : fallback);
+  } catch {
+    /* ignore — keep current in-memory state */
+  }
 }
 
 function useToggleSet(initial = []) {
@@ -1045,6 +1055,11 @@ export default function PastelPlan() {
                 ? goToWorkOutlineWeek(item.sourceClassId, item.outlineWeek)
                 : goToWorkClass(item.sourceClassId)
             }
+            onRefresh={() => {
+              refreshFromStorage("pastelplan.water.v1", setWaterFilled, 0);
+              setSchedule(loadScheduleFor(selectedDate));
+            }}
+            onBack={() => setActiveView("planner")}
           />
         )}
         </>
@@ -1292,7 +1307,20 @@ function CalendarSheet({ selectedDate, onSelect, onClose, classSchedule, classSe
   );
 }
 
-function DashboardView({ upNext, weekDays, selectedDate, todayIso, computeDayStats, onSelectDay, todayStats, water, catCounts, onOpenSyncedClass }) {
+function DashboardView({
+  upNext,
+  weekDays,
+  selectedDate,
+  todayIso,
+  computeDayStats,
+  onSelectDay,
+  todayStats,
+  water,
+  catCounts,
+  onOpenSyncedClass,
+  onRefresh,
+  onBack,
+}) {
   let upNextVisual = null;
   let UpNextIcon = Bell;
   if (upNext) {
@@ -1305,6 +1333,22 @@ function DashboardView({ upNext, weekDays, selectedDate, todayIso, computeDaySta
 
   return (
     <div className="flex flex-col gap-5 px-4.5 pb-1.5 pt-4.5">
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] py-2 text-[0.74rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          🔄 Refresh
+        </button>
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] py-2 text-[0.74rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          ← Back
+        </button>
+      </div>
       <section>
         <SectionTitle icon={Bell} fill="var(--pp-gold)" ink="var(--pp-gold-ink)" title="Up Next" />
         <div className="pp-card">
@@ -1453,6 +1497,30 @@ function WorkView({
         </div>
       </section>
 
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            refreshFromStorage("pastelplan.classSchedule.v1", setClassSchedule, []);
+            refreshFromStorage("pastelplan.courseOutlines.v1", setCourseOutlines, {});
+            refreshFromStorage("pastelplan.classSections.v1", setClassSections, {});
+            refreshFromStorage("pastelplan.sectionLogs.v1", setSectionLogs, {});
+            refreshFromStorage("pastelplan.officeHead.v1", setOfficeHead, () => ({ ...DEFAULT_OFFICE_HEAD }));
+            refreshFromStorage("pastelplan.tourismPlanner.v1", setTourismEntries, []);
+          }}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] py-2 text-[0.74rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          🔄 Refresh
+        </button>
+        <button
+          type="button"
+          onClick={() => setWorkRole("select")}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] py-2 text-[0.74rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          ← Back
+        </button>
+      </div>
+
       {workRole === "teacher" ? (
         <TeacherWorkspace
           classSchedule={classSchedule}
@@ -1562,7 +1630,7 @@ function DaysTimeFields({ days, timeIn, timeOut, onChange }) {
 }
 
 function ClassAddForm({ onAdd, onCancel }) {
-  const [draft, setDraft] = useState({ className: "", code: "", days: [], timeIn: "", timeOut: "" });
+  const [draft, setDraft] = useState({ className: "", code: "", color: "", days: [], timeIn: "", timeOut: "" });
 
   const submit = () => {
     if (!draft.className.trim()) return;
@@ -1570,6 +1638,7 @@ function ClassAddForm({ onAdd, onCancel }) {
       id: uid(),
       className: draft.className.trim(),
       code: draft.code.trim(),
+      color: draft.color || null,
       days: draft.days,
       timeIn: draft.timeIn,
       timeOut: draft.timeOut,
@@ -1589,6 +1658,30 @@ function ClassAddForm({ onAdd, onCancel }) {
           onChange={(e) => setDraft((d) => ({ ...d, code: e.target.value }))}
           className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.82rem] font-medium text-[var(--pp-ink)]"
         />
+      </div>
+      <div>
+        <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">
+          Color <span className="font-medium italic text-[var(--pp-ink-soft)]">(optional)</span>
+        </label>
+        <div className="flex flex-wrap gap-1.5">
+          {COLOR_SWATCHES.map((s) => (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setDraft((d) => ({ ...d, color: s.key }))}
+              aria-label={s.key}
+              className="h-[18px] w-[18px] rounded-full border-[1.5px]"
+              style={{ background: s.fill, borderColor: draft.color === s.key ? "var(--pp-ink)" : "transparent" }}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={() => setDraft((d) => ({ ...d, color: "" }))}
+            aria-label="No color"
+            className="h-[18px] w-[18px] rounded-full border-[1.5px] border-dashed"
+            style={{ background: "var(--pp-paper)", borderColor: !draft.color ? "var(--pp-ink)" : "var(--pp-line)" }}
+          />
+        </div>
       </div>
       <div>
         <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">Class</label>
@@ -1737,7 +1830,7 @@ function ClassScheduleMap({ classSchedule }) {
                 const span = Math.max(1, Math.min(hours.length - hIdx, Math.ceil((endM - startM) / 60)));
                 for (let s = 1; s < span; s++) occupied[day].add(hIdx + s);
                 const idx = classSchedule.findIndex((c) => c.id === cls.id);
-                const swatch = COLOR_SWATCHES[idx % COLOR_SWATCHES.length];
+                const swatch = cls.color ? swatchByKey(cls.color) : COLOR_SWATCHES[idx % COLOR_SWATCHES.length];
                 return (
                   <td key={day} rowSpan={span} className="border-b border-[var(--pp-line)] p-1 align-top">
                     <div
@@ -1785,7 +1878,6 @@ function ClassScheduleList({ classSchedule, setClassSchedule, setCourseOutlines,
       return next;
     });
   };
-
   return (
     <section>
       <SectionTitle icon={Calendar} fill="var(--pp-sky)" ink="var(--pp-sky-ink)" title="Class Schedule" />
@@ -3034,6 +3126,9 @@ function CustomizeSheet({ customize, setCustomize, onClose, onReset }) {
 
 function SyncedTimelineRow({ item, isFirst, isLast, onOpen }) {
   const cat = CATS[item.cat];
+  const custom = item.color ? swatchByKey(item.color) : null;
+  const fillColor = custom ? custom.fill : cat.fill;
+  const inkColor = custom ? custom.ink : cat.ink;
   const t = fmtTime(item.time24);
   return (
     <div className="pp-row-grid relative grid gap-x-0.5 px-0.5 py-2.5">
@@ -3045,7 +3140,7 @@ function SyncedTimelineRow({ item, isFirst, isLast, onOpen }) {
         <span className={`pp-rail-line ${isFirst ? "first" : ""} ${isLast ? "last" : ""}`} aria-hidden="true" />
         <span
           className="relative z-[1] mt-1 h-[11px] w-[11px] rounded-full border-2"
-          style={{ borderColor: "var(--pp-surface)", boxShadow: `0 0 0 1.5px ${cat.ink}` }}
+          style={{ borderColor: "var(--pp-surface)", boxShadow: `0 0 0 1.5px ${inkColor}` }}
         />
       </div>
       <div
@@ -3056,12 +3151,12 @@ function SyncedTimelineRow({ item, isFirst, isLast, onOpen }) {
         className="flex cursor-pointer items-center gap-2.5 rounded-[14px] border border-dashed px-2.5 py-2.5"
         style={{ borderColor: "var(--pp-line)" }}
       >
-        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[10px] text-[16px] leading-none" style={{ background: cat.fill, color: cat.ink }}>
+        <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[10px] text-[16px] leading-none" style={{ background: fillColor, color: inkColor }}>
           <cat.Icon size={16} strokeWidth={1.9} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[0.83rem] font-semibold text-[var(--pp-ink)]">{item.title}</span>
-          <span className="text-[0.66rem] font-bold uppercase tracking-[.03em]" style={{ color: cat.ink }}>
+          <span className="text-[0.66rem] font-bold uppercase tracking-[.03em]" style={{ color: inkColor }}>
             Work Notes
           </span>
         </span>
