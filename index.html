@@ -591,12 +591,19 @@
   .dash-day-ring { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
   .dash-day-num { width: 26px; height: 26px; border-radius: 50%; background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--ink); }
   .dash-day-num.today { box-shadow: 0 0 0 1.5px var(--lavender-ink); }
-  .dash-stat-row { display: flex; gap: 10px; margin-bottom: 14px; }
-  .dash-stat { flex: 1; background: var(--paper); border-radius: 14px; padding: 14px; text-align: center; }
-  .dash-stat-num { display: block; font-family: var(--font-display); font-size: 1.4rem; font-weight: 650; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .dash-stat-label { display: block; font-size: 0.66rem; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .03em; margin-top: 2px; }
-  .dash-cat-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .dash-cat { padding: 6px 12px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+  .dash-map-overview {
+    width: 152px; aspect-ratio: 1; border-radius: 24px; border: none; cursor: pointer;
+    background: var(--blush); color: var(--blush-ink); padding: 14px;
+    display: flex; flex-direction: column; gap: 8px; text-align: left;
+    font-family: var(--font-body);
+  }
+  .dash-map-overview-title { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.75; }
+  .dash-map-overview-days { flex: 1; display: flex; gap: 4px; align-items: stretch; }
+  .dash-map-overview-day { flex: 1; display: flex; flex-direction: column; gap: 3px; align-items: center; }
+  .dash-map-overview-day-label { font-size: 0.56rem; font-weight: 800; opacity: 0.65; }
+  .dash-map-overview-bar { width: 100%; flex: 1; border-radius: 5px; overflow: hidden; display: flex; flex-direction: column; background: color-mix(in srgb, var(--blush-ink) 12%, transparent); }
+  .dash-map-overview-seg { width: 100%; flex: 1; }
+  .dash-map-overview-empty { margin: auto; font-size: 0.74rem; font-weight: 700; text-align: center; }
   .dash-empty { font-size: 0.78rem; color: var(--ink-soft); text-align: center; padding: 14px; }
   .dash-upnext-row { display: flex; align-items: center; gap: 12px; }
   .dash-upnext-icon { width: 42px; height: 42px; border-radius: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -1234,12 +1241,12 @@
     </section>
     <section>
       <h2 class="section-title">
-        <span class="icon-chip" style="background:var(--mint);color:var(--mint-ink)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 20V13M12 20V8M19 20V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="icon-chip" style="background:var(--blush);color:var(--blush-ink)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5H20.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V6M16 3V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </span>
-        Today's Snapshot
+        Class Schedule Mapping
       </h2>
-      <div class="card" id="dashSnapshot"></div>
+      <button type="button" class="dash-map-overview" id="dashMapOverview"></button>
     </section>
   </div>
   </div>
@@ -1616,6 +1623,7 @@
 
   // Needed early by dayOfWeekFromDate below (used by the sync helpers at page load).
   const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   // Loaded early (before Timeline/Dashboard/Calendar render) so the Personal-side
   // sync helpers below can read Work Notes data on first render.
@@ -2579,25 +2587,32 @@
       dashWeek.appendChild(cell);
     }
   }
-  function renderSnapshot(){
-    const stats = computeDayStats(TODAY_ISO);
-    const water = loadJSON('pastelplan.water.v1', 0);
-    const arr = (TODAY_ISO === selectedDate) ? schedule : (loadJSON(scheduleKey(TODAY_ISO), null) || DEFAULT_SCHEDULE);
-    const catCounts = { class: 0, duty: 0, prep: 0, errands: 0, tourism: 0 };
-    arr.forEach(s => { catCounts[s.cat] = (catCounts[s.cat] || 0) + 1; });
-    catCounts.class += getSyncedClassBlocksForDate(TODAY_ISO).length;
-    catCounts.tourism += getSyncedTourismBlocksForDate(TODAY_ISO).length;
-    document.getElementById('dashSnapshot').innerHTML = `
-      <div class="dash-stat-row">
-        <div class="dash-stat"><span class="dash-stat-num">${stats.done}/${stats.total}</span><span class="dash-stat-label">Blocks done</span></div>
-        <div class="dash-stat"><span class="dash-stat-num">${water}/8</span><span class="dash-stat-label">Cups logged</span></div>
-      </div>
-      <div class="dash-cat-row">
-        <span class="dash-cat" style="background:var(--lavender);color:var(--lavender-ink)">Class ${catCounts.class}</span>
-        <span class="dash-cat" style="background:var(--blush);color:var(--blush-ink)">Task ${catCounts.duty}</span>
-        <span class="dash-cat" style="background:var(--sky);color:var(--sky-ink)">Prep ${catCounts.prep}</span>
-        <span class="dash-cat" style="background:var(--mint);color:var(--mint-ink)">Errands ${catCounts.errands}</span>
-        ${catCounts.tourism ? `<span class="dash-cat" style="background:var(--gold);color:var(--gold-ink)">Tourism ${catCounts.tourism}</span>` : ''}
+  function renderScheduleMappingOverview(){
+    const box = document.getElementById('dashMapOverview');
+    if (!box) return;
+    if (!classSchedule.length) {
+      box.innerHTML = `
+        <span class="dash-map-overview-title">Class Schedule Mapping</span>
+        <span class="dash-map-overview-empty">No classes yet</span>`;
+      return;
+    }
+    const weekendDays = WEEKDAYS.slice(5).filter(d => classSchedule.some(c => (c.days || []).includes(d)));
+    const days = [...WEEKDAYS.slice(0, 5), ...weekendDays];
+    box.innerHTML = `
+      <span class="dash-map-overview-title">Class Schedule Mapping</span>
+      <div class="dash-map-overview-days">
+        ${days.map(d => {
+          const classesToday = classSchedule.filter(c => (c.days || []).includes(d));
+          const segsHTML = classesToday.map(c => {
+            const idx = classSchedule.findIndex(x => x.id === c.id);
+            const swatch = c.color ? swatchByKey(c.color) : COLOR_SWATCHES[idx % COLOR_SWATCHES.length];
+            return `<span class="dash-map-overview-seg" style="background:${swatch.fill}"></span>`;
+          }).join('');
+          return `<div class="dash-map-overview-day">
+            <span class="dash-map-overview-day-label">${d.slice(0, 1)}</span>
+            <div class="dash-map-overview-bar">${segsHTML}</div>
+          </div>`;
+        }).join('')}
       </div>`;
   }
   function renderUpNext(){
@@ -2650,13 +2665,20 @@
     mainEl.style.display = view === 'planner' ? 'flex' : 'none';
     dashboardView.style.display = view === 'dashboard' ? 'flex' : 'none';
     document.querySelectorAll('.view-tab').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-    if (view === 'dashboard') { renderUpNext(); renderDashboardWeek(); renderSnapshot(); }
+    if (view === 'dashboard') { renderUpNext(); renderDashboardWeek(); renderScheduleMappingOverview(); }
   }
   document.querySelectorAll('.view-tab').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
   switchView('dashboard'); // default landing page
   setInterval(() => { if (dashboardView.style.display !== 'none') renderUpNext(); }, 30000);
   document.getElementById('dashRefreshBtn').addEventListener('click', () => switchView('dashboard'));
   document.getElementById('dashBackBtn').addEventListener('click', () => switchView('planner'));
+  document.getElementById('dashMapOverview').addEventListener('click', () => {
+    switchMainPage('work');
+    workRole = 'teacher';
+    saveJSON('pastelplan.role.v1', workRole);
+    applyRole();
+    setClassView('mapping');
+  });
 
   // PERSONAL / WORK SWITCHER
   const personalPage = document.getElementById('personalPage');
@@ -2671,7 +2693,7 @@
       renderPrepList();
       renderTodoLists();
       renderUpNext();
-      renderSnapshot();
+      renderScheduleMappingOverview();
       renderDashboardWeek();
     }
   }
@@ -2734,7 +2756,6 @@
   // WORK: CLASS SCHEDULE (Teacher)
   // classSchedule / classSections / sectionLogs are loaded earlier in the script
   // (see "Loaded early" note above) so Personal-side sync can read them on first render.
-  const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const ACTION_TYPES = ['QUIZ', 'LECTURE', 'GROUP ACTIVITY', 'LAB ACTIVITY', 'REMINDERS', 'ASSIGNMENT', 'GRADE', 'ABSENT', 'EXCUSE', 'PRESENT', 'OTHERS'];
   let classAdding = false;
   let editingClassId = null;

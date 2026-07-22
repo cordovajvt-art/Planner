@@ -24,7 +24,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowUp,
-  BarChart3,
   User,
   Briefcase,
   AlignLeft,
@@ -492,6 +491,7 @@ export default function PastelPlan() {
   const [sectionLogs, setSectionLogs] = useLocalStorageState("pastelplan.sectionLogs.v1", {});
   const [activeClassId, setActiveClassId] = useState(null);
   const [outlineJumpWeek, setOutlineJumpWeek] = useState(null);
+  const [classViewJump, setClassViewJump] = useState(null);
   const [activeSectionsClassId, setActiveSectionsClassId] = useState(null);
   const [activeSectionId, setActiveSectionId] = useState(null);
   const [officeHead, setOfficeHead] = useLocalStorageState("pastelplan.officeHead.v1", () => ({ ...DEFAULT_OFFICE_HEAD }));
@@ -566,6 +566,11 @@ export default function PastelPlan() {
   function goToWorkTourism() {
     setMainPage("work");
     setWorkRole("tourism-officer");
+  }
+  function goToWorkClassMap() {
+    setMainPage("work");
+    setWorkRole("teacher");
+    setClassViewJump("mapping");
   }
   const leftCount = schedule.filter((s) => !s.done).length;
 
@@ -672,12 +677,6 @@ export default function PastelPlan() {
     d.setDate(weekStart.getDate() + i);
     return d;
   });
-  const todayStats = computeDayStats(todayIso);
-  const catCounts = { class: 0, duty: 0, prep: 0, errands: 0 };
-  todaySchedule.forEach((s) => {
-    catCounts[s.cat] = (catCounts[s.cat] || 0) + 1;
-  });
-
   const wrapperStyle = {
     "--pp-font-display-override": fontStack.display,
     "--pp-font-body-override": fontStack.body,
@@ -1045,9 +1044,6 @@ export default function PastelPlan() {
               switchDate(dStr);
               setActiveView("planner");
             }}
-            todayStats={todayStats}
-            water={waterFilled}
-            catCounts={catCounts}
             onOpenSyncedClass={(item) =>
               item.sourceTourismId
                 ? goToWorkTourism()
@@ -1060,6 +1056,8 @@ export default function PastelPlan() {
               setSchedule(loadScheduleFor(selectedDate));
             }}
             onBack={() => setActiveView("planner")}
+            classSchedule={classSchedule}
+            onOpenClassMap={goToWorkClassMap}
           />
         )}
         </>
@@ -1081,6 +1079,8 @@ export default function PastelPlan() {
             setActiveClassId={setActiveClassId}
             outlineJumpWeek={outlineJumpWeek}
             setOutlineJumpWeek={setOutlineJumpWeek}
+            classViewJump={classViewJump}
+            setClassViewJump={setClassViewJump}
             activeSectionsClassId={activeSectionsClassId}
             setActiveSectionsClassId={setActiveSectionsClassId}
             activeSectionId={activeSectionId}
@@ -1314,12 +1314,11 @@ function DashboardView({
   todayIso,
   computeDayStats,
   onSelectDay,
-  todayStats,
-  water,
-  catCounts,
   onOpenSyncedClass,
   onRefresh,
   onBack,
+  classSchedule,
+  onOpenClassMap,
 }) {
   let upNextVisual = null;
   let UpNextIcon = Bell;
@@ -1413,39 +1412,49 @@ function DashboardView({
       </section>
 
       <section>
-        <SectionTitle icon={BarChart3} fill="var(--pp-mint)" ink="var(--pp-mint-ink)" title="Today's Snapshot" />
-        <div className="pp-card">
-          <div className="mb-3.5 flex gap-2.5">
-            <div className="flex-1 rounded-[14px] bg-[var(--pp-paper)] py-3.5 text-center">
-              <span className="pp-font-display block text-[1.4rem] font-semibold tabular-nums text-[var(--pp-ink)]">
-                {todayStats.done}/{todayStats.total}
-              </span>
-              <span className="mt-0.5 block text-[0.66rem] font-bold uppercase tracking-[.03em] text-[var(--pp-ink-soft)]">Blocks done</span>
-            </div>
-            <div className="flex-1 rounded-[14px] bg-[var(--pp-paper)] py-3.5 text-center">
-              <span className="pp-font-display block text-[1.4rem] font-semibold tabular-nums text-[var(--pp-ink)]">
-                {water}/{WATER_GOAL}
-              </span>
-              <span className="mt-0.5 block text-[0.66rem] font-bold uppercase tracking-[.03em] text-[var(--pp-ink-soft)]">Cups logged</span>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="rounded-full px-3 py-1.5 text-[0.72rem] font-bold" style={{ background: "var(--pp-lavender)", color: "var(--pp-lavender-ink)" }}>
-              Class {catCounts.class || 0}
-            </span>
-            <span className="rounded-full px-3 py-1.5 text-[0.72rem] font-bold" style={{ background: "var(--pp-blush)", color: "var(--pp-blush-ink)" }}>
-              Task {catCounts.duty || 0}
-            </span>
-            <span className="rounded-full px-3 py-1.5 text-[0.72rem] font-bold" style={{ background: "var(--pp-sky)", color: "var(--pp-sky-ink)" }}>
-              Prep {catCounts.prep || 0}
-            </span>
-            <span className="rounded-full px-3 py-1.5 text-[0.72rem] font-bold" style={{ background: "var(--pp-mint)", color: "var(--pp-mint-ink)" }}>
-              Errands {catCounts.errands || 0}
-            </span>
-          </div>
-        </div>
+        <SectionTitle icon={Calendar} fill="var(--pp-blush)" ink="var(--pp-blush-ink)" title="Class Schedule Mapping" />
+        <ClassScheduleOverviewCard classSchedule={classSchedule} onOpen={onOpenClassMap} />
       </section>
     </div>
+  );
+}
+
+function ClassScheduleOverviewCard({ classSchedule, onOpen }) {
+  const weekendDays = WEEKDAYS.slice(5).filter((d) => classSchedule.some((c) => (c.days || []).includes(d)));
+  const days = [...WEEKDAYS.slice(0, 5), ...weekendDays];
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex h-[152px] w-[152px] flex-col gap-2 rounded-[24px] p-3.5 text-left"
+      style={{ background: "var(--pp-blush)", color: "var(--pp-blush-ink)" }}
+    >
+      <span className="text-[0.62rem] font-extrabold uppercase tracking-[.03em] opacity-75">Class Schedule Mapping</span>
+      {classSchedule.length === 0 ? (
+        <span className="m-auto text-[0.74rem] font-bold">No classes yet</span>
+      ) : (
+        <div className="flex flex-1 items-stretch gap-1">
+          {days.map((d) => {
+            const classesToday = classSchedule.filter((c) => (c.days || []).includes(d));
+            return (
+              <div key={d} className="flex flex-1 flex-col items-center gap-1">
+                <span className="text-[0.56rem] font-extrabold opacity-65">{d.slice(0, 1)}</span>
+                <div
+                  className="flex w-full flex-1 flex-col overflow-hidden rounded-[5px]"
+                  style={{ background: "color-mix(in srgb, var(--pp-blush-ink) 12%, transparent)" }}
+                >
+                  {classesToday.map((c) => {
+                    const idx = classSchedule.findIndex((x) => x.id === c.id);
+                    const swatch = c.color ? swatchByKey(c.color) : COLOR_SWATCHES[idx % COLOR_SWATCHES.length];
+                    return <span key={c.id} className="w-full flex-1" style={{ background: swatch.fill }} />;
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </button>
   );
 }
 
@@ -1464,6 +1473,8 @@ function WorkView({
   setActiveClassId,
   outlineJumpWeek,
   setOutlineJumpWeek,
+  classViewJump,
+  setClassViewJump,
   activeSectionsClassId,
   setActiveSectionsClassId,
   activeSectionId,
@@ -1535,6 +1546,8 @@ function WorkView({
           setActiveClassId={setActiveClassId}
           outlineJumpWeek={outlineJumpWeek}
           setOutlineJumpWeek={setOutlineJumpWeek}
+          classViewJump={classViewJump}
+          setClassViewJump={setClassViewJump}
           activeSectionsClassId={activeSectionsClassId}
           setActiveSectionsClassId={setActiveSectionsClassId}
           activeSectionId={activeSectionId}
@@ -1865,11 +1878,31 @@ function ClassScheduleMap({ classSchedule }) {
   );
 }
 
-function ClassScheduleList({ classSchedule, setClassSchedule, setCourseOutlines, classSections, setClassSections, setSectionLogs, onOpenOutline, onOpenSections }) {
+function ClassScheduleList({
+  classSchedule,
+  setClassSchedule,
+  setCourseOutlines,
+  classSections,
+  setClassSections,
+  setSectionLogs,
+  onOpenOutline,
+  onOpenSections,
+  jumpToView,
+  onConsumeViewJump,
+}) {
   const [adding, setAdding] = useState(false);
   const [view, setView] = useState("list");
   const [editingClassId, setEditingClassId] = useState(null);
   const editingClass = editingClassId ? classSchedule.find((c) => c.id === editingClassId) : null;
+
+  useEffect(() => {
+    if (jumpToView) {
+      setView(jumpToView);
+      setAdding(false);
+      onConsumeViewJump?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumpToView]);
 
   const saveClass = (cls) => {
     setClassSchedule((prev) => (prev.some((c) => c.id === cls.id) ? prev.map((c) => (c.id === cls.id ? cls : c)) : [...prev, cls]));
@@ -2199,6 +2232,8 @@ function TeacherWorkspace({
   setActiveClassId,
   outlineJumpWeek,
   setOutlineJumpWeek,
+  classViewJump,
+  setClassViewJump,
   activeSectionsClassId,
   setActiveSectionsClassId,
   activeSectionId,
@@ -2280,6 +2315,8 @@ function TeacherWorkspace({
         setActiveSectionsClassId(id);
         setActiveSectionId(null);
       }}
+      jumpToView={classViewJump}
+      onConsumeViewJump={() => setClassViewJump(null)}
     />
   );
 }
