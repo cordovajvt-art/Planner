@@ -344,14 +344,56 @@
   .work-generic-title { font-family: var(--font-display); font-weight: 650; font-size: 1.02rem; color: var(--ink); margin: 0 0 6px; }
   .work-generic-desc { font-size: 0.8rem; color: var(--ink-soft); margin: 0; max-width: 280px; margin-inline: auto; }
 
-  .outline-mode-toggle { display: flex; gap: 6px; background: var(--paper); border-radius: 12px; padding: 4px; margin-bottom: 16px; }
-  .outline-mode-btn {
-    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
-    border: none; background: transparent; border-radius: 9px; padding: 8px 0;
+  .outline-week-header { display: flex; gap: 8px; margin-bottom: 14px; }
+  .outline-week-select {
+    flex: 1; font-family: var(--font-body); font-size: 0.84rem; font-weight: 700; color: var(--ink);
+    border: 1.5px solid var(--line); border-radius: 12px; padding: 9px 12px; background: var(--surface);
+  }
+  .outline-summary-btn {
+    display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+    border: 1.5px solid var(--line); background: var(--surface); border-radius: 12px; padding: 9px 14px;
+    font-family: var(--font-body); font-size: 0.76rem; font-weight: 700; color: var(--ink-soft); cursor: pointer;
+  }
+  .outline-summary-btn svg { width: 13px; height: 13px; }
+  .outline-summary-btn.active { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
+
+  .outline-section { margin-bottom: 16px; }
+  .outline-section:last-child { margin-bottom: 0; }
+  .t-optional-tag { font-weight: 500; font-style: italic; color: var(--ink-soft); }
+
+  .outline-save-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 4px;
+    border: none; border-radius: 12px; padding: 11px; background: var(--seafoam); color: var(--seafoam-ink);
+    font-family: var(--font-body); font-size: 0.82rem; font-weight: 700; cursor: pointer;
+  }
+  .outline-save-btn svg { width: 14px; height: 14px; }
+  .outline-save-btn.saved { background: var(--mint); color: var(--mint-ink); }
+
+  .outline-summary-back-btn {
+    display: flex; align-items: center; gap: 5px; margin-bottom: 12px;
+    border: 1.5px solid var(--line); background: var(--surface); border-radius: 10px; padding: 7px 12px;
     font-family: var(--font-body); font-size: 0.74rem; font-weight: 700; color: var(--ink-soft); cursor: pointer;
   }
-  .outline-mode-btn svg { width: 13px; height: 13px; }
-  .outline-mode-btn.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.15); }
+  .outline-summary-back-btn svg { width: 13px; height: 13px; }
+  .outline-summary-table-wrap { overflow-x: auto; border: 1.5px solid var(--line); border-radius: 12px; }
+  .outline-summary-table { width: 100%; min-width: 860px; border-collapse: collapse; font-family: var(--font-body); }
+  .outline-summary-table th, .outline-summary-table td {
+    border-bottom: 1px solid var(--line); padding: 9px 10px; text-align: left; vertical-align: top;
+    font-size: 0.72rem; line-height: 1.45; color: var(--ink);
+  }
+  .outline-summary-table th {
+    background: var(--paper); font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em;
+    color: var(--ink-soft); white-space: nowrap; position: sticky; top: 0;
+  }
+  .outline-summary-table td.summary-col-week { font-family: var(--font-display); font-weight: 700; white-space: nowrap; }
+  .outline-summary-table td { min-width: 130px; max-width: 220px; }
+  .outline-summary-table tr:last-child td { border-bottom: none; }
+  .outline-summary-edit-btn {
+    display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+    border: 1.5px solid var(--line); background: var(--surface); border-radius: 8px; padding: 5px 9px;
+    font-family: var(--font-body); font-size: 0.68rem; font-weight: 700; color: var(--ink-soft); cursor: pointer; white-space: nowrap;
+  }
+  .outline-summary-edit-btn svg { width: 11px; height: 11px; }
 
   .outline-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; }
   .outline-tab {
@@ -375,21 +417,6 @@
   .five-e-input { width: 100%; border: none; background: transparent; font-family: var(--font-body); font-size: 0.8rem; color: var(--ink); padding: 0; }
   .five-e-input:focus { outline: none; }
 
-  .outline-dropzone {
-    width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px;
-    border: 2px dashed var(--line); border-radius: 14px; padding: 32px 16px; background: var(--paper);
-    cursor: pointer; color: var(--sky-ink);
-  }
-  .outline-dropzone-title { font-family: var(--font-body); font-size: 0.82rem; font-weight: 700; color: var(--ink); }
-  .outline-dropzone-sub { font-family: var(--font-body); font-size: 0.7rem; color: var(--ink-soft); }
-  .outline-file-chip {
-    display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 12px;
-    border: 1px solid var(--line); border-radius: 12px; background: var(--paper);
-  }
-  .outline-file-chip svg { width: 16px; height: 16px; color: var(--sky-ink); flex-shrink: 0; }
-  .outline-file-chip span.name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; font-weight: 600; color: var(--ink); }
-  .outline-file-chip button { border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; flex-shrink: 0; }
-  .outline-file-chip button svg { color: inherit; }
 
   .office-item { position: relative; padding-right: 24px; }
   .office-item .office-del {
@@ -688,6 +715,7 @@
     display: flex; align-items: center; gap: 7px;
     padding: 6px; border: 1.5px dashed var(--line); border-radius: 10px; background: var(--paper);
   }
+  .t-topic-num { flex-shrink: 0; font-size: 0.72rem; font-weight: 800; color: var(--ink-soft); }
   .t-sub-color-btn {
     flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--line);
     background: transparent; cursor: pointer; padding: 0;
@@ -774,6 +802,17 @@
     border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px;
     background: var(--paper); color: var(--ink); margin-bottom: 9px;
   }
+  .t-input-date {
+    flex: 1; min-width: 0; font-family: var(--font-body); font-weight: 700; font-size: 0.78rem;
+    border: 1.5px solid var(--line); border-radius: 10px; padding: 7px 8px;
+    background: var(--paper); color: var(--ink);
+  }
+  .t-input-venue {
+    flex: 1; min-width: 0; font-family: var(--font-body); font-size: 0.83rem; font-weight: 500;
+    border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px;
+    background: var(--paper); color: var(--ink);
+  }
+  .t-meta { display: block; font-size: 0.68rem; font-weight: 600; color: var(--ink-soft); margin-top: 1px; }
   .t-edit-actions { display: flex; align-items: center; gap: 8px; }
   .t-btn-delete {
     border: none; background: transparent; color: var(--blush-ink);
@@ -1150,33 +1189,15 @@
           Course Outline
         </h2>
         <div class="card">
-          <p class="work-sub" style="margin-bottom:14px;">Upload a syllabus document or fill out the course outline manually.</p>
-
-          <div class="outline-mode-toggle">
-            <button type="button" class="outline-mode-btn active" id="modeManualBtn" data-mode="manual">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M4 20L4.6 16.7L15.5 5.8C16.2 5.1 17.3 5.1 18 5.8L18.7 6.5C19.4 7.2 19.4 8.3 18.7 9L7.8 19.9L4 20Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
-              Manual Input
-            </button>
-            <button type="button" class="outline-mode-btn" id="modeUploadBtn" data-mode="upload">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M12 15V4M12 4L8 8M12 4L16 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 16V17.5C5 18.9 6.1 20 7.5 20H16.5C17.9 20 19 18.9 19 17.5V16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-              Upload File
+          <div class="outline-week-header">
+            <select class="outline-week-select" id="outlineWeekSelect"></select>
+            <button type="button" class="outline-summary-btn" id="outlineSummaryBtn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 6H20M4 12H20M4 18H14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              Summary
             </button>
           </div>
-
-          <div id="outlineManualContainer">
-            <div class="outline-tabs" id="outlineTabs"></div>
-            <div class="outline-panel" id="outlinePanel"></div>
-          </div>
-
-          <div id="outlineUploadContainer" style="display:none">
-            <button type="button" class="outline-dropzone" id="outlineDropzoneBtn">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 15V4M12 4L8 8M12 4L16 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 16V17.5C5 18.9 6.1 20 7.5 20H16.5C17.9 20 19 18.9 19 17.5V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-              <span class="outline-dropzone-title">Click to upload</span>
-              <span class="outline-dropzone-sub">PDF, DOCX, XLSX, TXT (max 5MB) — .txt and .docx syllabi auto-fill the outline</span>
-            </button>
-            <input type="file" id="outlineFileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" style="display:none">
-            <div id="outlineFileChip"></div>
-          </div>
+          <div id="outlineWeekPanel"></div>
+          <div id="outlineSummaryPanel" style="display:none"></div>
         </div>
       </div>
 
@@ -1353,14 +1374,16 @@
     bell: '<svg viewBox="0 0 24 24" fill="none"><path d="M6 10.5C6 7 8.7 4.5 12 4.5C15.3 4.5 18 7 18 10.5C18 15 19.5 16 19.5 16.5H4.5C4.5 16 6 15 6 10.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 19.5C10.4 20.2 11.1 20.7 12 20.7C12.9 20.7 13.6 20.2 14 19.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
     mappin: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 19 15.1 19 10C19 6.1 15.9 3 12 3C8.1 3 5 6.1 5 10C5 15.1 12 21 12 21Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" stroke="currentColor" stroke-width="1.8"/></svg>',
     clipboard: '<svg viewBox="0 0 24 24" fill="none"><rect x="5" y="4.5" width="14" height="17" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M9 4.5V3.8C9 3.1 9.6 2.5 10.3 2.5H13.7C14.4 2.5 15 3.1 15 3.8V4.5" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 11H15.5M8.5 15H13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12C2.5 12 6 5.5 12 5.5C18 5.5 21.5 12 21.5 12C21.5 12 18 18.5 12 18.5C6 18.5 2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.7"/></svg>',
   };
 
   const CATS = {
-    class: { fill: 'var(--lavender)', ink: 'var(--lavender-ink)', label: 'Class', icon: 'book', emoji: '📚' },
-    duty:  { fill: 'var(--blush)',    ink: 'var(--blush-ink)',    label: 'Task',  icon: 'users', emoji: '🗂️' },
-    prep:  { fill: 'var(--sky)',      ink: 'var(--sky-ink)',      label: 'Prep',  icon: 'pencil', emoji: '✏️' },
+    class:   { fill: 'var(--lavender)', ink: 'var(--lavender-ink)', label: 'Class',   icon: 'book', emoji: '📚' },
+    duty:    { fill: 'var(--blush)',    ink: 'var(--blush-ink)',    label: 'Task',    icon: 'users', emoji: '🗂️' },
+    prep:    { fill: 'var(--sky)',      ink: 'var(--sky-ink)',      label: 'Prep',    icon: 'pencil', emoji: '✏️' },
+    errands: { fill: 'var(--mint)',     ink: 'var(--mint-ink)',     label: 'Errands', icon: 'mappin', emoji: '🛒' },
   };
-  const CAT_ORDER = ['class', 'duty', 'prep'];
+  const CAT_ORDER = ['class', 'duty', 'prep', 'errands'];
 
   const COLOR_SWATCHES = [
     { key: 'lavender', fill: 'var(--lavender)', ink: 'var(--lavender-ink)' },
@@ -1444,22 +1467,107 @@
   let classSchedule = loadJSON('pastelplan.classSchedule.v1', []);
   let classSections = loadJSON('pastelplan.classSections.v1', {}); // { classId: [{id, name}] }
   let sectionLogs = loadJSON('pastelplan.sectionLogs.v1', {}); // { sectionId: [{id, type, date, notes}] }
+  let courseOutlines = loadJSON('pastelplan.courseOutlines.v1', {}); // { classId: { weeks: {1: weekObj, ...} } }
   const PREP_LOG_TYPES = ['LECTURE', 'LAB ACTIVITY', 'GROUP ACTIVITY'];
+  const DAY_OFFSET_FROM_MONDAY = { Monday: 0, Tuesday: 1, Wednesday: 2, Thursday: 3, Friday: 4, Saturday: 5, Sunday: 6 };
+
+  // A course-outline week's Date is treated as an anchor within its Mon–Sun span;
+  // its checked Days resolve to the actual calendar date(s) in that same week.
+  function weekMeetingDates(week){
+    if (!week.date) return [];
+    if (!week.days || !week.days.length) return [week.date];
+    const anchor = dateFromISO(week.date);
+    const anchorDow = anchor.getDay();
+    const mondayOffset = anchorDow === 0 ? -6 : 1 - anchorDow;
+    const monday = new Date(anchor);
+    monday.setDate(anchor.getDate() + mondayOffset);
+    return week.days.map(dayName => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + (DAY_OFFSET_FROM_MONDAY[dayName] || 0));
+      return todayISO(d);
+    });
+  }
+
+  function findOutlineWeekForClassOnDate(classId, dateStr){
+    const co = courseOutlines[classId];
+    if (!co || !co.weeks) return null;
+    for (const weekKey of Object.keys(co.weeks)) {
+      const week = co.weeks[weekKey];
+      if (weekMeetingDates(week).includes(dateStr)) return { weekNum: Number(weekKey), week };
+    }
+    return null;
+  }
+
+  function getMatchedOutlineWeeksForDate(dateStr){
+    const results = [];
+    classSchedule.forEach(cls => {
+      const match = findOutlineWeekForClassOnDate(cls.id, dateStr);
+      if (match) results.push({ classId: cls.id, className: cls.className, weekNum: match.weekNum, week: match.week });
+    });
+    return results;
+  }
+
+  function getSyncedOutlinePrepForDate(dateStr){
+    return getMatchedOutlineWeeksForDate(dateStr).map(m => {
+      const topicsLabel = m.week.topics.map(t => t.title).filter(Boolean).join(', ');
+      return {
+        id: `outline-prep-${m.classId}-${m.weekNum}`,
+        classId: m.classId,
+        weekNum: m.weekNum,
+        label: `LESSON — ${m.className} / Week ${m.weekNum}${topicsLabel ? ': ' + topicsLabel : ''}`,
+      };
+    });
+  }
+
+  function getSyncedOutlineTodosForDate(dateStr){
+    const items = [];
+    getMatchedOutlineWeeksForDate(dateStr).forEach(m => {
+      if (m.week.assessments && m.week.assessments.trim()) {
+        items.push({
+          id: `outline-todo-assess-${m.classId}-${m.weekNum}`,
+          text: `Assessment — ${m.className} / Week ${m.weekNum}: ${m.week.assessments.trim()}`,
+          sourceClassId: m.classId,
+          outlineWeek: m.weekNum,
+        });
+      }
+      if (m.week.remarks && m.week.remarks.trim()) {
+        items.push({
+          id: `outline-todo-remarks-${m.classId}-${m.weekNum}`,
+          text: `Remarks — ${m.className} / Week ${m.weekNum}: ${m.week.remarks.trim()}`,
+          sourceClassId: m.classId,
+          outlineWeek: m.weekNum,
+        });
+      }
+    });
+    return items;
+  }
 
   function getSyncedClassBlocksForDate(dateStr){
     const weekday = dayOfWeekFromDate(dateStr);
-    if (!weekday) return [];
-    return classSchedule
-      .filter(cls => (cls.days || []).includes(weekday))
-      .map(cls => ({
+    const results = [];
+    classSchedule.forEach(cls => {
+      const scheduledToday = !!weekday && (cls.days || []).includes(weekday);
+      const match = findOutlineWeekForClassOnDate(cls.id, dateStr);
+      // A class block shows up either on its own recurring weekly schedule, or on any
+      // date a course-outline week explicitly resolves to for it — the outline's Date/Days
+      // don't need to also be re-registered in the class's general weekly schedule.
+      if (!scheduledToday && !match) return;
+      const topicsLabel = match ? match.week.topics.map(t => t.title).filter(Boolean).join(', ') : '';
+      const title = match
+        ? `${cls.className} — Week ${match.weekNum}${topicsLabel ? ': ' + topicsLabel : ''}`
+        : cls.className;
+      results.push({
         id: 'class-' + cls.id,
         time24: cls.timeIn || '00:00',
-        title: cls.className,
+        title,
         cat: 'class',
         emoji: CATS.class.emoji,
         synced: true,
         sourceClassId: cls.id,
-      }));
+        outlineWeek: match ? match.weekNum : null,
+      });
+    });
+    return results;
   }
 
   function getSyncedLogEntriesForDate(dateStr){
@@ -1483,6 +1591,19 @@
     saveJSON('pastelplan.role.v1', workRole);
     applyRole();
     openSectionsFolder(classId);
+  }
+
+  function goToSyncedOutlineWeek(classId, weekNum){
+    switchMainPage('work');
+    workRole = 'teacher';
+    saveJSON('pastelplan.role.v1', workRole);
+    applyRole();
+    openClassFolder(classId);
+    if (weekNum) {
+      activeWeek = weekNum;
+      renderOutlineWeekSelect();
+      renderOutlineWeekPanel();
+    }
   }
 
   function goToSyncedLogEntry(classId, sectionId){
@@ -1517,6 +1638,15 @@
         </div>
       </div>
       <input type="text" class="t-input-title" placeholder="What's happening?" value="${escapeHTML(item.title)}">
+
+      <p class="t-edit-caption">Day</p>
+      <div class="day-checkbox-row" id="itemDaysRow">
+        ${WEEKDAYS.map(d => `<label class="day-checkbox"><input type="checkbox" value="${d}" ${(item.days || []).includes(d) ? 'checked' : ''}> ${d.slice(0, 3)}</label>`).join('')}
+      </div>
+      <div class="t-edit-row">
+        <input type="date" class="t-input-date" value="${escapeHTML(item.date || '')}">
+        <input type="text" class="t-input-venue" placeholder="Venue" value="${escapeHTML(item.venue || '')}">
+      </div>
 
       <p class="t-edit-caption">Sub-blocks</p>
       <div class="t-subs-edit" id="subsEdit"></div>
@@ -1760,6 +1890,9 @@
       item.time24 = timeVal;
       item.title = titleVal;
       item.cat = selectedCat;
+      item.days = [...row.querySelectorAll('#itemDaysRow input:checked')].map(el => el.value);
+      item.date = row.querySelector('.t-input-date').value;
+      item.venue = row.querySelector('.t-input-venue').value.trim();
       item.subs = draftSubs
         .map(s => ({ ...s, title: s.title.trim() }))
         .filter(s => s.title);
@@ -1805,7 +1938,10 @@
               <span class="t-synced-badge" title="From Work Notes">${ICONS.file}</span>
             </div>
           </div>`;
-        row.querySelector('.t-card').addEventListener('click', () => goToSyncedClass(item.sourceClassId));
+        row.querySelector('.t-card').addEventListener('click', () => {
+          if (item.outlineWeek) goToSyncedOutlineWeek(item.sourceClassId, item.outlineWeek);
+          else goToSyncedClass(item.sourceClassId);
+        });
         timeline.appendChild(row);
         return;
       }
@@ -1825,6 +1961,11 @@
       const t = fmtTime(item.time24);
       const subs = item.subs || [];
       const atts = item.attachments || [];
+      const metaParts = [];
+      if (item.venue) metaParts.push(item.venue);
+      if (item.days && item.days.length) metaParts.push(item.days.map(d => d.slice(0, 3)).join(', '));
+      if (item.date) metaParts.push(fmtShortDate(item.date));
+      const metaLine = metaParts.join(' · ');
       function subRowHTML(s){
         const subSwatch = s.color ? swatchByKey(s.color) : null;
         const subStyle = subSwatch ? ` style="--sub-tone:${subSwatch.ink};border-left-color:${subSwatch.ink}"` : '';
@@ -1843,6 +1984,7 @@
             <span class="t-body">
               <span class="t-title">${escapeHTML(item.title)}</span><br>
               <span class="t-tag" style="color:${inkColor}">${cat.label}</span>
+              ${metaLine ? `<span class="t-meta">${escapeHTML(metaLine)}</span>` : ''}
             </span>
             <button class="t-check" aria-label="Mark ${escapeHTML(item.title)} done" style="color:${inkColor}">${ICONS.check}</button>
           </div>
@@ -1904,13 +2046,14 @@
   let prepChecked = loadJSON('pastelplan.prep.v1', []);
   const prepList = document.getElementById('prepList');
   function renderPrepList(){
-    const entries = getSyncedLogEntriesForDate(selectedDate).filter(e => PREP_LOG_TYPES.includes(e.type));
-    if (!entries.length) {
+    const logEntries = getSyncedLogEntriesForDate(selectedDate).filter(e => PREP_LOG_TYPES.includes(e.type));
+    const outlineEntries = getSyncedOutlinePrepForDate(selectedDate);
+    if (!logEntries.length && !outlineEntries.length) {
       prepList.innerHTML = '<li class="empty-note">No prep items yet.</li>';
       return;
     }
     prepList.innerHTML = '';
-    entries.forEach(entry => {
+    logEntries.forEach(entry => {
       const label = `${entry.type} — ${entry.className} / ${entry.sectionName}${entry.notes ? ': ' + entry.notes : ''}`;
       const li = document.createElement('li');
       li.className = 'prep-item' + (prepChecked.includes(entry.id) ? ' checked' : '');
@@ -1924,6 +2067,21 @@
         saveJSON('pastelplan.prep.v1', prepChecked);
       });
       li.querySelector('span:last-child').addEventListener('click', () => goToSyncedLogEntry(entry.classId, entry.sectionId));
+      prepList.appendChild(li);
+    });
+    outlineEntries.forEach(entry => {
+      const li = document.createElement('li');
+      li.className = 'prep-item' + (prepChecked.includes(entry.id) ? ' checked' : '');
+      li.innerHTML = `<span class="chk">${ICONS.check}</span><span>${escapeHTML(entry.label)}</span>`;
+      li.querySelector('.chk').addEventListener('click', (e) => {
+        e.stopPropagation();
+        li.classList.toggle('checked');
+        prepChecked = li.classList.contains('checked')
+          ? [...new Set([...prepChecked, entry.id])]
+          : prepChecked.filter(t => t !== entry.id);
+        saveJSON('pastelplan.prep.v1', prepChecked);
+      });
+      li.querySelector('span:last-child').addEventListener('click', () => goToSyncedOutlineWeek(entry.classId, entry.weekNum));
       prepList.appendChild(li);
     });
   }
@@ -1951,20 +2109,24 @@
       });
       if (item.sourceClassId) {
         li.style.cursor = 'pointer';
-        li.querySelector('p').addEventListener('click', () => goToSyncedLogEntry(item.sourceClassId, item.sourceSectionId));
+        li.querySelector('p').addEventListener('click', () => {
+          if (item.outlineWeek) goToSyncedOutlineWeek(item.sourceClassId, item.outlineWeek);
+          else goToSyncedLogEntry(item.sourceClassId, item.sourceSectionId);
+        });
       }
       container.appendChild(li);
     });
   }
   function renderTodoLists(){
-    const entries = getSyncedLogEntriesForDate(selectedDate).filter(e => !PREP_LOG_TYPES.includes(e.type));
-    const items = entries.map(entry => ({
+    const logEntries = getSyncedLogEntriesForDate(selectedDate).filter(e => !PREP_LOG_TYPES.includes(e.type));
+    const logItems = logEntries.map(entry => ({
       id: entry.id,
       text: `${entry.type} — ${entry.className} / ${entry.sectionName}${entry.notes ? ': ' + entry.notes : ''}`,
       sourceClassId: entry.classId,
       sourceSectionId: entry.sectionId,
     }));
-    buildTodo(document.getElementById('todoUrgent'), items);
+    const outlineItems = getSyncedOutlineTodosForDate(selectedDate);
+    buildTodo(document.getElementById('todoUrgent'), [...logItems, ...outlineItems]);
     buildTodo(document.getElementById('todoLater'), []);
   }
   renderTodoLists();
@@ -2129,7 +2291,8 @@
       const iso = todayISO(cellDate);
       const hasData = !!loadJSON(scheduleKey(iso), null)
         || getSyncedClassBlocksForDate(iso).length > 0
-        || getSyncedLogEntriesForDate(iso).length > 0;
+        || getSyncedLogEntriesForDate(iso).length > 0
+        || getMatchedOutlineWeeksForDate(iso).length > 0;
       const isToday = iso === TODAY_ISO;
       const isSelected = iso === selectedDate;
       const cls = ['cal-day'];
@@ -2220,7 +2383,7 @@
     const stats = computeDayStats(TODAY_ISO);
     const water = loadJSON('pastelplan.water.v1', 0);
     const arr = (TODAY_ISO === selectedDate) ? schedule : (loadJSON(scheduleKey(TODAY_ISO), null) || DEFAULT_SCHEDULE);
-    const catCounts = { class: 0, duty: 0, prep: 0 };
+    const catCounts = { class: 0, duty: 0, prep: 0, errands: 0 };
     arr.forEach(s => { catCounts[s.cat] = (catCounts[s.cat] || 0) + 1; });
     catCounts.class += getSyncedClassBlocksForDate(TODAY_ISO).length;
     document.getElementById('dashSnapshot').innerHTML = `
@@ -2232,6 +2395,7 @@
         <span class="dash-cat" style="background:var(--lavender);color:var(--lavender-ink)">Class ${catCounts.class}</span>
         <span class="dash-cat" style="background:var(--blush);color:var(--blush-ink)">Task ${catCounts.duty}</span>
         <span class="dash-cat" style="background:var(--sky);color:var(--sky-ink)">Prep ${catCounts.prep}</span>
+        <span class="dash-cat" style="background:var(--mint);color:var(--mint-ink)">Errands ${catCounts.errands}</span>
       </div>`;
   }
   function renderUpNext(){
@@ -2272,7 +2436,10 @@
         </div>
       </div>`;
     if (next.synced) {
-      box.querySelector('.dash-upnext-row').addEventListener('click', () => goToSyncedClass(next.sourceClassId));
+      box.querySelector('.dash-upnext-row').addEventListener('click', () => {
+        if (next.outlineWeek) goToSyncedOutlineWeek(next.sourceClassId, next.outlineWeek);
+        else goToSyncedClass(next.sourceClassId);
+      });
     }
   }
 
@@ -2490,17 +2657,17 @@
 
   function openClassFolder(classId){
     activeClassId = classId;
-    outline = courseOutlines[classId] || freshOutline();
-    activeOutlineTab = 'desc';
+    outline = (courseOutlines[classId] && courseOutlines[classId].weeks) ? courseOutlines[classId] : freshCourseOutline();
+    activeWeek = 1;
+    outlineSummaryOpen = false;
     const cls = classSchedule.find(c => c.id === classId);
     const meta = cls ? fmtDaysTime(cls) : '';
     activeClassLabel.innerHTML = `${escapeHTML(cls ? cls.className : '')}${meta ? `<span>${escapeHTML(meta)}</span>` : ''}`;
     classScheduleBox.style.display = 'none';
     classOutlineBox.style.display = 'block';
-    renderOutlineTabs();
-    renderOutlinePanel();
-    applyOutlineMode();
-    renderOutlineFileChip();
+    renderOutlineWeekSelect();
+    renderOutlineWeekPanel();
+    applyOutlineViewMode();
   }
   backToClassesBtn.addEventListener('click', () => {
     activeClassId = null;
@@ -2682,27 +2849,6 @@
   renderClassAddForm();
 
   // WORK: COURSE OUTLINE (Teacher)
-  const MAX_COURSE_FILE_BYTES = 5 * 1024 * 1024; // 5MB cap
-  const OUTLINE_TABS = [
-    { key: 'desc', label: 'Description', accent: 'lavender', icon: 'align' },
-    { key: 'topic', label: 'Topic / Lesson', accent: 'sky', icon: 'book' },
-    { key: 'outcomes', label: 'Learning Outcomes', accent: 'gold', icon: 'target' },
-    { key: 'fiveEs', label: "5E's Activities", accent: 'seafoam', icon: 'layers' },
-    { key: 'assessments', label: 'Assessments', accent: 'blush', icon: 'ruler' },
-    { key: 'labs', label: 'Laboratory Activities', accent: 'mint', icon: 'flask' },
-    { key: 'date', label: 'Date', accent: 'peach', icon: 'calendar' },
-    { key: 'remarks', label: 'Remarks', accent: 'lilac', icon: 'remarks' },
-  ];
-  const OUTLINE_ICONS = {
-    align: '<svg viewBox="0 0 24 24" fill="none"><path d="M4 6H20M4 12H14M4 18H18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-    book: ICONS.book,
-    target: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>',
-    layers: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 3L21 8L12 13L3 8L12 3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M3 13L12 18L21 13" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>',
-    ruler: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="8" width="18" height="8" rx="1.5" stroke="currentColor" stroke-width="1.7" transform="rotate(-8 12 12)"/></svg>',
-    flask: '<svg viewBox="0 0 24 24" fill="none"><path d="M9 3H15M10 3V9.5L5.5 18C5 19.1 5.8 20.3 7 20.3H17C18.2 20.3 19 19.1 18.5 18L14 9.5V3" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>',
-    calendar: '<svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 9.5H20.5" stroke="currentColor" stroke-width="1.7"/><path d="M8 3V6M16 3V6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
-    remarks: '<svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H18.5C19.3 4 20 4.7 20 5.5V14.5C20 15.3 19.3 16 18.5 16H9L5 19.5V16H5.5C4.7 16 4 15.3 4 14.5V5.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>',
-  };
   const FIVE_ES = [
     { key: 'engage', label: 'Engage', placeholder: 'Hooks, warm-ups, diagnostic queries...' },
     { key: 'explore', label: 'Explore', placeholder: 'Hands-on observation, guided inquiry...' },
@@ -2710,245 +2856,242 @@
     { key: 'elaborate', label: 'Elaborate', placeholder: 'Application, case studies, extended problems...' },
     { key: 'evaluate', label: 'Evaluate', placeholder: 'Exit tickets, reflection, self-assessment...' },
   ];
-  const DEFAULT_OUTLINE = {
-    mode: 'manual', desc: '', topic: '', outcomes: '', assessments: '', labs: '', date: '', remarks: '',
-    fiveEs: { engage: '', explore: '', explain: '', elaborate: '', evaluate: '' },
-    uploadedFile: null,
-  };
-  function freshOutline(){ return { ...DEFAULT_OUTLINE, fiveEs: { ...DEFAULT_OUTLINE.fiveEs } }; }
-  let courseOutlines = loadJSON('pastelplan.courseOutlines.v1', {});
+  const TOTAL_WEEKS = 18;
+  function freshWeek(){
+    return {
+      topics: [],
+      outcomes: '',
+      assessments: '',
+      labs: '',
+      date: '',
+      days: [],
+      remarks: '',
+      fiveEs: { engage: '', explore: '', explain: '', elaborate: '', evaluate: '' },
+    };
+  }
+  function freshCourseOutline(){
+    const weeks = {};
+    for (let i = 1; i <= TOTAL_WEEKS; i++) weeks[i] = freshWeek();
+    return { weeks };
+  }
   let activeClassId = null;
-  let outline = freshOutline();
-  let activeOutlineTab = 'desc';
+  let outline = freshCourseOutline();
+  let activeWeek = 1;
+  let outlineSummaryOpen = false;
   function saveOutline(){
     courseOutlines[activeClassId] = outline;
     saveJSON('pastelplan.courseOutlines.v1', courseOutlines);
   }
+  function currentWeek(){ return outline.weeks[activeWeek]; }
 
-  const outlineTabsBox = document.getElementById('outlineTabs');
-  const outlinePanel = document.getElementById('outlinePanel');
-  function renderOutlineTabs(){
-    outlineTabsBox.innerHTML = OUTLINE_TABS.map(t => {
-      const sw = swatchByKey(t.accent);
-      const active = t.key === activeOutlineTab;
-      const style = active ? `background:${sw.fill};border-color:${sw.fill};color:${sw.ink}` : '';
-      return `<button type="button" class="outline-tab" data-tab="${t.key}" style="${style}">${OUTLINE_ICONS[t.icon]} ${t.label}</button>`;
-    }).join('');
-    outlineTabsBox.querySelectorAll('.outline-tab').forEach(btn => {
-      btn.addEventListener('click', () => { activeOutlineTab = btn.dataset.tab; renderOutlineTabs(); renderOutlinePanel(); });
-    });
+  const outlineWeekSelect = document.getElementById('outlineWeekSelect');
+  const outlineWeekPanel = document.getElementById('outlineWeekPanel');
+  const outlineSummaryPanel = document.getElementById('outlineSummaryPanel');
+  const outlineSummaryBtn = document.getElementById('outlineSummaryBtn');
+
+  function renderOutlineWeekSelect(){
+    outlineWeekSelect.innerHTML = Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1)
+      .map(w => `<option value="${w}" ${w === activeWeek ? 'selected' : ''}>Week ${w}</option>`).join('');
   }
-  function textareaPanel(label, key, placeholder){
-    return `<label class="t-edit-caption" style="margin-bottom:8px;">${label}</label>
-      <textarea class="outline-textarea" rows="4" id="outlineField-${key}" placeholder="${placeholder}">${escapeHTML(outline[key] || '')}</textarea>`;
-  }
-  function renderOutlinePanel(){
-    const t = activeOutlineTab;
-    if (t === 'desc') outlinePanel.innerHTML = textareaPanel('Course Overview & Description', 'desc', 'Provide a detailed course summary, prerequisites, and introductory scope...');
-    else if (t === 'topic') outlinePanel.innerHTML = textareaPanel('Topic & Lesson Breakdown', 'topic', 'Enter module units, lecture topics, sub-topics, and core concepts...');
-    else if (t === 'outcomes') outlinePanel.innerHTML = textareaPanel('Intended Learning Outcomes (ILO)', 'outcomes', "Detail student competencies and Bloom's Taxonomy-aligned objectives...");
-    else if (t === 'assessments') outlinePanel.innerHTML = textareaPanel('Assessment & Evaluation Methods', 'assessments', 'Outline quizzes, exams, rubrics, grading criteria, and deadlines...');
-    else if (t === 'labs') outlinePanel.innerHTML = textareaPanel('Laboratory Exercises & Experiments', 'labs', 'List practical experiments, specimen lists, and lab safety protocols...');
-    else if (t === 'remarks') outlinePanel.innerHTML = textareaPanel('Teaching Remarks & Notes', 'remarks', 'Post-lesson adjustments, class progress observations...');
-    else if (t === 'date') {
-      outlinePanel.innerHTML = `<label class="t-edit-caption" style="margin-bottom:8px;">Schedule & Target Date</label>
-        <input type="date" class="outline-date-input" id="outlineField-date" value="${escapeHTML(outline.date || '')}">`;
-    } else if (t === 'fiveEs') {
-      outlinePanel.innerHTML = `<p class="t-edit-caption" style="margin-bottom:10px;">5E's Instructional Framework</p>` +
-        FIVE_ES.map(f => `<div class="five-e-field">
-          <span class="five-e-label">${f.label}</span>
-          <input type="text" class="five-e-input" id="outlineField-fiveEs-${f.key}" placeholder="${f.placeholder}" value="${escapeHTML(outline.fiveEs[f.key] || '')}">
-        </div>`).join('');
-    }
-
-    if (t === 'fiveEs') {
-      FIVE_ES.forEach(f => {
-        const el = document.getElementById(`outlineField-fiveEs-${f.key}`);
-        el.addEventListener('input', () => { outline.fiveEs[f.key] = el.value; saveOutline(); });
-      });
-    } else {
-      const el = document.getElementById(`outlineField-${t}`);
-      const evt = t === 'date' ? 'change' : 'input';
-      el.addEventListener(evt, () => { outline[t] = el.value; saveOutline(); });
-    }
-  }
-  renderOutlineTabs();
-  renderOutlinePanel();
-
-  const modeManualBtn = document.getElementById('modeManualBtn');
-  const modeUploadBtn = document.getElementById('modeUploadBtn');
-  const outlineManualContainer = document.getElementById('outlineManualContainer');
-  const outlineUploadContainer = document.getElementById('outlineUploadContainer');
-  function applyOutlineMode(){
-    modeManualBtn.classList.toggle('active', outline.mode === 'manual');
-    modeUploadBtn.classList.toggle('active', outline.mode === 'upload');
-    outlineManualContainer.style.display = outline.mode === 'manual' ? 'block' : 'none';
-    outlineUploadContainer.style.display = outline.mode === 'upload' ? 'block' : 'none';
-  }
-  applyOutlineMode();
-  modeManualBtn.addEventListener('click', () => { outline.mode = 'manual'; saveOutline(); applyOutlineMode(); });
-  modeUploadBtn.addEventListener('click', () => { outline.mode = 'upload'; saveOutline(); applyOutlineMode(); });
-
-  // Heading-keyword matcher: scans plain-text syllabus content for recognizable
-  // section headings and buckets the text under each heading into the matching
-  // outline field. No AI involved — purely pattern matching, so results are only
-  // as good as how closely the syllabus follows common heading conventions.
-  const OUTLINE_FIELD_KEYWORDS = {
-    desc: ['course description', 'description', 'course overview', 'overview', 'introduction'],
-    topic: ['course outline', 'syllabus outline', 'topics', 'topic', 'lessons', 'lesson', 'units', 'modules'],
-    outcomes: ['intended learning outcomes', 'learning outcomes', 'course objectives', 'objectives', 'outcomes'],
-    assessments: ['assessment methods', 'assessments', 'assessment', 'evaluation', 'grading', 'requirements'],
-    labs: ['laboratory activities', 'laboratory', 'lab activities', 'practical work', 'experiments'],
-    remarks: ['remarks', 'additional notes', 'notes'],
-  };
-  function extractOutlineFromText(text){
-    const allKeywords = [];
-    Object.keys(OUTLINE_FIELD_KEYWORDS).forEach(field => {
-      OUTLINE_FIELD_KEYWORDS[field].forEach(keyword => allKeywords.push({ field, keyword }));
-    });
-    allKeywords.sort((a, b) => b.keyword.length - a.keyword.length);
-
-    function matchHeading(line){
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.length > 70) return null;
-      const cleaned = trimmed.replace(/^[\dIVXivx]+[.)]\s*/, '').replace(/:$/, '').trim().toLowerCase();
-      for (const { field, keyword } of allKeywords) {
-        if (cleaned === keyword || cleaned === keyword + ':' || cleaned.startsWith(keyword + ' ')) return field;
-      }
-      return null;
-    }
-
-    const result = {};
-    let current = null;
-    text.split(/\r?\n/).forEach(line => {
-      const field = matchHeading(line);
-      if (field) {
-        current = { field, lines: [] };
-      } else if (current) {
-        current.lines.push(line);
-        result[current.field] = current.lines.join('\n').trim();
-      }
-    });
-    return result;
-  }
-
-  function applyExtractedOutline(extracted, fileName){
-    const filledFields = Object.keys(extracted);
-    if (!filledFields.length) {
-      alert(`Couldn't find recognizable section headings in "${fileName}" — fill in the outline manually.`);
-      return;
-    }
-    filledFields.forEach(field => { outline[field] = extracted[field]; });
-    outline.mode = 'manual';
-    saveOutline();
-    activeOutlineTab = 'desc';
-    applyOutlineMode();
-    renderOutlineTabs();
-    renderOutlinePanel();
-    alert(`Filled in ${filledFields.length} field(s) from "${fileName}": ${filledFields.map(f => OUTLINE_TABS.find(t => t.key === f).label).join(', ')}.`);
-  }
-
-  // .docx files are ZIP archives; word/document.xml holds the body text as a series
-  // of <w:p> paragraphs, each made of one or more <w:t> text runs. We scan the ZIP's
-  // local file headers (no library needed) to find that entry, inflate it with the
-  // browser's native DecompressionStream if it's deflate-compressed, then rebuild
-  // plain text with one line per paragraph so the heading matcher below can work
-  // on it exactly like a .txt file.
-  function docxParagraphsToText(xml){
-    const paragraphs = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
-    return paragraphs
-      .map(p => {
-        const runs = [...p.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)].map(m => m[1]);
-        return runs.join('')
-          .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"').replace(/&apos;/g, "'");
-      })
-      .join('\n');
-  }
-
-  async function extractDocxText(file){
-    if (!window.DecompressionStream) {
-      throw new Error("Your browser can't decompress .docx files. Try a recent Chrome, Edge, or Safari.");
-    }
-    const buffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    const dv = new DataView(buffer);
-    let offset = 0;
-    while (offset < bytes.length - 30) {
-      if (dv.getUint32(offset, true) !== 0x04034b50) { offset++; continue; }
-      const compMethod = dv.getUint16(offset + 8, true);
-      const compSize = dv.getUint32(offset + 18, true);
-      const nameLen = dv.getUint16(offset + 26, true);
-      const extraLen = dv.getUint16(offset + 28, true);
-      const nameStart = offset + 30;
-      const name = new TextDecoder().decode(bytes.slice(nameStart, nameStart + nameLen));
-      const dataStart = nameStart + nameLen + extraLen;
-      if (name === 'word/document.xml') {
-        const compData = bytes.slice(dataStart, dataStart + compSize);
-        let xmlBytes;
-        if (compMethod === 0) {
-          xmlBytes = compData;
-        } else if (compMethod === 8) {
-          const stream = new Blob([compData]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-          xmlBytes = new Uint8Array(await new Response(stream).arrayBuffer());
-        } else {
-          throw new Error('Unsupported compression in this .docx file.');
-        }
-        const xml = new TextDecoder('utf-8').decode(xmlBytes);
-        return docxParagraphsToText(xml);
-      }
-      offset = dataStart + compSize;
-    }
-    throw new Error("Couldn't find document content in this .docx file — it may be corrupted.");
-  }
-
-  const outlineDropzoneBtn = document.getElementById('outlineDropzoneBtn');
-  const outlineFileInput = document.getElementById('outlineFileInput');
-  const outlineFileChip = document.getElementById('outlineFileChip');
-  function renderOutlineFileChip(){
-    if (!outline.uploadedFile) { outlineFileChip.innerHTML = ''; return; }
-    outlineFileChip.innerHTML = `<div class="outline-file-chip">
-      ${ICONS.file}
-      <span class="name">${escapeHTML(outline.uploadedFile.name)}</span>
-      <button type="button" id="outlineFileRemoveBtn">${ICONS.x}</button>
-    </div>`;
-    document.getElementById('outlineFileRemoveBtn').addEventListener('click', () => {
-      outline.uploadedFile = null;
-      saveOutline();
-      renderOutlineFileChip();
-    });
-  }
-  renderOutlineFileChip();
-  outlineDropzoneBtn.addEventListener('click', () => outlineFileInput.click());
-  outlineFileInput.addEventListener('change', () => {
-    const file = outlineFileInput.files[0];
-    if (!file) return;
-    if (file.size > MAX_COURSE_FILE_BYTES) { alert(`"${file.name}" is over 5MB — try a smaller file.`); return; }
-    const reader = new FileReader();
-    reader.onload = () => {
-      outline.uploadedFile = { name: file.name, size: file.size, url: reader.result };
-      saveOutline();
-      renderOutlineFileChip();
-    };
-    reader.readAsDataURL(file);
-
-    const isTxt = /\.txt$/i.test(file.name) || file.type === 'text/plain';
-    const isDocx = /\.docx$/i.test(file.name) || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-
-    if (isTxt) {
-      const textReader = new FileReader();
-      textReader.onload = () => {
-        applyExtractedOutline(extractOutlineFromText(String(textReader.result || '')), file.name);
-      };
-      textReader.readAsText(file);
-    } else if (isDocx) {
-      extractDocxText(file)
-        .then(text => applyExtractedOutline(extractOutlineFromText(text), file.name))
-        .catch(err => alert(`Couldn't read "${file.name}": ${err.message}`));
-    }
-
-    outlineFileInput.value = '';
+  outlineWeekSelect.addEventListener('change', () => {
+    activeWeek = Number(outlineWeekSelect.value);
+    renderOutlineWeekPanel();
   });
+
+  function renderOutlineWeekPanel(){
+    const week = currentWeek();
+    const topics = week.topics || [];
+    outlineWeekPanel.innerHTML = `
+      <div class="outline-section">
+        <label class="t-edit-caption" style="margin-bottom:8px;">Topic / Lesson</label>
+        <div class="t-subs-edit" id="topicsEdit">
+          ${topics.length ? topics.map((tp, i) => `
+            <div class="t-sub-edit-row" data-idx="${i}">
+              <span class="t-topic-num">${i + 1}.</span>
+              <input type="text" class="t-sub-edit-input" data-action="title" placeholder="e.g. Cell structure" value="${escapeHTML(tp.title)}">
+              <button type="button" class="t-sub-edit-remove" data-action="remove" aria-label="Remove topic">${ICONS.x}</button>
+            </div>`).join('') : `<p class="t-edit-caption" style="font-style:italic;">No topics/lessons yet.</p>`}
+        </div>
+        <button type="button" class="t-add-sub-btn" id="addTopicBtn">${ICONS.plus} Add topic / lesson</button>
+      </div>
+
+      <div class="outline-section">
+        <label class="t-edit-caption" style="margin-bottom:8px;">Learning Outcome</label>
+        <textarea class="outline-textarea" rows="3" id="weekField-outcomes" placeholder="Detail student competencies and objectives...">${escapeHTML(week.outcomes)}</textarea>
+      </div>
+
+      <div class="outline-section">
+        <label class="t-edit-caption" style="margin-bottom:8px;">Assessments</label>
+        <textarea class="outline-textarea" rows="3" id="weekField-assessments" placeholder="Quizzes, exams, rubrics, grading criteria...">${escapeHTML(week.assessments)}</textarea>
+      </div>
+
+      <div class="outline-section">
+        <label class="t-edit-caption" style="margin-bottom:8px;">Lab Activity <span class="t-optional-tag">(optional)</span></label>
+        <textarea class="outline-textarea" rows="3" id="weekField-labs" placeholder="Practical experiments, specimen lists...">${escapeHTML(week.labs)}</textarea>
+      </div>
+
+      <div class="outline-section">
+        <label class="t-edit-caption" style="margin-bottom:8px;">Date</label>
+        <input type="date" class="outline-date-input" id="weekField-date" value="${escapeHTML(week.date || '')}">
+        <label class="t-edit-caption" style="margin:10px 0 8px;">Days</label>
+        <div class="day-checkbox-row" id="weekFieldDays">
+          ${WEEKDAYS.map(d => `<label class="day-checkbox"><input type="checkbox" value="${d}" ${week.days.includes(d) ? 'checked' : ''}> ${d.slice(0, 3)}</label>`).join('')}
+        </div>
+      </div>
+
+      <div class="outline-section">
+        <label class="t-edit-caption" style="margin-bottom:8px;">Remarks</label>
+        <textarea class="outline-textarea" rows="3" id="weekField-remarks" placeholder="Post-lesson adjustments, class progress observations...">${escapeHTML(week.remarks)}</textarea>
+      </div>
+
+      <div class="outline-section">
+        <p class="t-edit-caption" style="margin-bottom:10px;">5E's Instructional Framework</p>
+        ${FIVE_ES.map(f => `<div class="five-e-field">
+          <span class="five-e-label">${f.label}</span>
+          <input type="text" class="five-e-input" id="weekField-fiveEs-${f.key}" placeholder="${f.placeholder}" value="${escapeHTML(week.fiveEs[f.key] || '')}">
+        </div>`).join('')}
+      </div>
+
+      <button type="button" class="outline-save-btn" id="saveWeekBtn">${ICONS.check} Save Week ${activeWeek}</button>
+    `;
+
+    const topicsEditBox = document.getElementById('topicsEdit');
+    topicsEditBox.querySelectorAll('[data-action="title"]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const idx = Number(inp.closest('.t-sub-edit-row').dataset.idx);
+        currentWeek().topics[idx].title = inp.value;
+        saveOutline();
+      });
+    });
+    topicsEditBox.querySelectorAll('[data-action="remove"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.closest('.t-sub-edit-row').dataset.idx);
+        currentWeek().topics.splice(idx, 1);
+        saveOutline();
+        renderOutlineWeekPanel();
+      });
+    });
+    document.getElementById('addTopicBtn').addEventListener('click', () => {
+      currentWeek().topics.push({ id: uid(), title: '' });
+      saveOutline();
+      renderOutlineWeekPanel();
+      const inputs = document.querySelectorAll('#topicsEdit .t-sub-edit-input');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+
+    ['outcomes', 'assessments', 'labs', 'remarks'].forEach(key => {
+      const el = document.getElementById(`weekField-${key}`);
+      el.addEventListener('input', () => { currentWeek()[key] = el.value; saveOutline(); });
+    });
+
+    document.getElementById('weekField-date').addEventListener('change', (e) => {
+      currentWeek().date = e.target.value;
+      saveOutline();
+    });
+
+    document.querySelectorAll('#weekFieldDays input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        currentWeek().days = [...document.querySelectorAll('#weekFieldDays input:checked')].map(el => el.value);
+        saveOutline();
+      });
+    });
+
+    FIVE_ES.forEach(f => {
+      const el = document.getElementById(`weekField-fiveEs-${f.key}`);
+      el.addEventListener('input', () => { currentWeek().fiveEs[f.key] = el.value; saveOutline(); });
+    });
+
+    const saveBtn = document.getElementById('saveWeekBtn');
+    let saveResetTimer = null;
+    saveBtn.addEventListener('click', () => {
+      saveOutline();
+      saveBtn.classList.add('saved');
+      saveBtn.innerHTML = `${ICONS.check} Saved!`;
+      clearTimeout(saveResetTimer);
+      saveResetTimer = setTimeout(() => {
+        saveBtn.classList.remove('saved');
+        saveBtn.innerHTML = `${ICONS.check} Save Week ${activeWeek}`;
+      }, 1500);
+    });
+  }
+
+  function cellText(val){
+    return val && val.trim() ? escapeHTML(val) : '—';
+  }
+  function cellList(items){
+    return items.length ? items.map(s => escapeHTML(s)).join('<br>') : '—';
+  }
+
+  function renderOutlineSummary(){
+    const rows = Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1).map(w => {
+      const week = outline.weeks[w];
+      const topicList = week.topics.map((t, i) => `${i + 1}. ${t.title || '(untitled)'}`);
+      const dateLabel = week.date ? fmtShortDate(week.date) : '';
+      const daysLabel = week.days.length ? week.days.map(d => d.slice(0, 3)).join(', ') : '';
+      const dateDayText = [dateLabel, daysLabel].filter(Boolean).join(' · ');
+      const fiveEsList = FIVE_ES.filter(f => week.fiveEs[f.key] && week.fiveEs[f.key].trim())
+        .map(f => `${f.label}: ${week.fiveEs[f.key]}`);
+      return `<tr>
+        <td class="summary-col-week">Week ${w}</td>
+        <td>${cellList(topicList)}</td>
+        <td>${cellText(week.outcomes)}</td>
+        <td>${cellText(week.assessments)}</td>
+        <td>${cellText(week.labs)}</td>
+        <td>${dateDayText ? escapeHTML(dateDayText) : '—'}</td>
+        <td>${cellText(week.remarks)}</td>
+        <td>${cellList(fiveEsList)}</td>
+        <td><button type="button" class="outline-summary-edit-btn" data-week="${w}">${ICONS.pencil} Edit</button></td>
+      </tr>`;
+    }).join('');
+    outlineSummaryPanel.innerHTML = `
+      <button type="button" class="outline-summary-back-btn" id="summaryBackBtn">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </button>
+      <div class="outline-summary-table-wrap">
+        <table class="outline-summary-table">
+          <thead>
+            <tr>
+              <th>Week</th><th>Topic</th><th>Learning Outcome</th><th>Assessments</th><th>Lab Activity</th><th>Date & Day</th><th>Remarks</th><th>5E's</th><th></th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+    document.getElementById('summaryBackBtn').addEventListener('click', () => {
+      outlineSummaryOpen = false;
+      applyOutlineViewMode();
+    });
+    outlineSummaryPanel.querySelectorAll('.outline-summary-edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeWeek = Number(btn.dataset.week);
+        outlineSummaryOpen = false;
+        applyOutlineViewMode();
+        renderOutlineWeekSelect();
+        renderOutlineWeekPanel();
+      });
+    });
+  }
+
+  function applyOutlineViewMode(){
+    outlineWeekPanel.style.display = outlineSummaryOpen ? 'none' : 'block';
+    outlineWeekSelect.style.display = outlineSummaryOpen ? 'none' : '';
+    outlineSummaryPanel.style.display = outlineSummaryOpen ? 'block' : 'none';
+    outlineSummaryBtn.classList.toggle('active', outlineSummaryOpen);
+    outlineSummaryBtn.innerHTML = outlineSummaryOpen
+      ? `${ICONS.x} Close Summary`
+      : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 6H20M4 12H20M4 18H14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Summary`;
+  }
+  outlineSummaryBtn.addEventListener('click', () => {
+    outlineSummaryOpen = !outlineSummaryOpen;
+    if (outlineSummaryOpen) renderOutlineSummary();
+    applyOutlineViewMode();
+  });
+
+  renderOutlineWeekSelect();
+  renderOutlineWeekPanel();
+  applyOutlineViewMode();
 
   // WORK: OFFICE HEAD DASHBOARD
   const OFFICE_HEAD_TABS = [

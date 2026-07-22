@@ -28,13 +28,6 @@ import {
   User,
   Briefcase,
   AlignLeft,
-  Target,
-  Layers,
-  Ruler,
-  FlaskConical,
-  MessageSquare,
-  PenLine,
-  UploadCloud,
   MapPin,
   Folder,
 } from "lucide-react";
@@ -120,8 +113,9 @@ const CATS = {
   class: { fill: "var(--pp-lavender)", ink: "var(--pp-lavender-ink)", label: "Class", Icon: BookOpen },
   duty: { fill: "var(--pp-blush)", ink: "var(--pp-blush-ink)", label: "Task", Icon: Users },
   prep: { fill: "var(--pp-sky)", ink: "var(--pp-sky-ink)", label: "Prep", Icon: PencilLine },
+  errands: { fill: "var(--pp-mint)", ink: "var(--pp-mint-ink)", label: "Errands", Icon: MapPin },
 };
-const CAT_ORDER = ["class", "duty", "prep"];
+const CAT_ORDER = ["class", "duty", "prep", "errands"];
 
 // New days start empty — no seeded sample content.
 const DEFAULT_SCHEDULE = [];
@@ -157,19 +151,6 @@ const WORK_ROLES = [
   { key: "others", label: "Others" },
 ];
 
-const MAX_COURSE_FILE_BYTES = 5 * 1024 * 1024; // 5MB cap
-
-const OUTLINE_TABS = [
-  { key: "desc", label: "Description", accent: "lavender", Icon: AlignLeft },
-  { key: "topic", label: "Topic / Lesson", accent: "sky", Icon: BookOpen },
-  { key: "outcomes", label: "Learning Outcomes", accent: "gold", Icon: Target },
-  { key: "fiveEs", label: "5E's Activities", accent: "seafoam", Icon: Layers },
-  { key: "assessments", label: "Assessments", accent: "blush", Icon: Ruler },
-  { key: "labs", label: "Laboratory Activities", accent: "mint", Icon: FlaskConical },
-  { key: "date", label: "Date", accent: "peach", Icon: Calendar },
-  { key: "remarks", label: "Remarks", accent: "lilac", Icon: MessageSquare },
-];
-
 const FIVE_ES = [
   { key: "engage", label: "Engage", placeholder: "Hooks, warm-ups, diagnostic queries..." },
   { key: "explore", label: "Explore", placeholder: "Hands-on observation, guided inquiry..." },
@@ -178,126 +159,25 @@ const FIVE_ES = [
   { key: "evaluate", label: "Evaluate", placeholder: "Exit tickets, reflection, self-assessment..." },
 ];
 
-const DEFAULT_OUTLINE = {
-  mode: "manual",
-  desc: "",
-  topic: "",
-  outcomes: "",
-  assessments: "",
-  labs: "",
-  date: "",
-  remarks: "",
-  fiveEs: { engage: "", explore: "", explain: "", elaborate: "", evaluate: "" },
-  uploadedFile: null,
-};
+const TOTAL_WEEKS = 18;
 
-// Heading-keyword matcher: scans plain-text syllabus content for recognizable
-// section headings and buckets the text under each heading into the matching
-// outline field. No AI involved — purely pattern matching, so results are only
-// as good as how closely the syllabus follows common heading conventions.
-const OUTLINE_FIELD_KEYWORDS = {
-  desc: ["course description", "description", "course overview", "overview", "introduction"],
-  topic: ["course outline", "syllabus outline", "topics", "topic", "lessons", "lesson", "units", "modules"],
-  outcomes: ["intended learning outcomes", "learning outcomes", "course objectives", "objectives", "outcomes"],
-  assessments: ["assessment methods", "assessments", "assessment", "evaluation", "grading", "requirements"],
-  labs: ["laboratory activities", "laboratory", "lab activities", "practical work", "experiments"],
-  remarks: ["remarks", "additional notes", "notes"],
-};
-
-function extractOutlineFromText(text) {
-  const allKeywords = [];
-  Object.keys(OUTLINE_FIELD_KEYWORDS).forEach((field) => {
-    OUTLINE_FIELD_KEYWORDS[field].forEach((keyword) => allKeywords.push({ field, keyword }));
-  });
-  allKeywords.sort((a, b) => b.keyword.length - a.keyword.length);
-
-  function matchHeading(line) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.length > 70) return null;
-    const cleaned = trimmed
-      .replace(/^[\dIVXivx]+[.)]\s*/, "")
-      .replace(/:$/, "")
-      .trim()
-      .toLowerCase();
-    for (const { field, keyword } of allKeywords) {
-      if (cleaned === keyword || cleaned === keyword + ":" || cleaned.startsWith(keyword + " ")) return field;
-    }
-    return null;
-  }
-
-  const result = {};
-  let current = null;
-  text.split(/\r?\n/).forEach((line) => {
-    const field = matchHeading(line);
-    if (field) {
-      current = { field, lines: [] };
-    } else if (current) {
-      current.lines.push(line);
-      result[current.field] = current.lines.join("\n").trim();
-    }
-  });
-  return result;
+function freshWeek() {
+  return {
+    topics: [],
+    outcomes: "",
+    assessments: "",
+    labs: "",
+    date: "",
+    days: [],
+    remarks: "",
+    fiveEs: { engage: "", explore: "", explain: "", elaborate: "", evaluate: "" },
+  };
 }
 
-// .docx files are ZIP archives; word/document.xml holds the body text as a series
-// of <w:p> paragraphs, each made of one or more <w:t> text runs. We scan the ZIP's
-// local file headers (no library needed) to find that entry, inflate it with the
-// browser's native DecompressionStream if it's deflate-compressed, then rebuild
-// plain text with one line per paragraph so extractOutlineFromText can work on it
-// exactly like a .txt file.
-function docxParagraphsToText(xml) {
-  const paragraphs = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
-  return paragraphs
-    .map((p) => {
-      const runs = [...p.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)].map((m) => m[1]);
-      return runs
-        .join("")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"')
-        .replace(/&apos;/g, "'");
-    })
-    .join("\n");
-}
-
-async function extractDocxText(file) {
-  if (!window.DecompressionStream) {
-    throw new Error("Your browser can't decompress .docx files. Try a recent Chrome, Edge, or Safari.");
-  }
-  const buffer = await file.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  const dv = new DataView(buffer);
-  let offset = 0;
-  while (offset < bytes.length - 30) {
-    if (dv.getUint32(offset, true) !== 0x04034b50) {
-      offset++;
-      continue;
-    }
-    const compMethod = dv.getUint16(offset + 8, true);
-    const compSize = dv.getUint32(offset + 18, true);
-    const nameLen = dv.getUint16(offset + 26, true);
-    const extraLen = dv.getUint16(offset + 28, true);
-    const nameStart = offset + 30;
-    const name = new TextDecoder().decode(bytes.slice(nameStart, nameStart + nameLen));
-    const dataStart = nameStart + nameLen + extraLen;
-    if (name === "word/document.xml") {
-      const compData = bytes.slice(dataStart, dataStart + compSize);
-      let xmlBytes;
-      if (compMethod === 0) {
-        xmlBytes = compData;
-      } else if (compMethod === 8) {
-        const stream = new Blob([compData]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-        xmlBytes = new Uint8Array(await new Response(stream).arrayBuffer());
-      } else {
-        throw new Error("Unsupported compression in this .docx file.");
-      }
-      const xml = new TextDecoder("utf-8").decode(xmlBytes);
-      return docxParagraphsToText(xml);
-    }
-    offset = dataStart + compSize;
-  }
-  throw new Error("Couldn't find document content in this .docx file — it may be corrupted.");
+function freshCourseOutline() {
+  const weeks = {};
+  for (let i = 1; i <= TOTAL_WEEKS; i++) weeks[i] = freshWeek();
+  return { weeks };
 }
 
 const OFFICE_HEAD_TABS = [
@@ -340,25 +220,108 @@ function dayOfWeekFromDate(dateStr) {
 }
 
 const PREP_LOG_TYPES = ["LECTURE", "LAB ACTIVITY", "GROUP ACTIVITY"];
+const DAY_OFFSET_FROM_MONDAY = { Monday: 0, Tuesday: 1, Wednesday: 2, Thursday: 3, Friday: 4, Saturday: 5, Sunday: 6 };
+
+// A course-outline week's Date is treated as an anchor within its Mon–Sun span;
+// its checked Days resolve to the actual calendar date(s) in that same week.
+function weekMeetingDates(week) {
+  if (!week.date) return [];
+  if (!week.days || !week.days.length) return [week.date];
+  const anchor = dateFromISO(week.date);
+  const anchorDow = anchor.getDay();
+  const mondayOffset = anchorDow === 0 ? -6 : 1 - anchorDow;
+  const monday = new Date(anchor);
+  monday.setDate(anchor.getDate() + mondayOffset);
+  return week.days.map((dayName) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + (DAY_OFFSET_FROM_MONDAY[dayName] || 0));
+    return todayISO(d);
+  });
+}
+
+function findOutlineWeekForClassOnDate(courseOutlines, classId, dateStr) {
+  const co = courseOutlines[classId];
+  if (!co || !co.weeks) return null;
+  for (const weekKey of Object.keys(co.weeks)) {
+    const week = co.weeks[weekKey];
+    if (weekMeetingDates(week).includes(dateStr)) return { weekNum: Number(weekKey), week };
+  }
+  return null;
+}
+
+function getMatchedOutlineWeeksForDate(classSchedule, courseOutlines, dateStr) {
+  const results = [];
+  classSchedule.forEach((cls) => {
+    const match = findOutlineWeekForClassOnDate(courseOutlines, cls.id, dateStr);
+    if (match) results.push({ classId: cls.id, className: cls.className, weekNum: match.weekNum, week: match.week });
+  });
+  return results;
+}
+
+function getSyncedOutlinePrepForDate(classSchedule, courseOutlines, dateStr) {
+  return getMatchedOutlineWeeksForDate(classSchedule, courseOutlines, dateStr).map((m) => {
+    const topicsLabel = m.week.topics.map((t) => t.title).filter(Boolean).join(", ");
+    return {
+      id: `outline-prep-${m.classId}-${m.weekNum}`,
+      classId: m.classId,
+      weekNum: m.weekNum,
+      label: `LESSON — ${m.className} / Week ${m.weekNum}${topicsLabel ? ": " + topicsLabel : ""}`,
+    };
+  });
+}
+
+function getSyncedOutlineTodosForDate(classSchedule, courseOutlines, dateStr) {
+  const items = [];
+  getMatchedOutlineWeeksForDate(classSchedule, courseOutlines, dateStr).forEach((m) => {
+    if (m.week.assessments && m.week.assessments.trim()) {
+      items.push({
+        id: `outline-todo-assess-${m.classId}-${m.weekNum}`,
+        text: `Assessment — ${m.className} / Week ${m.weekNum}: ${m.week.assessments.trim()}`,
+        sourceClassId: m.classId,
+        outlineWeek: m.weekNum,
+      });
+    }
+    if (m.week.remarks && m.week.remarks.trim()) {
+      items.push({
+        id: `outline-todo-remarks-${m.classId}-${m.weekNum}`,
+        text: `Remarks — ${m.className} / Week ${m.weekNum}: ${m.week.remarks.trim()}`,
+        sourceClassId: m.classId,
+        outlineWeek: m.weekNum,
+      });
+    }
+  });
+  return items;
+}
 
 // Work Notes → Personal Notes sync: recurring class meetings show up as read-only
-// Timeline/Calendar/Dashboard blocks; activity log entries feed Rush Prep & Hook
-// (lecture/lab/group types) and the To-Do Matrix (everything else). Nothing here
-// is persisted — it's recomputed live from classSchedule/classSections/sectionLogs
-// so Work Notes stays the single source of truth.
-function getSyncedClassBlocksForDate(classSchedule, dateStr) {
+// Timeline/Calendar/Dashboard blocks (enriched with the matching course-outline
+// week's topics when its Date/Days resolve to this date); activity log entries and
+// outline weeks feed Rush Prep & Hook and the To-Do Matrix. Nothing here is
+// persisted — it's recomputed live from classSchedule/courseOutlines/sectionLogs so
+// Work Notes stays the single source of truth.
+function getSyncedClassBlocksForDate(classSchedule, courseOutlines, dateStr) {
   const weekday = dayOfWeekFromDate(dateStr);
-  if (!weekday) return [];
-  return classSchedule
-    .filter((cls) => (cls.days || []).includes(weekday))
-    .map((cls) => ({
+  const results = [];
+  classSchedule.forEach((cls) => {
+    const scheduledToday = !!weekday && (cls.days || []).includes(weekday);
+    const match = findOutlineWeekForClassOnDate(courseOutlines, cls.id, dateStr);
+    // A class block shows up either on its own recurring weekly schedule, or on any
+    // date a course-outline week explicitly resolves to for it — the outline's Date/Days
+    // don't need to also be re-registered in the class's general weekly schedule.
+    if (!scheduledToday && !match) return;
+    const topicsLabel = match ? match.week.topics.map((t) => t.title).filter(Boolean).join(", ") : "";
+    const title = match ? `${cls.className} — Week ${match.weekNum}${topicsLabel ? ": " + topicsLabel : ""}` : cls.className;
+    results.push({
       id: "class-" + cls.id,
       time24: cls.timeIn || "00:00",
-      title: cls.className,
+      title,
       cat: "class",
       synced: true,
       sourceClassId: cls.id,
-    }));
+      outlineWeek: match ? match.weekNum : null,
+    });
+  });
+  return results;
 }
 
 function getSyncedLogEntriesForDate(classSchedule, classSections, sectionLogs, dateStr) {
@@ -374,10 +337,6 @@ function getSyncedLogEntriesForDate(classSchedule, classSections, sectionLogs, d
     });
   });
   return results;
-}
-
-function freshOutline() {
-  return { ...DEFAULT_OUTLINE, fiveEs: { ...DEFAULT_OUTLINE.fiveEs } };
 }
 
 function fmtTime(time24) {
@@ -499,9 +458,9 @@ export default function PastelPlan() {
   const [classSections, setClassSections] = useLocalStorageState("pastelplan.classSections.v1", {});
   const [sectionLogs, setSectionLogs] = useLocalStorageState("pastelplan.sectionLogs.v1", {});
   const [activeClassId, setActiveClassId] = useState(null);
+  const [outlineJumpWeek, setOutlineJumpWeek] = useState(null);
   const [activeSectionsClassId, setActiveSectionsClassId] = useState(null);
   const [activeSectionId, setActiveSectionId] = useState(null);
-  const [activeOutlineTab, setActiveOutlineTab] = useState("desc");
   const [officeHead, setOfficeHead] = useLocalStorageState("pastelplan.officeHead.v1", () => ({ ...DEFAULT_OFFICE_HEAD }));
   const [activeOfficeTab, setActiveOfficeTab] = useState("meetings");
 
@@ -541,10 +500,12 @@ export default function PastelPlan() {
   const clock = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   const firstName = userProfile?.name ? userProfile.name.trim().split(/\s+/)[0] : "";
   const namePart = firstName ? `Hi ${firstName}` : isToday ? "Sample day" : "";
-  const syncedClassBlocksSelected = getSyncedClassBlocksForDate(classSchedule, selectedDate);
+  const syncedClassBlocksSelected = getSyncedClassBlocksForDate(classSchedule, courseOutlines, selectedDate);
   const syncedLogEntriesSelected = getSyncedLogEntriesForDate(classSchedule, classSections, sectionLogs, selectedDate);
   const syncedPrepEntries = syncedLogEntriesSelected.filter((e) => PREP_LOG_TYPES.includes(e.type));
   const syncedTodoEntries = syncedLogEntriesSelected.filter((e) => !PREP_LOG_TYPES.includes(e.type));
+  const syncedOutlinePrepEntries = getSyncedOutlinePrepForDate(classSchedule, courseOutlines, selectedDate);
+  const syncedOutlineTodoEntries = getSyncedOutlineTodosForDate(classSchedule, courseOutlines, selectedDate);
   const sortedSchedule = [...schedule, ...syncedClassBlocksSelected].sort((a, b) => a.time24.localeCompare(b.time24));
 
   function goToWorkClass(classId) {
@@ -558,6 +519,12 @@ export default function PastelPlan() {
     setWorkRole("teacher");
     setActiveSectionsClassId(classId);
     setActiveSectionId(sectionId);
+  }
+  function goToWorkOutlineWeek(classId, weekNum) {
+    setMainPage("work");
+    setWorkRole("teacher");
+    setActiveClassId(classId);
+    setOutlineJumpWeek(weekNum);
   }
   const leftCount = schedule.filter((s) => !s.done).length;
 
@@ -587,7 +554,7 @@ export default function PastelPlan() {
     setSchedule((prev) => [...prev, item]);
     setEditingId(item.id);
   }
-  function saveEdit(id, { time24, title, cat, subs, attachments, color, emoji }) {
+  function saveEdit(id, { time24, title, cat, days, date, venue, subs, attachments, color, emoji }) {
     const trimmed = title.trim();
     if (!trimmed) {
       // discard blank new/edited blocks instead of saving an empty title
@@ -595,7 +562,7 @@ export default function PastelPlan() {
       setEditingId(null);
       return;
     }
-    updateItem(id, { time24, title: trimmed, cat, subs, sub: undefined, attachments, color, emoji });
+    updateItem(id, { time24, title: trimmed, cat, days, date, venue, subs, sub: undefined, attachments, color, emoji });
     setEditingId(null);
   }
   function cancelEdit(id, wasNew) {
@@ -617,7 +584,7 @@ export default function PastelPlan() {
 
   // ---- Dashboard data (computed here so it can read live `schedule` for the selected day) ----
   function computeDayStats(dateStr) {
-    const syncedCount = getSyncedClassBlocksForDate(classSchedule, dateStr).length;
+    const syncedCount = getSyncedClassBlocksForDate(classSchedule, courseOutlines, dateStr).length;
     if (dateStr === selectedDate) return { total: schedule.length + syncedCount, done: schedule.filter((s) => s.done).length };
     try {
       const raw = localStorage.getItem(scheduleKeyFor(dateStr));
@@ -636,7 +603,7 @@ export default function PastelPlan() {
       return [];
     }
   }
-  const todaySchedule = [...getTodaySchedule(), ...getSyncedClassBlocksForDate(classSchedule, todayIso)];
+  const todaySchedule = [...getTodaySchedule(), ...getSyncedClassBlocksForDate(classSchedule, courseOutlines, todayIso)];
   const nowMins = now.getHours() * 60 + now.getMinutes();
   const upNextRaw = todaySchedule
     .filter((s) => !s.done)
@@ -659,7 +626,7 @@ export default function PastelPlan() {
     return d;
   });
   const todayStats = computeDayStats(todayIso);
-  const catCounts = { class: 0, duty: 0, prep: 0 };
+  const catCounts = { class: 0, duty: 0, prep: 0, errands: 0 };
   todaySchedule.forEach((s) => {
     catCounts[s.cat] = (catCounts[s.cat] || 0) + 1;
   });
@@ -836,7 +803,9 @@ export default function PastelPlan() {
                       item={item}
                       isFirst={i === 0}
                       isLast={i === sortedSchedule.length - 1}
-                      onOpen={() => goToWorkClass(item.sourceClassId)}
+                      onOpen={() =>
+                        item.outlineWeek ? goToWorkOutlineWeek(item.sourceClassId, item.outlineWeek) : goToWorkClass(item.sourceClassId)
+                      }
                     />
                   ) : (
                     <TimelineRow
@@ -874,7 +843,9 @@ export default function PastelPlan() {
                   Add today's objective here once you've planned it.
                 </p>
                 <ul className="mb-3 flex flex-col gap-1.5">
-                  {syncedPrepEntries.length === 0 && <li className="text-[0.8rem] italic text-[var(--pp-ink-soft)]">No prep items yet.</li>}
+                  {syncedPrepEntries.length === 0 && syncedOutlinePrepEntries.length === 0 && (
+                    <li className="text-[0.8rem] italic text-[var(--pp-ink-soft)]">No prep items yet.</li>
+                  )}
                   {syncedPrepEntries.map((entry) => {
                     const checked = prepChecked.has(entry.id);
                     const label = `${entry.type} — ${entry.className} / ${entry.sectionName}${entry.notes ? ": " + entry.notes : ""}`;
@@ -887,6 +858,21 @@ export default function PastelPlan() {
                           onClick={() => goToWorkSection(entry.classId, entry.sectionId)}
                         >
                           {label}
+                        </span>
+                      </li>
+                    );
+                  })}
+                  {syncedOutlinePrepEntries.map((entry) => {
+                    const checked = prepChecked.has(entry.id);
+                    return (
+                      <li key={entry.id} className="flex select-none items-center gap-2.5">
+                        <CheckBox checked={checked} onClick={() => togglePrep(entry.id)} size={19} tone="var(--pp-sky-ink)" label={entry.label} />
+                        <span
+                          className="cursor-pointer text-[0.82rem] font-medium text-[var(--pp-ink)]"
+                          style={checked ? { color: "var(--pp-ink-soft)", textDecoration: "line-through" } : undefined}
+                          onClick={() => goToWorkOutlineWeek(entry.classId, entry.weekNum)}
+                        >
+                          {entry.label}
                         </span>
                       </li>
                     );
@@ -911,15 +897,20 @@ export default function PastelPlan() {
                 <TodoGroup
                   label="Handle today"
                   dotColor="var(--pp-blush-ink)"
-                  items={syncedTodoEntries.map((entry) => ({
-                    id: entry.id,
-                    text: `${entry.type} — ${entry.className} / ${entry.sectionName}${entry.notes ? ": " + entry.notes : ""}`,
-                    sourceClassId: entry.classId,
-                    sourceSectionId: entry.sectionId,
-                  }))}
+                  items={[
+                    ...syncedTodoEntries.map((entry) => ({
+                      id: entry.id,
+                      text: `${entry.type} — ${entry.className} / ${entry.sectionName}${entry.notes ? ": " + entry.notes : ""}`,
+                      sourceClassId: entry.classId,
+                      sourceSectionId: entry.sectionId,
+                    })),
+                    ...syncedOutlineTodoEntries,
+                  ]}
                   checked={todoChecked}
                   onToggle={toggleTodo}
-                  onOpenSource={goToWorkSection}
+                  onOpenSource={(item) =>
+                    item.outlineWeek ? goToWorkOutlineWeek(item.sourceClassId, item.outlineWeek) : goToWorkSection(item.sourceClassId, item.sourceSectionId)
+                  }
                 />
                 <div className="mt-3.5">
                   <TodoGroup label="Can wait this week" dotColor="var(--pp-ink-soft)" items={TODO_LATER} checked={todoChecked} onToggle={toggleTodo} />
@@ -1006,7 +997,9 @@ export default function PastelPlan() {
             todayStats={todayStats}
             water={waterFilled}
             catCounts={catCounts}
-            onOpenSyncedClass={goToWorkClass}
+            onOpenSyncedClass={(item) =>
+              item.outlineWeek ? goToWorkOutlineWeek(item.sourceClassId, item.outlineWeek) : goToWorkClass(item.sourceClassId)
+            }
           />
         )}
         </>
@@ -1026,12 +1019,12 @@ export default function PastelPlan() {
             setSectionLogs={setSectionLogs}
             activeClassId={activeClassId}
             setActiveClassId={setActiveClassId}
+            outlineJumpWeek={outlineJumpWeek}
+            setOutlineJumpWeek={setOutlineJumpWeek}
             activeSectionsClassId={activeSectionsClassId}
             setActiveSectionsClassId={setActiveSectionsClassId}
             activeSectionId={activeSectionId}
             setActiveSectionId={setActiveSectionId}
-            activeOutlineTab={activeOutlineTab}
-            setActiveOutlineTab={setActiveOutlineTab}
             officeHead={officeHead}
             setOfficeHead={setOfficeHead}
             activeOfficeTab={activeOfficeTab}
@@ -1056,6 +1049,7 @@ export default function PastelPlan() {
           classSchedule={classSchedule}
           classSections={classSections}
           sectionLogs={sectionLogs}
+          courseOutlines={courseOutlines}
         />
       )}
     </div>
@@ -1141,7 +1135,7 @@ function SignUpCard({ userProfile, firstName, dateLabel, quote, onSubmit, onCont
   );
 }
 
-function CalendarSheet({ selectedDate, onSelect, onClose, classSchedule, classSections, sectionLogs }) {
+function CalendarSheet({ selectedDate, onSelect, onClose, classSchedule, classSections, sectionLogs, courseOutlines }) {
   const initial = dateFromISO(selectedDate);
   const [viewYear, setViewYear] = useState(initial.getFullYear());
   const [viewMonth, setViewMonth] = useState(initial.getMonth());
@@ -1206,8 +1200,9 @@ function CalendarSheet({ selectedDate, onSelect, onClose, classSchedule, classSe
             }
             if (!hasData) {
               hasData =
-                getSyncedClassBlocksForDate(classSchedule, iso).length > 0 ||
-                getSyncedLogEntriesForDate(classSchedule, classSections, sectionLogs, iso).length > 0;
+                getSyncedClassBlocksForDate(classSchedule, courseOutlines, iso).length > 0 ||
+                getSyncedLogEntriesForDate(classSchedule, classSections, sectionLogs, iso).length > 0 ||
+                getMatchedOutlineWeeksForDate(classSchedule, courseOutlines, iso).length > 0;
             }
             const isToday = iso === todayIso;
             const isSelected = iso === selectedDate;
@@ -1267,7 +1262,7 @@ function DashboardView({ upNext, weekDays, selectedDate, todayIso, computeDaySta
           {upNext && upNextVisual ? (
             <div
               className={"flex items-center gap-3" + (upNext.synced ? " cursor-pointer" : "")}
-              onClick={upNext.synced ? () => onOpenSyncedClass(upNext.sourceClassId) : undefined}
+              onClick={upNext.synced ? () => onOpenSyncedClass(upNext) : undefined}
             >
               <span
                 className={`grid h-[42px] w-[42px] shrink-0 place-items-center rounded-[13px] text-[20px] leading-none ${upNext.soon ? "pp-bell-pulse" : ""}`}
@@ -1351,6 +1346,9 @@ function DashboardView({ upNext, weekDays, selectedDate, todayIso, computeDaySta
             <span className="rounded-full px-3 py-1.5 text-[0.72rem] font-bold" style={{ background: "var(--pp-sky)", color: "var(--pp-sky-ink)" }}>
               Prep {catCounts.prep || 0}
             </span>
+            <span className="rounded-full px-3 py-1.5 text-[0.72rem] font-bold" style={{ background: "var(--pp-mint)", color: "var(--pp-mint-ink)" }}>
+              Errands {catCounts.errands || 0}
+            </span>
           </div>
         </div>
       </section>
@@ -1371,12 +1369,12 @@ function WorkView({
   setSectionLogs,
   activeClassId,
   setActiveClassId,
+  outlineJumpWeek,
+  setOutlineJumpWeek,
   activeSectionsClassId,
   setActiveSectionsClassId,
   activeSectionId,
   setActiveSectionId,
-  activeOutlineTab,
-  setActiveOutlineTab,
   officeHead,
   setOfficeHead,
   activeOfficeTab,
@@ -1416,12 +1414,12 @@ function WorkView({
           setSectionLogs={setSectionLogs}
           activeClassId={activeClassId}
           setActiveClassId={setActiveClassId}
+          outlineJumpWeek={outlineJumpWeek}
+          setOutlineJumpWeek={setOutlineJumpWeek}
           activeSectionsClassId={activeSectionsClassId}
           setActiveSectionsClassId={setActiveSectionsClassId}
           activeSectionId={activeSectionId}
           setActiveSectionId={setActiveSectionId}
-          activeOutlineTab={activeOutlineTab}
-          setActiveOutlineTab={setActiveOutlineTab}
         />
       ) : workRole === "office-head" ? (
         <OfficeHeadDashboard
@@ -1867,22 +1865,24 @@ function TeacherWorkspace({
   setSectionLogs,
   activeClassId,
   setActiveClassId,
+  outlineJumpWeek,
+  setOutlineJumpWeek,
   activeSectionsClassId,
   setActiveSectionsClassId,
   activeSectionId,
   setActiveSectionId,
-  activeOutlineTab,
-  setActiveOutlineTab,
 }) {
   const activeClass = classSchedule.find((c) => c.id === activeClassId);
 
   if (activeClass) {
-    const outline = courseOutlines[activeClassId] || freshOutline();
+    const existing = courseOutlines[activeClassId];
+    const outline = existing && existing.weeks ? existing : freshCourseOutline();
     const setOutline = (updater) =>
-      setCourseOutlines((prev) => ({
-        ...prev,
-        [activeClassId]: typeof updater === "function" ? updater(prev[activeClassId] || freshOutline()) : updater,
-      }));
+      setCourseOutlines((prev) => {
+        const prevExisting = prev[activeClassId];
+        const prevOutline = prevExisting && prevExisting.weeks ? prevExisting : freshCourseOutline();
+        return { ...prev, [activeClassId]: typeof updater === "function" ? updater(prevOutline) : updater };
+      });
 
     return (
       <section>
@@ -1897,7 +1897,13 @@ function TeacherWorkspace({
           {activeClass.className}
           <span className="ml-1.5 text-[0.72rem] font-medium text-[var(--pp-ink-soft)]">{fmtDaysTime(activeClass)}</span>
         </p>
-        <TeacherOutline outline={outline} setOutline={setOutline} activeOutlineTab={activeOutlineTab} setActiveOutlineTab={setActiveOutlineTab} />
+        <TeacherOutline
+          key={activeClassId}
+          outline={outline}
+          setOutline={setOutline}
+          initialWeek={outlineJumpWeek}
+          onConsumeJumpWeek={() => setOutlineJumpWeek(null)}
+        />
       </section>
     );
   }
@@ -1936,10 +1942,7 @@ function TeacherWorkspace({
       classSections={classSections}
       setClassSections={setClassSections}
       setSectionLogs={setSectionLogs}
-      onOpenOutline={(id) => {
-        setActiveOutlineTab("desc");
-        setActiveClassId(id);
-      }}
+      onOpenOutline={(id) => setActiveClassId(id)}
       onOpenSections={(id) => {
         setActiveSectionsClassId(id);
         setActiveSectionId(null);
@@ -1948,169 +1951,340 @@ function TeacherWorkspace({
   );
 }
 
-function TeacherOutline({ outline, setOutline, activeOutlineTab, setActiveOutlineTab }) {
-  const fileInputRef = useRef(null);
-  const tab = OUTLINE_TABS.find((t) => t.key === activeOutlineTab) || OUTLINE_TABS[0];
-  const swatch = swatchByKey(tab.accent);
+function TeacherOutline({ outline, setOutline, initialWeek, onConsumeJumpWeek }) {
+  const [activeWeek, setActiveWeek] = useState(initialWeek || 1);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+  const saveTimerRef = useRef(null);
+  const week = outline.weeks[activeWeek];
 
-  const setField = (key, val) => setOutline((prev) => ({ ...prev, [key]: val }));
-  const setFiveE = (key, val) => setOutline((prev) => ({ ...prev, fiveEs: { ...prev.fiveEs, [key]: val } }));
+  useEffect(() => {
+    if (initialWeek) onConsumeJumpWeek?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const applyExtractedOutline = (extracted, fileName) => {
-    const filledFields = Object.keys(extracted);
-    if (!filledFields.length) {
-      alert(`Couldn't find recognizable section headings in "${fileName}" — fill in the outline manually.`);
-      return;
-    }
-    setOutline((prev) => ({ ...prev, ...extracted, mode: "manual" }));
-    setActiveOutlineTab("desc");
-    alert(
-      `Filled in ${filledFields.length} field(s) from "${fileName}": ${filledFields
-        .map((f) => OUTLINE_TABS.find((t) => t.key === f).label)
-        .join(", ")}.`
-    );
+  const handleSaveWeek = () => {
+    setJustSaved(true);
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => setJustSaved(false), 1500);
   };
 
-  const handleFile = (file) => {
-    if (!file) return;
-    if (file.size > MAX_COURSE_FILE_BYTES) {
-      alert("That file is too large (max 5MB).");
-      return;
-    }
-    setField("uploadedFile", { name: file.name, size: file.size });
-
-    const isTxt = /\.txt$/i.test(file.name) || file.type === "text/plain";
-    const isDocx = /\.docx$/i.test(file.name) || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-
-    if (isTxt) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        applyExtractedOutline(extractOutlineFromText(String(reader.result || "")), file.name);
-      };
-      reader.readAsText(file);
-    } else if (isDocx) {
-      extractDocxText(file)
-        .then((text) => applyExtractedOutline(extractOutlineFromText(text), file.name))
-        .catch((err) => alert(`Couldn't read "${file.name}": ${err.message}`));
-    }
-  };
+  const updateWeek = (key, val) =>
+    setOutline((prev) => ({
+      ...prev,
+      weeks: { ...prev.weeks, [activeWeek]: { ...prev.weeks[activeWeek], [key]: val } },
+    }));
+  const updateWeekFiveE = (key, val) =>
+    setOutline((prev) => ({
+      ...prev,
+      weeks: {
+        ...prev.weeks,
+        [activeWeek]: { ...prev.weeks[activeWeek], fiveEs: { ...prev.weeks[activeWeek].fiveEs, [key]: val } },
+      },
+    }));
+  const addTopic = () =>
+    setOutline((prev) => ({
+      ...prev,
+      weeks: {
+        ...prev.weeks,
+        [activeWeek]: { ...prev.weeks[activeWeek], topics: [...prev.weeks[activeWeek].topics, { id: uid(), title: "" }] },
+      },
+    }));
+  const updateTopic = (id, title) =>
+    setOutline((prev) => ({
+      ...prev,
+      weeks: {
+        ...prev.weeks,
+        [activeWeek]: {
+          ...prev.weeks[activeWeek],
+          topics: prev.weeks[activeWeek].topics.map((t) => (t.id === id ? { ...t, title } : t)),
+        },
+      },
+    }));
+  const removeTopic = (id) =>
+    setOutline((prev) => ({
+      ...prev,
+      weeks: {
+        ...prev.weeks,
+        [activeWeek]: { ...prev.weeks[activeWeek], topics: prev.weeks[activeWeek].topics.filter((t) => t.id !== id) },
+      },
+    }));
+  const toggleDay = (day) =>
+    setOutline((prev) => {
+      const current = prev.weeks[activeWeek].days;
+      const days = current.includes(day) ? current.filter((d) => d !== day) : [...current, day];
+      return { ...prev, weeks: { ...prev.weeks, [activeWeek]: { ...prev.weeks[activeWeek], days } } };
+    });
 
   return (
     <section>
       <SectionTitle icon={BookOpen} fill="var(--pp-seafoam)" ink="var(--pp-seafoam-ink)" title="Course Outline" />
 
-      <div className="mb-3 flex gap-2">
-        <button
-          type="button"
-          onClick={() => setField("mode", "manual")}
-          className="flex-1 rounded-xl border-[1.5px] py-2 text-[0.76rem] font-bold"
-          style={
-            outline.mode === "manual"
-              ? { background: "var(--pp-seafoam)", borderColor: "var(--pp-seafoam)", color: "var(--pp-seafoam-ink)" }
-              : { background: "var(--pp-surface)", borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }
-          }
-        >
-          <PenLine size={13} strokeWidth={2.2} className="mr-1 inline-block align-[-2px]" /> Manual
-        </button>
-        <button
-          type="button"
-          onClick={() => setField("mode", "upload")}
-          className="flex-1 rounded-xl border-[1.5px] py-2 text-[0.76rem] font-bold"
-          style={
-            outline.mode === "upload"
-              ? { background: "var(--pp-seafoam)", borderColor: "var(--pp-seafoam)", color: "var(--pp-seafoam-ink)" }
-              : { background: "var(--pp-surface)", borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }
-          }
-        >
-          <UploadCloud size={13} strokeWidth={2.2} className="mr-1 inline-block align-[-2px]" /> Upload
-        </button>
-      </div>
-
-      {outline.mode === "upload" ? (
-        <div className="pp-card">
+      <div className="pp-card">
+        <div className="mb-3.5 flex gap-2">
+          <select
+            value={activeWeek}
+            onChange={(e) => setActiveWeek(Number(e.target.value))}
+            className="flex-1 rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2.5 text-[0.84rem] font-bold text-[var(--pp-ink)]"
+          >
+            {Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1).map((w) => (
+              <option key={w} value={w}>
+                Week {w}
+              </option>
+            ))}
+          </select>
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="flex w-full flex-col items-center gap-2 rounded-xl border-[1.5px] border-dashed border-[var(--pp-line)] py-7 text-[var(--pp-ink-soft)]"
+            onClick={() => setSummaryOpen((v) => !v)}
+            className="flex shrink-0 items-center gap-1.5 rounded-xl border-[1.5px] px-3.5 py-2.5 text-[0.76rem] font-bold"
+            style={
+              summaryOpen
+                ? { background: "var(--pp-gold)", borderColor: "var(--pp-gold)", color: "var(--pp-gold-ink)" }
+                : { background: "var(--pp-surface)", borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }
+            }
           >
-            <UploadCloud size={22} strokeWidth={1.7} />
-            <span className="text-[0.78rem] font-bold">Tap to upload a course outline file</span>
-            <span className="text-[0.68rem]">Max 5MB — .txt and .docx syllabi auto-fill the outline</span>
+            {summaryOpen ? <X size={13} strokeWidth={2.2} /> : <AlignLeft size={13} strokeWidth={2.2} />}
+            {summaryOpen ? "Close" : "Summary"}
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
-            className="hidden"
-            onChange={(e) => handleFile(e.target.files?.[0])}
+        </div>
+
+        {summaryOpen ? (
+          <OutlineSummaryList
+            weeks={outline.weeks}
+            onBack={() => setSummaryOpen(false)}
+            onSelectWeek={(w) => {
+              setActiveWeek(w);
+              setSummaryOpen(false);
+            }}
           />
-          {outline.uploadedFile && (
-            <div className="mt-2.5 flex items-center justify-between rounded-lg bg-[var(--pp-paper)] px-3 py-2">
-              <span className="truncate text-[0.76rem] font-semibold text-[var(--pp-ink)]">{outline.uploadedFile.name}</span>
-              <button type="button" onClick={() => setField("uploadedFile", null)} aria-label="Remove file">
-                <X size={15} strokeWidth={2} className="text-[var(--pp-ink-soft)]" />
+        ) : (
+          <>
+            <div className="mb-4">
+              <label className="mb-1.5 block text-[0.72rem] font-bold text-[var(--pp-ink-soft)]">Topic / Lesson</label>
+              <div className="mb-2 flex flex-col gap-1.5">
+                {week.topics.length === 0 && (
+                  <p className="text-[0.78rem] italic text-[var(--pp-ink-soft)]">No topics/lessons yet.</p>
+                )}
+                {week.topics.map((t, i) => (
+                  <div
+                    key={t.id}
+                    className="flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-[var(--pp-line)] bg-[var(--pp-paper)] px-2.5 py-2"
+                  >
+                    <span className="shrink-0 text-[0.72rem] font-extrabold text-[var(--pp-ink-soft)]">{i + 1}.</span>
+                    <input
+                      type="text"
+                      value={t.title}
+                      onChange={(e) => updateTopic(t.id, e.target.value)}
+                      placeholder="e.g. Cell structure"
+                      className="min-w-0 flex-1 bg-transparent text-[0.8rem] font-medium text-[var(--pp-ink)] outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeTopic(t.id)}
+                      aria-label="Remove topic"
+                      className="shrink-0 text-[var(--pp-ink-soft)]"
+                    >
+                      <X size={13} strokeWidth={2.2} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={addTopic}
+                className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-[var(--pp-line)] py-2 text-[0.76rem] font-bold text-[var(--pp-ink-soft)]"
+              >
+                <Plus size={13} strokeWidth={2.2} /> Add topic / lesson
               </button>
             </div>
-          )}
-        </div>
-      ) : (
-        <>
-          <div className="mb-3 flex flex-wrap gap-1.5">
-            {OUTLINE_TABS.map((t) => {
-              const active = t.key === activeOutlineTab;
-              const s = swatchByKey(t.accent);
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setActiveOutlineTab(t.key)}
-                  className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[0.68rem] font-bold"
-                  style={
-                    active
-                      ? { background: s.fill, color: s.ink }
-                      : { background: "var(--pp-surface)", border: "1.5px solid var(--pp-line)", color: "var(--pp-ink-soft)" }
-                  }
-                >
-                  <t.Icon size={12} strokeWidth={2.2} /> {t.label}
-                </button>
-              );
-            })}
-          </div>
 
-          <div className="pp-card">
-            {tab.key === "fiveEs" ? (
-              <div className="flex flex-col gap-3">
-                {FIVE_ES.map((e) => (
-                  <div key={e.key}>
-                    <label className="mb-1 block text-[0.72rem] font-bold" style={{ color: swatch.ink }}>
-                      {e.label}
-                    </label>
-                    <OutlineTextarea
-                      value={outline.fiveEs[e.key]}
-                      onChange={(val) => setFiveE(e.key, val)}
-                      placeholder={e.placeholder}
+            <div className="mb-4">
+              <label className="mb-1.5 block text-[0.72rem] font-bold text-[var(--pp-ink-soft)]">Learning Outcome</label>
+              <OutlineTextarea
+                value={week.outcomes}
+                onChange={(v) => updateWeek("outcomes", v)}
+                placeholder="Detail student competencies and objectives..."
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="mb-1.5 block text-[0.72rem] font-bold text-[var(--pp-ink-soft)]">Assessments</label>
+              <OutlineTextarea
+                value={week.assessments}
+                onChange={(v) => updateWeek("assessments", v)}
+                placeholder="Quizzes, exams, rubrics, grading criteria..."
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="mb-1.5 block text-[0.72rem] font-bold text-[var(--pp-ink-soft)]">
+                Lab Activity <span className="font-medium italic text-[var(--pp-ink-soft)]">(optional)</span>
+              </label>
+              <OutlineTextarea
+                value={week.labs}
+                onChange={(v) => updateWeek("labs", v)}
+                placeholder="Practical experiments, specimen lists..."
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="mb-1.5 block text-[0.72rem] font-bold text-[var(--pp-ink-soft)]">Date</label>
+              <input
+                type="date"
+                value={week.date}
+                onChange={(e) => updateWeek("date", e.target.value)}
+                className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2.5 text-[0.85rem] font-semibold text-[var(--pp-ink)]"
+              />
+              <label className="mb-1.5 mt-2.5 block text-[0.72rem] font-bold text-[var(--pp-ink-soft)]">Days</label>
+              <div className="flex flex-wrap gap-1.5">
+                {WEEKDAYS.map((d) => {
+                  const active = week.days.includes(d);
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => toggleDay(d)}
+                      className="rounded-full border-[1.5px] px-3 py-1.5 text-[0.72rem] font-bold"
+                      style={
+                        active
+                          ? { background: "var(--pp-lavender)", borderColor: "var(--pp-lavender)", color: "var(--pp-lavender-ink)" }
+                          : { background: "var(--pp-surface)", borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }
+                      }
+                    >
+                      {d.slice(0, 3)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="mb-1.5 block text-[0.72rem] font-bold text-[var(--pp-ink-soft)]">Remarks</label>
+              <OutlineTextarea
+                value={week.remarks}
+                onChange={(v) => updateWeek("remarks", v)}
+                placeholder="Post-lesson adjustments, class progress observations..."
+              />
+            </div>
+
+            <div>
+              <p className="mb-2.5 text-[0.72rem] font-bold text-[var(--pp-ink-soft)]">{"5E's Instructional Framework"}</p>
+              <div className="flex flex-col gap-2">
+                {FIVE_ES.map((f) => (
+                  <div key={f.key} className="rounded-xl border border-[var(--pp-line)] bg-[var(--pp-surface)] px-2.5 py-2">
+                    <span className="mb-0.5 block text-[0.68rem] font-bold text-[var(--pp-lavender-ink)]">{f.label}</span>
+                    <input
+                      type="text"
+                      value={week.fiveEs[f.key]}
+                      onChange={(e) => updateWeekFiveE(f.key, e.target.value)}
+                      placeholder={f.placeholder}
+                      className="w-full bg-transparent text-[0.8rem] text-[var(--pp-ink)] outline-none"
                     />
                   </div>
                 ))}
               </div>
-            ) : tab.key === "date" ? (
-              <input
-                type="date"
-                value={outline.date}
-                onChange={(e) => setField("date", e.target.value)}
-                className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2.5 text-[0.85rem] font-semibold text-[var(--pp-ink)]"
-              />
-            ) : (
-              <OutlineTextarea
-                value={outline[tab.key]}
-                onChange={(val) => setField(tab.key, val)}
-                placeholder={`Add ${tab.label.toLowerCase()}...`}
-              />
-            )}
-          </div>
-        </>
-      )}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSaveWeek}
+              className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border-none py-2.5 text-[0.82rem] font-bold"
+              style={
+                justSaved
+                  ? { background: "var(--pp-mint)", color: "var(--pp-mint-ink)" }
+                  : { background: "var(--pp-seafoam)", color: "var(--pp-seafoam-ink)" }
+              }
+            >
+              <Check size={14} strokeWidth={2.4} /> {justSaved ? "Saved!" : `Save Week ${activeWeek}`}
+            </button>
+          </>
+        )}
+      </div>
     </section>
+  );
+}
+
+function summaryCellText(val) {
+  return val && val.trim() ? val : "—";
+}
+
+function OutlineSummaryList({ weeks, onBack, onSelectWeek }) {
+  const cols = ["Week", "Topic", "Learning Outcome", "Assessments", "Lab Activity", "Date & Day", "Remarks", "5E's", ""];
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={onBack}
+        className="mb-3 flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-1.5 text-[0.74rem] font-bold text-[var(--pp-ink-soft)]"
+      >
+        <ChevronLeft size={13} strokeWidth={2.2} /> Back
+      </button>
+      <div className="overflow-x-auto rounded-xl border-[1.5px] border-[var(--pp-line)]">
+        <table className="w-full min-w-[860px] border-collapse">
+          <thead>
+            <tr>
+              {cols.map((c) => (
+                <th
+                  key={c}
+                  className="whitespace-nowrap border-b border-[var(--pp-line)] bg-[var(--pp-paper)] px-2.5 py-2 text-left text-[0.62rem] font-extrabold uppercase tracking-[0.03em] text-[var(--pp-ink-soft)]"
+                >
+                  {c}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1).map((w) => {
+              const week = weeks[w];
+              const topicList = week.topics.map((t, i) => `${i + 1}. ${t.title || "(untitled)"}`);
+              const dateLabel = week.date ? fmtShortDate(week.date) : "";
+              const daysLabel = week.days.length ? week.days.map((d) => d.slice(0, 3)).join(", ") : "";
+              const dateDayText = [dateLabel, daysLabel].filter(Boolean).join(" · ");
+              const fiveEsList = FIVE_ES.filter((f) => week.fiveEs[f.key] && week.fiveEs[f.key].trim()).map(
+                (f) => `${f.label}: ${week.fiveEs[f.key]}`
+              );
+              return (
+                <tr key={w}>
+                  <td className="min-w-[90px] max-w-[220px] whitespace-nowrap border-b border-[var(--pp-line)] px-2.5 py-2 pp-font-display text-[0.72rem] font-bold text-[var(--pp-ink)]">
+                    Week {w}
+                  </td>
+                  <td className="min-w-[130px] max-w-[220px] border-b border-[var(--pp-line)] px-2.5 py-2 text-[0.72rem] leading-[1.45] text-[var(--pp-ink)]">
+                    {topicList.length ? topicList.map((t, i) => <div key={i}>{t}</div>) : "—"}
+                  </td>
+                  <td className="min-w-[130px] max-w-[220px] border-b border-[var(--pp-line)] px-2.5 py-2 text-[0.72rem] leading-[1.45] text-[var(--pp-ink)]">
+                    {summaryCellText(week.outcomes)}
+                  </td>
+                  <td className="min-w-[130px] max-w-[220px] border-b border-[var(--pp-line)] px-2.5 py-2 text-[0.72rem] leading-[1.45] text-[var(--pp-ink)]">
+                    {summaryCellText(week.assessments)}
+                  </td>
+                  <td className="min-w-[130px] max-w-[220px] border-b border-[var(--pp-line)] px-2.5 py-2 text-[0.72rem] leading-[1.45] text-[var(--pp-ink)]">
+                    {summaryCellText(week.labs)}
+                  </td>
+                  <td className="min-w-[130px] max-w-[220px] border-b border-[var(--pp-line)] px-2.5 py-2 text-[0.72rem] leading-[1.45] text-[var(--pp-ink)]">
+                    {dateDayText || "—"}
+                  </td>
+                  <td className="min-w-[130px] max-w-[220px] border-b border-[var(--pp-line)] px-2.5 py-2 text-[0.72rem] leading-[1.45] text-[var(--pp-ink)]">
+                    {summaryCellText(week.remarks)}
+                  </td>
+                  <td className="min-w-[130px] max-w-[220px] border-b border-[var(--pp-line)] px-2.5 py-2 text-[0.72rem] leading-[1.45] text-[var(--pp-ink)]">
+                    {fiveEsList.length ? fiveEsList.map((t, i) => <div key={i}>{t}</div>) : "—"}
+                  </td>
+                  <td className="min-w-[90px] border-b border-[var(--pp-line)] px-2.5 py-2">
+                    <button
+                      type="button"
+                      onClick={() => onSelectWeek(w)}
+                      className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-2.5 py-1 text-[0.68rem] font-bold text-[var(--pp-ink-soft)]"
+                    >
+                      <PencilLine size={11} strokeWidth={2.2} /> Edit
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
@@ -2443,6 +2617,9 @@ function TimelineRow({ item, isFirst, isLast, editing, onToggleDone, onToggleSub
   const [draftTime, setDraftTime] = useState(item.time24);
   const [draftTitle, setDraftTitle] = useState(item.title);
   const [draftCat, setDraftCat] = useState(item.cat);
+  const [draftDays, setDraftDays] = useState(item.days || []);
+  const [draftDate, setDraftDate] = useState(item.date || "");
+  const [draftVenue, setDraftVenue] = useState(item.venue || "");
   const [draftSubs, setDraftSubs] = useState(() => item.subs || (item.sub?.title ? [{ ...item.sub, id: uidAtt() }] : []));
   const [openSubColorIndex, setOpenSubColorIndex] = useState(null);
   const [draftColor, setDraftColor] = useState(item.color || "");
@@ -2461,6 +2638,9 @@ function TimelineRow({ item, isFirst, isLast, editing, onToggleDone, onToggleSub
       setDraftTime(item.time24);
       setDraftTitle(item.title);
       setDraftCat(item.cat);
+      setDraftDays(item.days || []);
+      setDraftDate(item.date || "");
+      setDraftVenue(item.venue || "");
       setDraftSubs(item.subs || (item.sub?.title ? [{ ...item.sub, id: uidAtt() }] : []));
       setOpenSubColorIndex(null);
       setDraftColor(item.color || "");
@@ -2475,6 +2655,10 @@ function TimelineRow({ item, isFirst, isLast, editing, onToggleDone, onToggleSub
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing]);
+
+  function toggleDraftDay(day) {
+    setDraftDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
+  }
 
   function addSub() {
     setDraftSubs((prev) => [...prev, { id: uidAtt(), title: "", done: false, color: null }]);
@@ -2559,6 +2743,43 @@ function TimelineRow({ item, isFirst, isLast, editing, onToggleDone, onToggleSub
             placeholder="What's happening?"
             className="mb-2 w-full rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-paper)] px-2.5 py-2 text-[0.83rem] font-medium text-[var(--pp-ink)]"
           />
+
+          <p className="mb-1.5 text-[0.68rem] font-extrabold uppercase tracking-[.04em] text-[var(--pp-ink-soft)]">Day</p>
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {WEEKDAYS.map((d) => {
+              const active = draftDays.includes(d);
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => toggleDraftDay(d)}
+                  className="rounded-full border-[1.5px] px-2.5 py-1 text-[0.68rem] font-bold"
+                  style={
+                    active
+                      ? { background: "var(--pp-lavender)", borderColor: "var(--pp-lavender)", color: "var(--pp-lavender-ink)" }
+                      : { background: "var(--pp-surface)", borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }
+                  }
+                >
+                  {d.slice(0, 3)}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mb-2 flex gap-2">
+            <input
+              type="date"
+              value={draftDate}
+              onChange={(e) => setDraftDate(e.target.value)}
+              className="min-w-0 flex-1 rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-paper)] px-2 py-1.5 text-[0.78rem] font-bold text-[var(--pp-ink)]"
+            />
+            <input
+              type="text"
+              value={draftVenue}
+              onChange={(e) => setDraftVenue(e.target.value)}
+              placeholder="Venue"
+              className="min-w-0 flex-1 rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-paper)] px-2.5 py-2 text-[0.83rem] font-medium text-[var(--pp-ink)]"
+            />
+          </div>
 
           <p className="mb-1.5 text-[0.68rem] font-extrabold uppercase tracking-[.04em] text-[var(--pp-ink-soft)]">Sub-blocks</p>
           <div className="mb-2 flex flex-col gap-1.5">
@@ -2736,6 +2957,9 @@ function TimelineRow({ item, isFirst, isLast, editing, onToggleDone, onToggleSub
                   time24: draftTime,
                   title: draftTitle,
                   cat: draftCat,
+                  days: draftDays,
+                  date: draftDate,
+                  venue: draftVenue.trim(),
                   subs: draftSubs.map((s) => ({ ...s, title: s.title.trim() })).filter((s) => s.title),
                   attachments: draftAttachments,
                   color: draftColor || null,
@@ -2758,6 +2982,11 @@ function TimelineRow({ item, isFirst, isLast, editing, onToggleDone, onToggleSub
   const customColor = item.color ? swatchByKey(item.color) : null;
   const fillColor = customColor ? customColor.fill : cat.fill;
   const inkColor = customColor ? customColor.ink : cat.ink;
+  const metaParts = [];
+  if (item.venue) metaParts.push(item.venue);
+  if (item.days && item.days.length) metaParts.push(item.days.map((d) => d.slice(0, 3)).join(", "));
+  if (item.date) metaParts.push(fmtShortDate(item.date));
+  const metaLine = metaParts.join(" · ");
 
   return (
     <div className="pp-row-grid relative grid gap-x-0.5 px-0.5 py-2.5">
@@ -2791,6 +3020,7 @@ function TimelineRow({ item, isFirst, isLast, editing, onToggleDone, onToggleSub
             <span className="text-[0.66rem] font-bold uppercase tracking-[.03em]" style={{ color: inkColor }}>
               {cat.label}
             </span>
+            {metaLine && <span className="block text-[0.66rem] font-semibold text-[var(--pp-ink-soft)]">{metaLine}</span>}
           </span>
           <CheckBox
             checked={item.done}
@@ -2938,7 +3168,7 @@ function TodoGroup({ label, dotColor, items, checked, onToggle, onOpenSource }) 
                 <p
                   className="cursor-pointer text-[0.83rem] font-medium leading-[1.38] text-[var(--pp-ink)]"
                   style={isChecked ? { color: "var(--pp-ink-soft)", textDecoration: "line-through" } : undefined}
-                  onClick={() => (item.sourceClassId && onOpenSource ? onOpenSource(item.sourceClassId, item.sourceSectionId) : onToggle(item.id))}
+                  onClick={() => (item.sourceClassId && onOpenSource ? onOpenSource(item) : onToggle(item.id))}
                 >
                   {item.text}
                   {item.due && <span className="mt-0.5 block text-[0.7rem] font-semibold text-[var(--pp-ink-soft)]">{item.due}</span>}
