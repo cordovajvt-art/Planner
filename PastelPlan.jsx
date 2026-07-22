@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+{
+  "name": "GIYA",
+  "short_name": "GIYA"
+}import { useEffect, useRef, useState } from "react";
 import {
   Sun,
   Clock,
@@ -1108,7 +1111,7 @@ function SignUpCard({ userProfile, firstName, dateLabel, quote, onSubmit, onCont
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
-              placeholder="e.g. Jess Cordova"
+              placeholder="e.g. Juan Dela Cruz"
               className="mb-3.5 w-full rounded-xl bg-[var(--pp-surface-alt)] px-3.5 py-2.5 text-[0.88rem] text-[var(--pp-ink)] shadow-[inset_0_2px_4px_rgba(30,20,40,.16)]"
             />
             <label className="mb-1.5 block text-left text-[0.66rem] font-extrabold uppercase tracking-[.04em] text-[var(--pp-ink-soft)]">Email (optional)</label>
@@ -1117,7 +1120,7 @@ function SignUpCard({ userProfile, firstName, dateLabel, quote, onSubmit, onCont
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
-              placeholder="you@school.edu"
+              placeholder="you@gmail.com"
               className="mb-3.5 w-full rounded-xl bg-[var(--pp-surface-alt)] px-3.5 py-2.5 text-[0.88rem] text-[var(--pp-ink)] shadow-[inset_0_2px_4px_rgba(30,20,40,.16)]"
             />
             <button
@@ -1421,7 +1424,7 @@ function WorkView({
           activeSectionId={activeSectionId}
           setActiveSectionId={setActiveSectionId}
         />
-      ) : workRole === "office-head" ? (
+      ) : workRole === "tourism officer" ? (
         <OfficeHeadDashboard
           officeHead={officeHead}
           setOfficeHead={setOfficeHead}
