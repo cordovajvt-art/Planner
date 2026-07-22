@@ -1,7 +1,4 @@
-{
-  "name": "GIYA",
-  "short_name": "GIYA"
-}import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Sun,
   Clock,
@@ -1425,7 +1422,7 @@ function WorkView({
           activeSectionId={activeSectionId}
           setActiveSectionId={setActiveSectionId}
         />
-      ) : workRole === "tourism officer" ? (
+      ) : workRole === "office-head" || workRole === "tourism-officer" ? (
         <OfficeHeadDashboard
           officeHead={officeHead}
           setOfficeHead={setOfficeHead}

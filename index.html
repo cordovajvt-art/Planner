@@ -1145,6 +1145,7 @@
           <option value="staff">Staff</option>
           <option value="coordinator">Coordinator</option>
           <option value="laboratory-incharge">Laboratory In-Charge</option>
+          <option value="tourism-officer">Tourism Officer</option>
           <option value="others">Others</option>
         </select>
       </div>
@@ -2475,7 +2476,7 @@
   // WORK: ROLE SELECT
   const ROLE_LABELS = {
     'office-head': 'Office Head', 'executive-assistant': 'Executive Assistant', staff: 'Staff',
-    coordinator: 'Coordinator', 'laboratory-incharge': 'Laboratory In-Charge', others: 'Others',
+    coordinator: 'Coordinator', 'laboratory-incharge': 'Laboratory In-Charge', 'tourism-officer': 'Tourism Officer', others: 'Others',
   };
   let workRole = loadJSON('pastelplan.role.v1', 'select');
   const roleSelect = document.getElementById('roleSelect');
@@ -2491,7 +2492,7 @@
     roleGenericSection.style.display = 'none';
     if (workRole === 'teacher') {
       teacherWorkspaceSection.style.display = 'block';
-    } else if (workRole === 'office-head') {
+    } else if (workRole === 'office-head' || workRole === 'tourism-officer') {
       officeHeadSection.style.display = 'block';
     } else {
       roleGenericSection.style.display = 'block';
