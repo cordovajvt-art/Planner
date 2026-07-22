@@ -1095,7 +1095,7 @@ export default function PastelPlan() {
         )}
 
         <footer className="px-5 pb-1 pt-3.5 text-center text-[0.68rem] font-semibold tracking-[.02em] text-[var(--pp-ink-soft)]">
-          DailyGiya · made for the space between periods
+          GIYA · made for the space between periods
         </footer>
         <p className="px-5 pb-5.5 text-center text-[0.62rem] font-bold tracking-[.04em] text-[var(--pp-ink-soft)] opacity-60">jvtcordova@2026</p>
       </div>
@@ -1161,7 +1161,7 @@ function SignUpCard({ userProfile, firstName, dateLabel, quote, onSubmit, onCont
             <h2 className="pp-font-display mb-1.5 text-[1.3rem] font-semibold leading-tight text-[var(--pp-ink)]">
               Welcome to
               <br />
-              Daily GIYA!
+              GIYA!
             </h2>
             <p className="mb-5.5 text-[0.82rem] italic leading-[1.45] text-[var(--pp-ink-soft)]">"Small steps every day lead to big changes."</p>
             <label className="mb-1.5 block text-left text-[0.66rem] font-extrabold uppercase tracking-[.04em] text-[var(--pp-ink-soft)]">Your name</label>
