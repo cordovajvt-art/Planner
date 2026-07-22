@@ -415,6 +415,17 @@
   .tp-cell-input:focus, .tp-cell-select:focus { border-color: var(--line); outline: none; }
   .tp-cell-input.tp-date { min-width: 118px; }
   .tp-cell-input.tp-remarks { min-width: 160px; }
+  .tp-dates-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+  .tp-date-chip {
+    display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; border-radius: 999px;
+    padding: 2px 4px 2px 8px; font-size: 0.66rem; font-weight: 700;
+    background: var(--surface-alt); color: var(--ink-soft);
+  }
+  .tp-date-chip-x {
+    width: 15px; height: 15px; border: none; border-radius: 50%; background: transparent; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center; color: var(--ink-soft); cursor: pointer;
+  }
+  .tp-date-chip-x svg { width: 9px; height: 9px; }
   .tp-multiday-badge {
     display: inline-block; white-space: nowrap; border-radius: 999px; padding: 3px 9px;
     font-size: 0.66rem; font-weight: 800;
@@ -1314,7 +1325,7 @@
         <table class="tp-table">
           <thead>
             <tr>
-              <th>Major Event</th><th>Sub-Event</th><th>Facility Name</th><th>Date In</th><th>Date Out</th><th>Days</th><th>Venue / Location</th><th>Notes & Remarks</th><th>⚡</th><th></th>
+              <th>Major Event</th><th>Sub-Event</th><th>Facility Name</th><th>Dates</th><th>Days</th><th>Venue / Location</th><th>Notes & Remarks</th><th>⚡</th><th></th>
             </tr>
           </thead>
           <tbody id="tpTableBody"></tbody>
@@ -1436,12 +1447,13 @@
   };
 
   const CATS = {
-    class:   { fill: 'var(--lavender)', ink: 'var(--lavender-ink)', label: 'Class',   icon: 'book', emoji: '📚' },
-    duty:    { fill: 'var(--blush)',    ink: 'var(--blush-ink)',    label: 'Task',    icon: 'users', emoji: '🗂️' },
-    prep:    { fill: 'var(--sky)',      ink: 'var(--sky-ink)',      label: 'Prep',    icon: 'pencil', emoji: '✏️' },
-    errands: { fill: 'var(--mint)',     ink: 'var(--mint-ink)',     label: 'Errands', icon: 'mappin', emoji: '🛒' },
+    class:    { fill: 'var(--lavender)', ink: 'var(--lavender-ink)', label: 'Class',    icon: 'book',      emoji: '📚' },
+    duty:     { fill: 'var(--blush)',    ink: 'var(--blush-ink)',    label: 'Task',     icon: 'users',     emoji: '🗂️' },
+    prep:     { fill: 'var(--sky)',      ink: 'var(--sky-ink)',      label: 'Prep',     icon: 'pencil',    emoji: '✏️' },
+    errands:  { fill: 'var(--mint)',     ink: 'var(--mint-ink)',     label: 'Errands',  icon: 'mappin',    emoji: '🛒' },
+    tourism:  { fill: 'var(--gold)',     ink: 'var(--gold-ink)',     label: 'Tourism',  icon: 'clipboard', emoji: '📋' },
   };
-  const CAT_ORDER = ['class', 'duty', 'prep', 'errands'];
+  const CAT_ORDER = ['class', 'duty', 'prep', 'errands', 'tourism'];
 
   const COLOR_SWATCHES = [
     { key: 'lavender', fill: 'var(--lavender)', ink: 'var(--lavender-ink)' },
@@ -1526,6 +1538,7 @@
   let classSections = loadJSON('pastelplan.classSections.v1', {}); // { classId: [{id, name}] }
   let sectionLogs = loadJSON('pastelplan.sectionLogs.v1', {}); // { sectionId: [{id, type, date, notes}] }
   let courseOutlines = loadJSON('pastelplan.courseOutlines.v1', {}); // { classId: { weeks: {1: weekObj, ...} } }
+  let tourismEntries = loadJSON('pastelplan.tourismPlanner.v1', []);
   const PREP_LOG_TYPES = ['LECTURE', 'LAB ACTIVITY', 'GROUP ACTIVITY'];
   const DAY_OFFSET_FROM_MONDAY = { Monday: 0, Tuesday: 1, Wednesday: 2, Thursday: 3, Friday: 4, Saturday: 5, Sunday: 6 };
 
@@ -1628,6 +1641,27 @@
     return results;
   }
 
+  function getSyncedTourismBlocksForDate(dateStr){
+    const results = [];
+    tourismEntries.forEach(entry => {
+      if (!(entry.dates || []).includes(dateStr)) return;
+      const label = entry.majorEvent === 'Other' && entry.majorEventOther ? entry.majorEventOther : entry.majorEvent;
+      const parts = [label || 'Tourism Event'];
+      if (entry.subEvent) parts.push(entry.subEvent);
+      if (entry.facility) parts.push(entry.facility);
+      results.push({
+        id: 'tourism-' + entry.id,
+        time24: '00:00',
+        title: parts.join(' — '),
+        cat: 'tourism',
+        emoji: CATS.tourism.emoji,
+        synced: true,
+        sourceTourismId: entry.id,
+      });
+    });
+    return results;
+  }
+
   function getSyncedLogEntriesForDate(dateStr){
     const results = [];
     Object.keys(classSections).forEach(classId => {
@@ -1671,6 +1705,17 @@
     applyRole();
     openSectionsFolder(classId);
     openSectionLog(sectionId);
+  }
+
+  function goToSyncedTourismEntry(entryId){
+    switchMainPage('work');
+    workRole = 'tourism-officer';
+    saveJSON('pastelplan.role.v1', workRole);
+    applyRole();
+    requestAnimationFrame(() => {
+      const row = document.querySelector(`#tpTableBody tr[data-id="${entryId}"]`);
+      if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
   }
 
   const timeline = document.getElementById('timeline');
@@ -1973,7 +2018,7 @@
   }
 
   function render(){
-    const syncedBlocks = getSyncedClassBlocksForDate(selectedDate);
+    const syncedBlocks = [...getSyncedClassBlocksForDate(selectedDate), ...getSyncedTourismBlocksForDate(selectedDate)];
     const sorted = [...schedule, ...syncedBlocks].sort((a, b) => a.time24.localeCompare(b.time24));
     timeline.innerHTML = '';
     sorted.forEach(item => {
@@ -1997,7 +2042,8 @@
             </div>
           </div>`;
         row.querySelector('.t-card').addEventListener('click', () => {
-          if (item.outlineWeek) goToSyncedOutlineWeek(item.sourceClassId, item.outlineWeek);
+          if (item.sourceTourismId) goToSyncedTourismEntry(item.sourceTourismId);
+          else if (item.outlineWeek) goToSyncedOutlineWeek(item.sourceClassId, item.outlineWeek);
           else goToSyncedClass(item.sourceClassId);
         });
         timeline.appendChild(row);
@@ -2350,7 +2396,8 @@
       const hasData = !!loadJSON(scheduleKey(iso), null)
         || getSyncedClassBlocksForDate(iso).length > 0
         || getSyncedLogEntriesForDate(iso).length > 0
-        || getMatchedOutlineWeeksForDate(iso).length > 0;
+        || getMatchedOutlineWeeksForDate(iso).length > 0
+        || getSyncedTourismBlocksForDate(iso).length > 0;
       const isToday = iso === TODAY_ISO;
       const isSelected = iso === selectedDate;
       const cls = ['cal-day'];
@@ -2397,7 +2444,7 @@
   const mainEl = document.querySelector('main');
   const dashboardView = document.getElementById('dashboardView');
   function computeDayStats(dateStr){
-    const syncedCount = getSyncedClassBlocksForDate(dateStr).length;
+    const syncedCount = getSyncedClassBlocksForDate(dateStr).length + getSyncedTourismBlocksForDate(dateStr).length;
     if (dateStr === selectedDate) return { total: schedule.length + syncedCount, done: schedule.filter(s => s.done).length };
     const arr = loadJSON(scheduleKey(dateStr), null);
     if (arr) return { total: arr.length + syncedCount, done: arr.filter(s => s.done).length };
@@ -2441,9 +2488,10 @@
     const stats = computeDayStats(TODAY_ISO);
     const water = loadJSON('pastelplan.water.v1', 0);
     const arr = (TODAY_ISO === selectedDate) ? schedule : (loadJSON(scheduleKey(TODAY_ISO), null) || DEFAULT_SCHEDULE);
-    const catCounts = { class: 0, duty: 0, prep: 0, errands: 0 };
+    const catCounts = { class: 0, duty: 0, prep: 0, errands: 0, tourism: 0 };
     arr.forEach(s => { catCounts[s.cat] = (catCounts[s.cat] || 0) + 1; });
     catCounts.class += getSyncedClassBlocksForDate(TODAY_ISO).length;
+    catCounts.tourism += getSyncedTourismBlocksForDate(TODAY_ISO).length;
     document.getElementById('dashSnapshot').innerHTML = `
       <div class="dash-stat-row">
         <div class="dash-stat"><span class="dash-stat-num">${stats.done}/${stats.total}</span><span class="dash-stat-label">Blocks done</span></div>
@@ -2454,6 +2502,7 @@
         <span class="dash-cat" style="background:var(--blush);color:var(--blush-ink)">Task ${catCounts.duty}</span>
         <span class="dash-cat" style="background:var(--sky);color:var(--sky-ink)">Prep ${catCounts.prep}</span>
         <span class="dash-cat" style="background:var(--mint);color:var(--mint-ink)">Errands ${catCounts.errands}</span>
+        ${catCounts.tourism ? `<span class="dash-cat" style="background:var(--gold);color:var(--gold-ink)">Tourism ${catCounts.tourism}</span>` : ''}
       </div>`;
   }
   function renderUpNext(){
@@ -2462,7 +2511,7 @@
     const now = new Date();
     const nowMins = now.getHours() * 60 + now.getMinutes();
     const arr = (TODAY_ISO === selectedDate) ? schedule : (loadJSON(scheduleKey(TODAY_ISO), null) || []);
-    const merged = [...arr, ...getSyncedClassBlocksForDate(TODAY_ISO)];
+    const merged = [...arr, ...getSyncedClassBlocksForDate(TODAY_ISO), ...getSyncedTourismBlocksForDate(TODAY_ISO)];
     const upcoming = merged
       .filter(s => !s.done)
       .map(s => {
@@ -2495,7 +2544,8 @@
       </div>`;
     if (next.synced) {
       box.querySelector('.dash-upnext-row').addEventListener('click', () => {
-        if (next.outlineWeek) goToSyncedOutlineWeek(next.sourceClassId, next.outlineWeek);
+        if (next.sourceTourismId) goToSyncedTourismEntry(next.sourceTourismId);
+        else if (next.outlineWeek) goToSyncedOutlineWeek(next.sourceClassId, next.outlineWeek);
         else goToSyncedClass(next.sourceClassId);
       });
     }
@@ -3305,27 +3355,26 @@
     { value: 'Meeting', emoji: '💼' },
     { value: 'Other', emoji: '📋' },
   ];
-  let tourismEntries = loadJSON('pastelplan.tourismPlanner.v1', []);
+  // tourismEntries is loaded earlier (see comment near classSchedule) so the Personal-side
+  // sync helpers can read it on first render.
   function saveTourismEntries(){ saveJSON('pastelplan.tourismPlanner.v1', tourismEntries); }
   function freshTourismEntry(){
-    return { id: uid(), majorEvent: '', majorEventOther: '', subEvent: '', facility: '', dateIn: '', dateOut: '', venue: '', remarks: '', urgent: false };
+    return { id: uid(), majorEvent: '', majorEventOther: '', subEvent: '', facility: '', dates: [], venue: '', remarks: '', urgent: false };
   }
   function multiDayInfo(entry){
-    if (!entry.dateIn || !entry.dateOut) return { label: '—', multi: false };
-    const inDate = new Date(entry.dateIn + 'T00:00:00');
-    const outDate = new Date(entry.dateOut + 'T00:00:00');
-    const days = Math.round((outDate - inDate) / 86400000) + 1;
-    if (!Number.isFinite(days) || days < 1) return { label: '—', multi: false };
-    return { label: days === 1 ? '1 Day' : `${days} Days`, multi: days > 1 };
+    const n = (entry.dates || []).length;
+    if (n === 0) return { label: '—', multi: false };
+    return { label: n === 1 ? '1 Day' : `${n} Days`, multi: n > 1 };
   }
   const tpTableBody = document.getElementById('tpTableBody');
   function renderTourismTable(){
     if (!tourismEntries.length) {
-      tpTableBody.innerHTML = `<tr><td class="tp-empty-note" colspan="10">No entries yet. Tap "Add entry" to log an event, inspection, or promo.</td></tr>`;
+      tpTableBody.innerHTML = `<tr><td class="tp-empty-note" colspan="9">No entries yet. Tap "Add entry" to log an event, inspection, or promo.</td></tr>`;
       return;
     }
     tpTableBody.innerHTML = tourismEntries.map(entry => {
       const md = multiDayInfo(entry);
+      const dates = (entry.dates || []).slice().sort();
       return `<tr class="${entry.urgent ? 'urgent' : ''}" data-id="${entry.id}">
         <td>
           <select class="tp-cell-select" data-field="majorEvent">
@@ -3341,8 +3390,12 @@
           </select>
         </td>
         <td><input type="text" class="tp-cell-input" data-field="facility" placeholder="e.g. Sunset Resort" value="${escapeHTML(entry.facility)}"></td>
-        <td><input type="date" class="tp-cell-input tp-date" data-field="dateIn" value="${escapeHTML(entry.dateIn)}"></td>
-        <td><input type="date" class="tp-cell-input tp-date" data-field="dateOut" value="${escapeHTML(entry.dateOut)}"></td>
+        <td>
+          <div class="tp-dates-chips">
+            ${dates.map(d => `<span class="tp-date-chip">${fmtShortDate(d)}<button type="button" class="tp-date-chip-x" data-action="removeDate" data-date="${d}" aria-label="Remove date">${ICONS.x}</button></span>`).join('')}
+          </div>
+          <input type="date" class="tp-cell-input tp-date" data-action="addDate" value="">
+        </td>
         <td><span class="tp-multiday-badge ${md.multi ? 'yes' : 'no'}">${md.label}</span></td>
         <td><input type="text" class="tp-cell-input" data-field="venue" placeholder="Municipal zone" value="${escapeHTML(entry.venue)}"></td>
         <td><input type="text" class="tp-cell-input tp-remarks" data-field="remarks" placeholder="Compliance / action items..." value="${escapeHTML(entry.remarks)}"></td>
@@ -3360,7 +3413,24 @@
         el.addEventListener(evt, () => {
           entry[el.dataset.field] = el.value;
           saveTourismEntries();
-          if (el.dataset.field === 'dateIn' || el.dataset.field === 'dateOut' || el.dataset.field === 'majorEvent') renderTourismTable();
+          if (el.dataset.field === 'majorEvent') renderTourismTable();
+        });
+      });
+      row.querySelector('[data-action="addDate"]').addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val && !entry.dates.includes(val)) {
+          entry.dates = [...entry.dates, val];
+          saveTourismEntries();
+          renderTourismTable();
+        } else {
+          e.target.value = '';
+        }
+      });
+      row.querySelectorAll('[data-action="removeDate"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          entry.dates = entry.dates.filter(d => d !== btn.dataset.date);
+          saveTourismEntries();
+          renderTourismTable();
         });
       });
       row.querySelector('[data-action="urgent"]').addEventListener('click', () => {

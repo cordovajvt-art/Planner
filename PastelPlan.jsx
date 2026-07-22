@@ -114,8 +114,9 @@ const CATS = {
   duty: { fill: "var(--pp-blush)", ink: "var(--pp-blush-ink)", label: "Task", Icon: Users },
   prep: { fill: "var(--pp-sky)", ink: "var(--pp-sky-ink)", label: "Prep", Icon: PencilLine },
   errands: { fill: "var(--pp-mint)", ink: "var(--pp-mint-ink)", label: "Errands", Icon: MapPin },
+  tourism: { fill: "var(--pp-gold)", ink: "var(--pp-gold-ink)", label: "Tourism", Icon: ClipboardList },
 };
-const CAT_ORDER = ["class", "duty", "prep", "errands"];
+const CAT_ORDER = ["class", "duty", "prep", "errands", "tourism"];
 
 // New days start empty — no seeded sample content.
 const DEFAULT_SCHEDULE = [];
@@ -325,6 +326,26 @@ function getSyncedClassBlocksForDate(classSchedule, courseOutlines, dateStr) {
   return results;
 }
 
+function getSyncedTourismBlocksForDate(tourismEntries, dateStr) {
+  const results = [];
+  tourismEntries.forEach((entry) => {
+    if (!(entry.dates || []).includes(dateStr)) return;
+    const label = entry.majorEvent === "Other" && entry.majorEventOther ? entry.majorEventOther : entry.majorEvent;
+    const parts = [label || "Tourism Event"];
+    if (entry.subEvent) parts.push(entry.subEvent);
+    if (entry.facility) parts.push(entry.facility);
+    results.push({
+      id: "tourism-" + entry.id,
+      time24: "00:00",
+      title: parts.join(" — "),
+      cat: "tourism",
+      synced: true,
+      sourceTourismId: entry.id,
+    });
+  });
+  return results;
+}
+
 function getSyncedLogEntriesForDate(classSchedule, classSections, sectionLogs, dateStr) {
   const results = [];
   Object.keys(classSections).forEach((classId) => {
@@ -503,12 +524,15 @@ export default function PastelPlan() {
   const firstName = userProfile?.name ? userProfile.name.trim().split(/\s+/)[0] : "";
   const namePart = firstName ? `Hi ${firstName}` : isToday ? "Sample day" : "";
   const syncedClassBlocksSelected = getSyncedClassBlocksForDate(classSchedule, courseOutlines, selectedDate);
+  const syncedTourismBlocksSelected = getSyncedTourismBlocksForDate(tourismEntries, selectedDate);
   const syncedLogEntriesSelected = getSyncedLogEntriesForDate(classSchedule, classSections, sectionLogs, selectedDate);
   const syncedPrepEntries = syncedLogEntriesSelected.filter((e) => PREP_LOG_TYPES.includes(e.type));
   const syncedTodoEntries = syncedLogEntriesSelected.filter((e) => !PREP_LOG_TYPES.includes(e.type));
   const syncedOutlinePrepEntries = getSyncedOutlinePrepForDate(classSchedule, courseOutlines, selectedDate);
   const syncedOutlineTodoEntries = getSyncedOutlineTodosForDate(classSchedule, courseOutlines, selectedDate);
-  const sortedSchedule = [...schedule, ...syncedClassBlocksSelected].sort((a, b) => a.time24.localeCompare(b.time24));
+  const sortedSchedule = [...schedule, ...syncedClassBlocksSelected, ...syncedTourismBlocksSelected].sort((a, b) =>
+    a.time24.localeCompare(b.time24)
+  );
 
   function goToWorkClass(classId) {
     setMainPage("work");
@@ -527,6 +551,10 @@ export default function PastelPlan() {
     setWorkRole("teacher");
     setActiveClassId(classId);
     setOutlineJumpWeek(weekNum);
+  }
+  function goToWorkTourism() {
+    setMainPage("work");
+    setWorkRole("tourism-officer");
   }
   const leftCount = schedule.filter((s) => !s.done).length;
 
@@ -586,7 +614,9 @@ export default function PastelPlan() {
 
   // ---- Dashboard data (computed here so it can read live `schedule` for the selected day) ----
   function computeDayStats(dateStr) {
-    const syncedCount = getSyncedClassBlocksForDate(classSchedule, courseOutlines, dateStr).length;
+    const syncedCount =
+      getSyncedClassBlocksForDate(classSchedule, courseOutlines, dateStr).length +
+      getSyncedTourismBlocksForDate(tourismEntries, dateStr).length;
     if (dateStr === selectedDate) return { total: schedule.length + syncedCount, done: schedule.filter((s) => s.done).length };
     try {
       const raw = localStorage.getItem(scheduleKeyFor(dateStr));
@@ -605,7 +635,11 @@ export default function PastelPlan() {
       return [];
     }
   }
-  const todaySchedule = [...getTodaySchedule(), ...getSyncedClassBlocksForDate(classSchedule, courseOutlines, todayIso)];
+  const todaySchedule = [
+    ...getTodaySchedule(),
+    ...getSyncedClassBlocksForDate(classSchedule, courseOutlines, todayIso),
+    ...getSyncedTourismBlocksForDate(tourismEntries, todayIso),
+  ];
   const nowMins = now.getHours() * 60 + now.getMinutes();
   const upNextRaw = todaySchedule
     .filter((s) => !s.done)
@@ -806,7 +840,11 @@ export default function PastelPlan() {
                       isFirst={i === 0}
                       isLast={i === sortedSchedule.length - 1}
                       onOpen={() =>
-                        item.outlineWeek ? goToWorkOutlineWeek(item.sourceClassId, item.outlineWeek) : goToWorkClass(item.sourceClassId)
+                        item.sourceTourismId
+                          ? goToWorkTourism()
+                          : item.outlineWeek
+                          ? goToWorkOutlineWeek(item.sourceClassId, item.outlineWeek)
+                          : goToWorkClass(item.sourceClassId)
                       }
                     />
                   ) : (
@@ -1000,7 +1038,11 @@ export default function PastelPlan() {
             water={waterFilled}
             catCounts={catCounts}
             onOpenSyncedClass={(item) =>
-              item.outlineWeek ? goToWorkOutlineWeek(item.sourceClassId, item.outlineWeek) : goToWorkClass(item.sourceClassId)
+              item.sourceTourismId
+                ? goToWorkTourism()
+                : item.outlineWeek
+                ? goToWorkOutlineWeek(item.sourceClassId, item.outlineWeek)
+                : goToWorkClass(item.sourceClassId)
             }
           />
         )}
@@ -1054,6 +1096,7 @@ export default function PastelPlan() {
           classSections={classSections}
           sectionLogs={sectionLogs}
           courseOutlines={courseOutlines}
+          tourismEntries={tourismEntries}
         />
       )}
     </div>
@@ -1139,7 +1182,7 @@ function SignUpCard({ userProfile, firstName, dateLabel, quote, onSubmit, onCont
   );
 }
 
-function CalendarSheet({ selectedDate, onSelect, onClose, classSchedule, classSections, sectionLogs, courseOutlines }) {
+function CalendarSheet({ selectedDate, onSelect, onClose, classSchedule, classSections, sectionLogs, courseOutlines, tourismEntries }) {
   const initial = dateFromISO(selectedDate);
   const [viewYear, setViewYear] = useState(initial.getFullYear());
   const [viewMonth, setViewMonth] = useState(initial.getMonth());
@@ -1206,7 +1249,8 @@ function CalendarSheet({ selectedDate, onSelect, onClose, classSchedule, classSe
               hasData =
                 getSyncedClassBlocksForDate(classSchedule, courseOutlines, iso).length > 0 ||
                 getSyncedLogEntriesForDate(classSchedule, classSections, sectionLogs, iso).length > 0 ||
-                getMatchedOutlineWeeksForDate(classSchedule, courseOutlines, iso).length > 0;
+                getMatchedOutlineWeeksForDate(classSchedule, courseOutlines, iso).length > 0 ||
+                getSyncedTourismBlocksForDate(tourismEntries, iso).length > 0;
             }
             const isToday = iso === todayIso;
             const isSelected = iso === selectedDate;
@@ -2485,8 +2529,7 @@ function freshTourismEntry() {
     majorEventOther: "",
     subEvent: "",
     facility: "",
-    dateIn: "",
-    dateOut: "",
+    dates: [],
     venue: "",
     remarks: "",
     urgent: false,
@@ -2494,12 +2537,9 @@ function freshTourismEntry() {
 }
 
 function tourismDaysInfo(entry) {
-  if (!entry.dateIn || !entry.dateOut) return { label: "—", multi: false };
-  const inDate = new Date(entry.dateIn + "T00:00:00");
-  const outDate = new Date(entry.dateOut + "T00:00:00");
-  const days = Math.round((outDate - inDate) / 86400000) + 1;
-  if (!Number.isFinite(days) || days < 1) return { label: "—", multi: false };
-  return { label: days === 1 ? "1 Day" : `${days} Days`, multi: days > 1 };
+  const n = (entry.dates || []).length;
+  if (n === 0) return { label: "—", multi: false };
+  return { label: n === 1 ? "1 Day" : `${n} Days`, multi: n > 1 };
 }
 
 function TourismOfficerPlanner({ tourismEntries, setTourismEntries }) {
@@ -2620,25 +2660,37 @@ function TourismEntryCard({ entry, onChange, onRemove }) {
         className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.8rem] font-medium text-[var(--pp-ink)]"
       />
 
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <label className="mb-1 block text-[0.66rem] font-bold text-[var(--pp-ink-soft)]">Date In</label>
-          <input
-            type="date"
-            value={entry.dateIn}
-            onChange={(e) => onChange("dateIn", e.target.value)}
-            className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-2.5 py-2 text-[0.78rem] font-semibold text-[var(--pp-ink)]"
-          />
-        </div>
-        <div className="flex-1">
-          <label className="mb-1 block text-[0.66rem] font-bold text-[var(--pp-ink-soft)]">Date Out</label>
-          <input
-            type="date"
-            value={entry.dateOut}
-            onChange={(e) => onChange("dateOut", e.target.value)}
-            className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-2.5 py-2 text-[0.78rem] font-semibold text-[var(--pp-ink)]"
-          />
-        </div>
+      <div>
+        <label className="mb-1 block text-[0.66rem] font-bold text-[var(--pp-ink-soft)]">Dates</label>
+        {entry.dates.length > 0 && (
+          <div className="mb-1.5 flex flex-wrap gap-1.5">
+            {[...entry.dates].sort().map((d) => (
+              <span
+                key={d}
+                className="flex items-center gap-1 rounded-full bg-[var(--pp-surface-alt)] pl-2.5 pr-1 py-1 text-[0.68rem] font-bold text-[var(--pp-ink-soft)]"
+              >
+                {fmtShortDate(d)}
+                <button
+                  type="button"
+                  onClick={() => onChange("dates", entry.dates.filter((x) => x !== d))}
+                  aria-label="Remove date"
+                  className="grid h-4 w-4 place-items-center rounded-full text-[var(--pp-ink-soft)]"
+                >
+                  <X size={10} strokeWidth={2.4} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <input
+          type="date"
+          value=""
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val && !entry.dates.includes(val)) onChange("dates", [...entry.dates, val]);
+          }}
+          className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-2.5 py-2 text-[0.78rem] font-semibold text-[var(--pp-ink)]"
+        />
       </div>
 
       <span
