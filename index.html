@@ -474,12 +474,17 @@
   .five-e-input:focus { outline: none; }
 
 
-  .office-item { position: relative; padding-right: 24px; }
+  .office-item { position: relative; padding-right: 46px; }
   .office-item .office-del {
     position: absolute; right: 0; top: 0; border: none; background: transparent;
     color: var(--ink-soft); cursor: pointer; display: flex; padding: 2px;
   }
   .office-item .office-del svg { width: 14px; height: 14px; }
+  .office-item .office-edit {
+    position: absolute; right: 22px; top: 0; border: none; background: transparent;
+    color: var(--ink-soft); cursor: pointer; display: flex; padding: 2px;
+  }
+  .office-item .office-edit svg { width: 13px; height: 13px; }
 
   .class-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
   .class-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
@@ -499,6 +504,8 @@
   .class-row .class-outline-btn svg { width: 13px; height: 13px; }
   .class-row .class-del { border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; flex-shrink: 0; padding: 2px; }
   .class-row .class-del svg { width: 15px; height: 15px; }
+  .class-row .class-edit { border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; flex-shrink: 0; padding: 2px; }
+  .class-row .class-edit svg { width: 14px; height: 14px; }
   .class-row .class-code { color: var(--sky-ink); margin-right: 6px; }
   .class-color-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
   .class-color-swatch {
@@ -778,6 +785,12 @@
     transition: all .15s cubic-bezier(.34,1.56,.64,1);
   }
   .t-check svg { width: 14px; height: 14px; transform: scale(.4); transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
+  .t-edit-icon-btn {
+    flex-shrink: 0; width: 25px; height: 25px; border-radius: 10px; border: none;
+    background: transparent; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0; color: var(--ink-soft);
+  }
+  .t-edit-icon-btn svg { width: 13px; height: 13px; }
   .t-row.done .t-card { opacity: .55; }
   .t-row.done .t-title { text-decoration: line-through; text-decoration-color: var(--ink-soft); }
   .t-row.done .t-check {
@@ -2166,11 +2179,17 @@
               <span class="t-tag" style="color:${inkColor}">${cat.label}</span>
               ${metaLine ? `<span class="t-meta">${escapeHTML(metaLine)}</span>` : ''}
             </span>
+            <button class="t-edit-icon-btn" aria-label="Edit ${escapeHTML(item.title)}">${ICONS.pencil}</button>
             <button class="t-check" aria-label="Mark ${escapeHTML(item.title)} done" style="color:${inkColor}">${ICONS.check}</button>
           </div>
           ${atts.length ? `<div class="t-chips t-chips-view">${atts.map(a => chipHTML(a, false)).join('')}</div>` : ''}
           ${subs.length ? `<div class="t-subs-view">${subs.map(subRowHTML).join('')}</div>` : ''}
         </div>`;
+      row.querySelector('.t-edit-icon-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        editingId = item.id;
+        render();
+      });
       row.querySelector('.t-check').addEventListener('click', (e) => {
         e.stopPropagation();
         item.done = !item.done;
@@ -2718,6 +2737,7 @@
   const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const ACTION_TYPES = ['QUIZ', 'LECTURE', 'GROUP ACTIVITY', 'LAB ACTIVITY', 'REMINDERS', 'ASSIGNMENT', 'GRADE', 'ABSENT', 'EXCUSE', 'PRESENT', 'OTHERS'];
   let classAdding = false;
+  let editingClassId = null;
   let sectionAdding = false;
   let activeSectionsClassId = null;
   let activeSectionId = null;
@@ -2788,9 +2808,16 @@
           <svg viewBox="0 0 24 24" fill="none"><path d="M3.5 8C3.5 6.9 4.4 6 5.5 6H9.5L11.5 8H18.5C19.6 8 20.5 8.9 20.5 10V17C20.5 18.1 19.6 19 18.5 19H5.5C4.4 19 3.5 18.1 3.5 17V8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
           Outline
         </button>
+        <button type="button" class="class-edit" data-id="${cls.id}" aria-label="Edit class">${ICONS.pencil}</button>
         <button type="button" class="class-del" data-id="${cls.id}" aria-label="Delete class">${ICONS.x}</button>`;
       li.querySelector('[data-action="outline"]').addEventListener('click', () => openClassFolder(cls.id));
       li.querySelector('[data-action="sections"]').addEventListener('click', () => openSectionsFolder(cls.id));
+      li.querySelector('.class-edit').addEventListener('click', (e) => {
+        e.stopPropagation();
+        editingClassId = cls.id;
+        classAdding = true;
+        renderClassAddForm();
+      });
       li.querySelector('.class-del').addEventListener('click', (e) => {
         e.stopPropagation();
         classSchedule = classSchedule.filter(c => c.id !== cls.id);
@@ -2814,32 +2841,34 @@
       classAddForm.innerHTML = '';
       classAddBtn.style.display = classView === 'list' ? 'flex' : 'none';
       classAddBtn.innerHTML = `${ICONS.plus} Add class`;
+      editingClassId = null;
       return;
     }
     classAddBtn.style.display = 'none';
     classAddForm.style.display = 'block';
-    let selectedClassColor = '';
+    const editingClass = editingClassId ? classSchedule.find(c => c.id === editingClassId) : null;
+    let selectedClassColor = editingClass ? (editingClass.color || '') : '';
     classAddForm.innerHTML = `
       <label class="t-edit-caption">Course Code <span style="font-weight:500;font-style:italic;">(optional)</span></label>
-      <input type="text" class="t-input-title" id="classFieldCode" placeholder="e.g. MATH 3213">
+      <input type="text" class="t-input-title" id="classFieldCode" placeholder="e.g. MATH 3213" value="${editingClass ? escapeHTML(editingClass.code || '') : ''}">
       <label class="t-edit-caption">Color <span style="font-weight:500;font-style:italic;">(optional)</span></label>
       <div class="class-color-row" id="classColorRow">
-        ${COLOR_SWATCHES.map(s => `<button type="button" class="class-color-swatch" data-color="${s.key}" style="background:${s.fill}" aria-label="${s.key}"></button>`).join('')}
-        <button type="button" class="class-color-swatch class-color-clear selected" data-color="" aria-label="No color"></button>
+        ${COLOR_SWATCHES.map(s => `<button type="button" class="class-color-swatch${selectedClassColor === s.key ? ' selected' : ''}" data-color="${s.key}" style="background:${s.fill}" aria-label="${s.key}"></button>`).join('')}
+        <button type="button" class="class-color-swatch class-color-clear${!selectedClassColor ? ' selected' : ''}" data-color="" aria-label="No color"></button>
       </div>
       <label class="t-edit-caption">Class</label>
-      <input type="text" class="t-input-title" id="classFieldName" placeholder="e.g. Grade 10 Biology">
+      <input type="text" class="t-input-title" id="classFieldName" placeholder="e.g. Grade 10 Biology" value="${editingClass ? escapeHTML(editingClass.className || '') : ''}">
       <label class="t-edit-caption">Days</label>
       <div class="day-checkbox-row" id="classFieldDays">
-        ${WEEKDAYS.map(d => `<label class="day-checkbox"><input type="checkbox" value="${d}"> ${d.slice(0, 3)}</label>`).join('')}
+        ${WEEKDAYS.map(d => `<label class="day-checkbox"><input type="checkbox" value="${d}"${editingClass && (editingClass.days || []).includes(d) ? ' checked' : ''}> ${d.slice(0, 3)}</label>`).join('')}
       </div>
       <label class="t-edit-caption">Time In</label>
-      <input type="time" class="t-input-title" id="classFieldTimeIn">
+      <input type="time" class="t-input-title" id="classFieldTimeIn" value="${editingClass ? escapeHTML(editingClass.timeIn || '') : ''}">
       <label class="t-edit-caption">Time Out</label>
-      <input type="time" class="t-input-title" id="classFieldTimeOut">
+      <input type="time" class="t-input-title" id="classFieldTimeOut" value="${editingClass ? escapeHTML(editingClass.timeOut || '') : ''}">
       <div class="t-edit-actions" style="margin-top:2px">
         <button type="button" class="t-btn-cancel" id="classCancelBtn">Cancel</button>
-        <button type="button" class="t-btn-save" id="classSaveBtn" style="margin-left:auto">Add</button>
+        <button type="button" class="t-btn-save" id="classSaveBtn" style="margin-left:auto">${editingClass ? 'Save' : 'Add'}</button>
       </div>`;
     document.querySelectorAll('#classColorRow .class-color-swatch').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -2851,23 +2880,29 @@
     });
     document.getElementById('classCancelBtn').addEventListener('click', () => {
       classAdding = false;
+      editingClassId = null;
       renderClassAddForm();
     });
     document.getElementById('classSaveBtn').addEventListener('click', () => {
       const nameEl = document.getElementById('classFieldName');
       if (!nameEl.value.trim()) return;
       const days = [...classAddForm.querySelectorAll('#classFieldDays input:checked')].map(el => el.value);
-      classSchedule = [...classSchedule, {
-        id: uid(),
+      const fields = {
         className: nameEl.value.trim(),
         code: document.getElementById('classFieldCode').value.trim(),
         color: selectedClassColor || null,
         days,
         timeIn: document.getElementById('classFieldTimeIn').value,
         timeOut: document.getElementById('classFieldTimeOut').value,
-      }];
+      };
+      if (editingClass) {
+        Object.assign(editingClass, fields);
+      } else {
+        classSchedule = [...classSchedule, { id: uid(), ...fields }];
+      }
       saveClassSchedule();
       classAdding = false;
+      editingClassId = null;
       renderClassList();
       renderClassAddForm();
       renderClassMap();
@@ -3432,6 +3467,7 @@
   let officeHead = loadJSON('pastelplan.officeHead.v1', null) || { meetings: [], field: [], dailyTasks: [] };
   let activeOfficeTab = 'meetings';
   let officeAdding = false;
+  let editingOfficeId = null;
   function saveOfficeHead(){ saveJSON('pastelplan.officeHead.v1', officeHead); }
   function fmtShortDate(dateStr){
     if (!dateStr) return '';
@@ -3480,11 +3516,17 @@
       const li = document.createElement('li');
       li.className = 'todo-item office-item' + (item.done ? ' checked' : '');
       const subtext = officeItemSubtext(activeOfficeTab, item);
-      li.innerHTML = `<span class="chk">${ICONS.check}</span><p>${escapeHTML(item.title)}${subtext ? `<span class="due">${escapeHTML(subtext)}</span>` : ''}</p><button type="button" class="office-del" aria-label="Delete">${ICONS.x}</button>`;
+      li.innerHTML = `<span class="chk">${ICONS.check}</span><p>${escapeHTML(item.title)}${subtext ? `<span class="due">${escapeHTML(subtext)}</span>` : ''}</p><button type="button" class="office-edit" aria-label="Edit">${ICONS.pencil}</button><button type="button" class="office-del" aria-label="Delete">${ICONS.x}</button>`;
       li.querySelector('.chk').addEventListener('click', () => {
         item.done = !item.done;
         saveOfficeHead();
         renderOfficeList();
+      });
+      li.querySelector('.office-edit').addEventListener('click', (e) => {
+        e.stopPropagation();
+        editingOfficeId = item.id;
+        officeAdding = true;
+        renderOfficeAddForm();
       });
       li.querySelector('.office-del').addEventListener('click', (e) => {
         e.stopPropagation();
@@ -3503,32 +3545,41 @@
       officeAddBtn.style.display = 'flex';
       const tabDef = OFFICE_HEAD_TABS.find(t => t.key === activeOfficeTab);
       officeAddBtn.innerHTML = `${ICONS.plus} Add ${tabDef.singular}`;
+      editingOfficeId = null;
       return;
     }
     officeAddBtn.style.display = 'none';
     officeAddForm.style.display = 'block';
     const fields = OFFICE_TAB_FIELDS[activeOfficeTab];
+    const editingItem = editingOfficeId ? (officeHead[activeOfficeTab] || []).find(it => it.id === editingOfficeId) : null;
     officeAddForm.innerHTML = fields.map(f => `
       <label class="t-edit-caption">${f.label}</label>
-      <input type="${f.type}" class="t-input-title" id="officeField-${f.key}" placeholder="${f.placeholder || ''}">
+      <input type="${f.type}" class="t-input-title" id="officeField-${f.key}" placeholder="${f.placeholder || ''}" value="${editingItem ? escapeHTML(editingItem[f.key] || '') : ''}">
     `).join('') + `
       <div class="t-edit-actions" style="margin-top:2px">
         <button type="button" class="t-btn-cancel" id="officeCancelBtn">Cancel</button>
-        <button type="button" class="t-btn-save" id="officeSaveBtn" style="margin-left:auto">Add</button>
+        <button type="button" class="t-btn-save" id="officeSaveBtn" style="margin-left:auto">${editingItem ? 'Save' : 'Add'}</button>
       </div>`;
     document.getElementById('officeCancelBtn').addEventListener('click', () => {
       officeAdding = false;
+      editingOfficeId = null;
       renderOfficeAddForm();
     });
     document.getElementById('officeSaveBtn').addEventListener('click', () => {
       const titleEl = document.getElementById('officeField-title');
       if (!titleEl.value.trim()) return;
-      const item = { id: 'off_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), done: false };
-      fields.forEach(f => { item[f.key] = document.getElementById(`officeField-${f.key}`).value; });
-      item.title = item.title.trim();
-      officeHead[activeOfficeTab] = [...(officeHead[activeOfficeTab] || []), item];
+      if (editingItem) {
+        fields.forEach(f => { editingItem[f.key] = document.getElementById(`officeField-${f.key}`).value; });
+        editingItem.title = editingItem.title.trim();
+      } else {
+        const item = { id: 'off_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), done: false };
+        fields.forEach(f => { item[f.key] = document.getElementById(`officeField-${f.key}`).value; });
+        item.title = item.title.trim();
+        officeHead[activeOfficeTab] = [...(officeHead[activeOfficeTab] || []), item];
+      }
       saveOfficeHead();
       officeAdding = false;
+      editingOfficeId = null;
       renderOfficeList();
       renderOfficeAddForm();
     });

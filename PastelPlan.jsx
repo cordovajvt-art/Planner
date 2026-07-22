@@ -1629,13 +1629,24 @@ function DaysTimeFields({ days, timeIn, timeOut, onChange }) {
   );
 }
 
-function ClassAddForm({ onAdd, onCancel }) {
-  const [draft, setDraft] = useState({ className: "", code: "", color: "", days: [], timeIn: "", timeOut: "" });
+function ClassAddForm({ onAdd, onCancel, editingClass }) {
+  const [draft, setDraft] = useState(
+    editingClass
+      ? {
+          className: editingClass.className || "",
+          code: editingClass.code || "",
+          color: editingClass.color || "",
+          days: editingClass.days || [],
+          timeIn: editingClass.timeIn || "",
+          timeOut: editingClass.timeOut || "",
+        }
+      : { className: "", code: "", color: "", days: [], timeIn: "", timeOut: "" }
+  );
 
   const submit = () => {
     if (!draft.className.trim()) return;
     onAdd({
-      id: uid(),
+      id: editingClass ? editingClass.id : uid(),
       className: draft.className.trim(),
       code: draft.code.trim(),
       color: draft.color || null,
@@ -1708,14 +1719,14 @@ function ClassAddForm({ onAdd, onCancel }) {
           className="flex-1 rounded-xl py-2 text-[0.78rem] font-bold text-[var(--pp-surface)]"
           style={{ background: "var(--pp-ink)" }}
         >
-          Add
+          {editingClass ? "Save" : "Add"}
         </button>
       </div>
     </div>
   );
 }
 
-function ClassRow({ cls, onOpenOutline, onOpenSections, onDelete }) {
+function ClassRow({ cls, onOpenOutline, onOpenSections, onDelete, onEdit }) {
   const subtext = fmtDaysTime(cls);
   return (
     <div className="flex items-center gap-2.5 border-b border-[var(--pp-line)] py-2.5 last:border-b-0">
@@ -1739,6 +1750,9 @@ function ClassRow({ cls, onOpenOutline, onOpenSections, onDelete }) {
         className="flex shrink-0 items-center gap-1 rounded-full border-[1.5px] border-[var(--pp-line)] px-2.5 py-1.5 text-[0.68rem] font-bold text-[var(--pp-ink-soft)]"
       >
         <Folder size={13} strokeWidth={2} /> Outline
+      </button>
+      <button type="button" onClick={onEdit} aria-label="Edit class" className="shrink-0 text-[var(--pp-ink-soft)]">
+        <PencilLine size={14} strokeWidth={2} />
       </button>
       <button type="button" onClick={onDelete} aria-label="Delete class" className="shrink-0 text-[var(--pp-ink-soft)]">
         <X size={15} strokeWidth={2} />
@@ -1854,10 +1868,13 @@ function ClassScheduleMap({ classSchedule }) {
 function ClassScheduleList({ classSchedule, setClassSchedule, setCourseOutlines, classSections, setClassSections, setSectionLogs, onOpenOutline, onOpenSections }) {
   const [adding, setAdding] = useState(false);
   const [view, setView] = useState("list");
+  const [editingClassId, setEditingClassId] = useState(null);
+  const editingClass = editingClassId ? classSchedule.find((c) => c.id === editingClassId) : null;
 
-  const addClass = (cls) => {
-    setClassSchedule((prev) => [...prev, cls]);
+  const saveClass = (cls) => {
+    setClassSchedule((prev) => (prev.some((c) => c.id === cls.id) ? prev.map((c) => (c.id === cls.id ? cls : c)) : [...prev, cls]));
     setAdding(false);
+    setEditingClassId(null);
   };
   const deleteClass = (id) => {
     setClassSchedule((prev) => prev.filter((c) => c.id !== id));
@@ -1912,7 +1929,14 @@ function ClassScheduleList({ classSchedule, setClassSchedule, setCourseOutlines,
       )}
 
       {adding ? (
-        <ClassAddForm onAdd={addClass} onCancel={() => setAdding(false)} />
+        <ClassAddForm
+          onAdd={saveClass}
+          onCancel={() => {
+            setAdding(false);
+            setEditingClassId(null);
+          }}
+          editingClass={editingClass}
+        />
       ) : view === "mapping" ? (
         <ClassScheduleMap classSchedule={classSchedule} />
       ) : (
@@ -1928,6 +1952,10 @@ function ClassScheduleList({ classSchedule, setClassSchedule, setCourseOutlines,
                   onOpenOutline={() => onOpenOutline(cls.id)}
                   onOpenSections={() => onOpenSections(cls.id)}
                   onDelete={() => deleteClass(cls.id)}
+                  onEdit={() => {
+                    setEditingClassId(cls.id);
+                    setAdding(true);
+                  }}
                 />
               ))
             )}
@@ -2606,13 +2634,17 @@ function officeItemSubtext(tabKey, item) {
   return parts.join(" · ");
 }
 
-function OfficeAddForm({ tabKey, onAdd, onCancel }) {
+function OfficeAddForm({ tabKey, onAdd, onCancel, editingItem }) {
   const fields = OFFICE_TAB_FIELDS[tabKey];
-  const [draft, setDraft] = useState(() => Object.fromEntries(fields.map((f) => [f.key, ""])));
+  const [draft, setDraft] = useState(() =>
+    editingItem
+      ? Object.fromEntries(fields.map((f) => [f.key, editingItem[f.key] || ""]))
+      : Object.fromEntries(fields.map((f) => [f.key, ""]))
+  );
 
   const submit = () => {
     if (!draft.title.trim()) return;
-    onAdd({ id: uid(), done: false, ...draft, title: draft.title.trim() });
+    onAdd({ id: editingItem ? editingItem.id : uid(), done: editingItem ? editingItem.done : false, ...draft, title: draft.title.trim() });
   };
 
   return (
@@ -2643,14 +2675,14 @@ function OfficeAddForm({ tabKey, onAdd, onCancel }) {
           className="flex-1 rounded-xl py-2 text-[0.78rem] font-bold text-[var(--pp-surface)]"
           style={{ background: "var(--pp-ink)" }}
         >
-          Add
+          {editingItem ? "Save" : "Add"}
         </button>
       </div>
     </div>
   );
 }
 
-function OfficeItemRow({ tabKey, item, onToggle, onDelete }) {
+function OfficeItemRow({ tabKey, item, onToggle, onDelete, onEdit }) {
   const subtext = officeItemSubtext(tabKey, item);
   return (
     <div className="flex items-center gap-2.5 border-b border-[var(--pp-line)] py-2.5 last:border-b-0">
@@ -2661,6 +2693,9 @@ function OfficeItemRow({ tabKey, item, onToggle, onDelete }) {
         </p>
         {subtext && <p className="truncate text-[0.68rem] text-[var(--pp-ink-soft)]">{subtext}</p>}
       </div>
+      <button type="button" onClick={onEdit} aria-label="Edit" className="shrink-0 text-[var(--pp-ink-soft)]">
+        <PencilLine size={14} strokeWidth={2} />
+      </button>
       <button type="button" onClick={onDelete} aria-label="Delete" className="shrink-0 text-[var(--pp-ink-soft)]">
         <X size={15} strokeWidth={2} />
       </button>
@@ -2670,17 +2705,25 @@ function OfficeItemRow({ tabKey, item, onToggle, onDelete }) {
 
 function OfficeHeadDashboard({ officeHead, setOfficeHead, activeOfficeTab, setActiveOfficeTab }) {
   const [adding, setAdding] = useState(false);
+  const [editingItemId, setEditingItemId] = useState(null);
   const tab = OFFICE_HEAD_TABS.find((t) => t.key === activeOfficeTab) || OFFICE_HEAD_TABS[0];
   const swatch = swatchByKey(tab.accent);
   const items = officeHead[activeOfficeTab] || [];
+  const editingItem = editingItemId ? items.find((it) => it.id === editingItemId) : null;
 
   const selectTab = (key) => {
     setActiveOfficeTab(key);
     setAdding(false);
+    setEditingItemId(null);
   };
-  const addItem = (item) => {
-    setOfficeHead((prev) => ({ ...prev, [activeOfficeTab]: [...(prev[activeOfficeTab] || []), item] }));
+  const saveItem = (item) => {
+    setOfficeHead((prev) => {
+      const list = prev[activeOfficeTab] || [];
+      const next = list.some((it) => it.id === item.id) ? list.map((it) => (it.id === item.id ? item : it)) : [...list, item];
+      return { ...prev, [activeOfficeTab]: next };
+    });
     setAdding(false);
+    setEditingItemId(null);
   };
   const toggleItem = (id) =>
     setOfficeHead((prev) => ({
@@ -2717,7 +2760,15 @@ function OfficeHeadDashboard({ officeHead, setOfficeHead, activeOfficeTab, setAc
       </div>
 
       {adding ? (
-        <OfficeAddForm tabKey={activeOfficeTab} onAdd={addItem} onCancel={() => setAdding(false)} />
+        <OfficeAddForm
+          tabKey={activeOfficeTab}
+          onAdd={saveItem}
+          onCancel={() => {
+            setAdding(false);
+            setEditingItemId(null);
+          }}
+          editingItem={editingItem}
+        />
       ) : (
         <>
           <div className="pp-card">
@@ -2731,6 +2782,10 @@ function OfficeHeadDashboard({ officeHead, setOfficeHead, activeOfficeTab, setAc
                   item={item}
                   onToggle={() => toggleItem(item.id)}
                   onDelete={() => deleteItem(item.id)}
+                  onEdit={() => {
+                    setEditingItemId(item.id);
+                    setAdding(true);
+                  }}
                 />
               ))
             )}
@@ -3575,6 +3630,17 @@ function TimelineRow({ item, isFirst, isLast, editing, onToggleDone, onToggleSub
             </span>
             {metaLine && <span className="block text-[0.66rem] font-semibold text-[var(--pp-ink-soft)]">{metaLine}</span>}
           </span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onStartEdit();
+            }}
+            aria-label={`Edit ${item.title}`}
+            className="grid h-6 w-6 shrink-0 place-items-center text-[var(--pp-ink-soft)]"
+          >
+            <PencilLine size={14} strokeWidth={2} />
+          </button>
           <CheckBox
             checked={item.done}
             onClick={(e) => {
