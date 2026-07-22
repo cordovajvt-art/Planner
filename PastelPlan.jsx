@@ -464,6 +464,7 @@ export default function PastelPlan() {
   const [activeSectionId, setActiveSectionId] = useState(null);
   const [officeHead, setOfficeHead] = useLocalStorageState("pastelplan.officeHead.v1", () => ({ ...DEFAULT_OFFICE_HEAD }));
   const [activeOfficeTab, setActiveOfficeTab] = useState("meetings");
+  const [tourismEntries, setTourismEntries] = useLocalStorageState("pastelplan.tourismPlanner.v1", []);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30000);
@@ -1030,6 +1031,8 @@ export default function PastelPlan() {
             setOfficeHead={setOfficeHead}
             activeOfficeTab={activeOfficeTab}
             setActiveOfficeTab={setActiveOfficeTab}
+            tourismEntries={tourismEntries}
+            setTourismEntries={setTourismEntries}
           />
         )}
 
@@ -1380,6 +1383,8 @@ function WorkView({
   setOfficeHead,
   activeOfficeTab,
   setActiveOfficeTab,
+  tourismEntries,
+  setTourismEntries,
 }) {
   const roleLabel = (WORK_ROLES.find((r) => r.key === workRole) || WORK_ROLES[0]).label;
 
@@ -1422,13 +1427,15 @@ function WorkView({
           activeSectionId={activeSectionId}
           setActiveSectionId={setActiveSectionId}
         />
-      ) : workRole === "office-head" || workRole === "tourism-officer" ? (
+      ) : workRole === "office-head" ? (
         <OfficeHeadDashboard
           officeHead={officeHead}
           setOfficeHead={setOfficeHead}
           activeOfficeTab={activeOfficeTab}
           setActiveOfficeTab={setActiveOfficeTab}
         />
+      ) : workRole === "tourism-officer" ? (
+        <TourismOfficerPlanner tourismEntries={tourismEntries} setTourismEntries={setTourismEntries} />
       ) : (
         <section>
           <div className="pp-card flex flex-col items-center gap-2 py-8 text-center">
@@ -2442,6 +2449,223 @@ function OfficeHeadDashboard({ officeHead, setOfficeHead, activeOfficeTab, setAc
         </>
       )}
     </section>
+  );
+}
+
+const TOURISM_MAJOR_EVENTS = [
+  "Budget Hearing",
+  "Field/Inspection",
+  "Training & Seminar",
+  "Meeting",
+  "Planning",
+  "Festival",
+  "Courtesy Call",
+  "Leave",
+  "Team Building",
+  "Tour",
+  "Other",
+];
+
+const TOURISM_SUB_EVENTS = [
+  { value: "Resort", emoji: "🏖️" },
+  { value: "Hotel", emoji: "🏨" },
+  { value: "Restaurant", emoji: "🏨" },
+  { value: "Beach", emoji: "🏖️" },
+  { value: "Boardwalk", emoji: "🌊" },
+  { value: "City Hall", emoji: "🏛️" },
+  { value: "Expo", emoji: "💼" },
+  { value: "Meeting", emoji: "💼" },
+  { value: "Other", emoji: "📋" },
+];
+
+function freshTourismEntry() {
+  return {
+    id: uid(),
+    majorEvent: "",
+    majorEventOther: "",
+    subEvent: "",
+    facility: "",
+    dateIn: "",
+    dateOut: "",
+    venue: "",
+    remarks: "",
+    urgent: false,
+  };
+}
+
+function tourismDaysInfo(entry) {
+  if (!entry.dateIn || !entry.dateOut) return { label: "—", multi: false };
+  const inDate = new Date(entry.dateIn + "T00:00:00");
+  const outDate = new Date(entry.dateOut + "T00:00:00");
+  const days = Math.round((outDate - inDate) / 86400000) + 1;
+  if (!Number.isFinite(days) || days < 1) return { label: "—", multi: false };
+  return { label: days === 1 ? "1 Day" : `${days} Days`, multi: days > 1 };
+}
+
+function TourismOfficerPlanner({ tourismEntries, setTourismEntries }) {
+  const addEntry = () => setTourismEntries((prev) => [...prev, freshTourismEntry()]);
+  const updateEntry = (id, key, val) =>
+    setTourismEntries((prev) => prev.map((e) => (e.id === id ? { ...e, [key]: val } : e)));
+  const removeEntry = (id) => setTourismEntries((prev) => prev.filter((e) => e.id !== id));
+
+  return (
+    <section>
+      <SectionTitle icon={ClipboardList} fill="var(--pp-gold)" ink="var(--pp-gold-ink)" title="Tourism Officer Planner" />
+      <p className="mb-3 text-[0.78rem] text-[var(--pp-ink-soft)]">
+        Every field below is editable — log events, inspections, and promotions as they happen.
+      </p>
+
+      {tourismEntries.length === 0 ? (
+        <div className="pp-card">
+          <p className="py-3 text-center text-[0.78rem] italic text-[var(--pp-ink-soft)]">
+            No entries yet. Tap "Add entry" to log an event, inspection, or promo.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {tourismEntries.map((entry) => (
+            <TourismEntryCard
+              key={entry.id}
+              entry={entry}
+              onChange={(key, val) => updateEntry(entry.id, key, val)}
+              onRemove={() => removeEntry(entry.id)}
+            />
+          ))}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={addEntry}
+        className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-[var(--pp-line)] py-3 text-[0.8rem] font-bold text-[var(--pp-ink-soft)]"
+      >
+        <Plus size={16} strokeWidth={2.2} /> Add entry
+      </button>
+    </section>
+  );
+}
+
+function TourismEntryCard({ entry, onChange, onRemove }) {
+  const days = tourismDaysInfo(entry);
+
+  return (
+    <div
+      className="pp-card flex flex-col gap-2.5"
+      style={entry.urgent ? { background: "color-mix(in srgb, var(--pp-blush) 35%, var(--pp-surface))" } : undefined}
+    >
+      <div className="flex items-center gap-1.5">
+        <select
+          value={entry.majorEvent}
+          onChange={(e) => onChange("majorEvent", e.target.value)}
+          className="min-w-0 flex-1 rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.85rem] font-bold text-[var(--pp-ink)]"
+        >
+          <option value="">— Select —</option>
+          {TOURISM_MAJOR_EVENTS.map((ev) => (
+            <option key={ev} value={ev}>
+              {ev}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => onChange("urgent", !entry.urgent)}
+          aria-label="Mark urgent"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border-[1.5px] text-[0.95rem]"
+          style={
+            entry.urgent
+              ? { background: "var(--pp-blush)", borderColor: "var(--pp-blush)" }
+              : { background: "var(--pp-surface)", borderColor: "var(--pp-line)", opacity: 0.4 }
+          }
+        >
+          ⚡
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="Remove entry"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-[var(--pp-ink-soft)]"
+        >
+          <X size={15} strokeWidth={2.2} />
+        </button>
+      </div>
+
+      {entry.majorEvent === "Other" && (
+        <input
+          type="text"
+          value={entry.majorEventOther}
+          onChange={(e) => onChange("majorEventOther", e.target.value)}
+          placeholder="Specify..."
+          className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.8rem] font-medium text-[var(--pp-ink)]"
+        />
+      )}
+
+      <select
+        value={entry.subEvent}
+        onChange={(e) => onChange("subEvent", e.target.value)}
+        className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.8rem] font-semibold text-[var(--pp-ink)]"
+      >
+        <option value="">— Sub-event —</option>
+        {TOURISM_SUB_EVENTS.map((s) => (
+          <option key={s.value} value={s.value}>
+            {s.emoji} {s.value}
+          </option>
+        ))}
+      </select>
+
+      <input
+        type="text"
+        value={entry.facility}
+        onChange={(e) => onChange("facility", e.target.value)}
+        placeholder="Facility name, e.g. Sunset Resort"
+        className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.8rem] font-medium text-[var(--pp-ink)]"
+      />
+
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <label className="mb-1 block text-[0.66rem] font-bold text-[var(--pp-ink-soft)]">Date In</label>
+          <input
+            type="date"
+            value={entry.dateIn}
+            onChange={(e) => onChange("dateIn", e.target.value)}
+            className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-2.5 py-2 text-[0.78rem] font-semibold text-[var(--pp-ink)]"
+          />
+        </div>
+        <div className="flex-1">
+          <label className="mb-1 block text-[0.66rem] font-bold text-[var(--pp-ink-soft)]">Date Out</label>
+          <input
+            type="date"
+            value={entry.dateOut}
+            onChange={(e) => onChange("dateOut", e.target.value)}
+            className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-2.5 py-2 text-[0.78rem] font-semibold text-[var(--pp-ink)]"
+          />
+        </div>
+      </div>
+
+      <span
+        className="w-fit rounded-full px-2.5 py-1 text-[0.66rem] font-extrabold"
+        style={
+          days.multi
+            ? { background: "var(--pp-mint)", color: "var(--pp-mint-ink)" }
+            : { background: "var(--pp-surface-alt)", color: "var(--pp-ink-soft)" }
+        }
+      >
+        Days: {days.label}
+      </span>
+
+      <input
+        type="text"
+        value={entry.venue}
+        onChange={(e) => onChange("venue", e.target.value)}
+        placeholder="Venue / Location, e.g. Municipal zone"
+        className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.8rem] font-medium text-[var(--pp-ink)]"
+      />
+
+      <OutlineTextarea
+        value={entry.remarks}
+        onChange={(v) => onChange("remarks", v)}
+        placeholder="Notes & remarks — compliance checks, action items, safety notes, status updates..."
+      />
+    </div>
   );
 }
 

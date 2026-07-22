@@ -395,6 +395,44 @@
   }
   .outline-summary-edit-btn svg { width: 11px; height: 11px; }
 
+  .tp-table-wrap { overflow-x: auto; border: 1.5px solid var(--line); border-radius: 12px; }
+  .tp-table { width: 100%; min-width: 1080px; border-collapse: collapse; font-family: var(--font-body); }
+  .tp-table th, .tp-table td {
+    border-bottom: 1px solid var(--line); border-right: 1px solid var(--line);
+    padding: 6px; text-align: left; vertical-align: top; font-size: 0.74rem; color: var(--ink);
+  }
+  .tp-table th:last-child, .tp-table td:last-child { border-right: none; }
+  .tp-table th {
+    background: var(--paper); font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em;
+    color: var(--ink-soft); white-space: nowrap; position: sticky; top: 0;
+  }
+  .tp-table tr:last-child td { border-bottom: none; }
+  .tp-table tr.urgent td { background: color-mix(in srgb, var(--blush) 35%, transparent); }
+  .tp-cell-input, .tp-cell-select {
+    width: 100%; min-width: 96px; font-family: var(--font-body); font-size: 0.74rem; font-weight: 500;
+    border: 1.5px solid transparent; border-radius: 8px; padding: 5px 6px; background: var(--surface); color: var(--ink);
+  }
+  .tp-cell-input:focus, .tp-cell-select:focus { border-color: var(--line); outline: none; }
+  .tp-cell-input.tp-date { min-width: 118px; }
+  .tp-cell-input.tp-remarks { min-width: 160px; }
+  .tp-multiday-badge {
+    display: inline-block; white-space: nowrap; border-radius: 999px; padding: 3px 9px;
+    font-size: 0.66rem; font-weight: 800;
+  }
+  .tp-multiday-badge.yes { background: var(--mint); color: var(--mint-ink); }
+  .tp-multiday-badge.no { background: var(--surface-alt); color: var(--ink-soft); }
+  .tp-urgent-toggle {
+    width: 26px; height: 26px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface);
+    display: flex; align-items: center; justify-content: center; font-size: 0.9rem; cursor: pointer; opacity: 0.35;
+  }
+  .tp-urgent-toggle.active { opacity: 1; background: var(--blush); border-color: var(--blush); }
+  .tp-remove-btn {
+    width: 26px; height: 26px; border-radius: 8px; border: none; background: transparent;
+    color: var(--ink-soft); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .tp-remove-btn svg { width: 13px; height: 13px; }
+  .tp-empty-note { padding: 16px; text-align: center; font-size: 0.78rem; font-style: italic; color: var(--ink-soft); }
+
   .outline-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; }
   .outline-tab {
     flex-shrink: 0; display: flex; align-items: center; gap: 5px;
@@ -1264,6 +1302,25 @@
         <div id="officeAddForm" style="display:none"></div>
       </div>
       <button class="t-add-block" id="officeAddBtn" type="button" style="margin-top:10px"></button>
+    </section>
+
+    <section id="tourismPlannerSection" style="display:none">
+      <h2 class="section-title">
+        <span class="icon-chip" style="background:var(--gold);color:var(--gold-ink)">📋</span>
+        Tourism Officer Planner
+      </h2>
+      <p class="work-sub" style="margin-bottom:10px;">Every field below is editable — log events, inspections, and promotions as they happen.</p>
+      <div class="tp-table-wrap">
+        <table class="tp-table">
+          <thead>
+            <tr>
+              <th>Major Event</th><th>Sub-Event</th><th>Facility Name</th><th>Date In</th><th>Date Out</th><th>Days</th><th>Venue / Location</th><th>Notes & Remarks</th><th>⚡</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="tpTableBody"></tbody>
+        </table>
+      </div>
+      <button type="button" class="t-add-block" id="tpAddBtn" style="margin-top:10px;">➕ Add entry</button>
     </section>
   </div>
 
@@ -2483,17 +2540,21 @@
   const roleGenericSection = document.getElementById('roleGenericSection');
   const teacherWorkspaceSection = document.getElementById('teacherWorkspaceSection');
   const officeHeadSection = document.getElementById('officeHeadSection');
+  const tourismPlannerSection = document.getElementById('tourismPlannerSection');
   const roleGenericTitle = document.getElementById('roleGenericTitle');
   const roleGenericDesc = document.getElementById('roleGenericDesc');
   function applyRole(){
     roleSelect.value = workRole;
     teacherWorkspaceSection.style.display = 'none';
     officeHeadSection.style.display = 'none';
+    tourismPlannerSection.style.display = 'none';
     roleGenericSection.style.display = 'none';
     if (workRole === 'teacher') {
       teacherWorkspaceSection.style.display = 'block';
-    } else if (workRole === 'office-head' || workRole === 'tourism-officer') {
+    } else if (workRole === 'office-head') {
       officeHeadSection.style.display = 'block';
+    } else if (workRole === 'tourism-officer') {
+      tourismPlannerSection.style.display = 'block';
     } else {
       roleGenericSection.style.display = 'block';
       if (workRole === 'select') {
@@ -3227,6 +3288,99 @@
   renderOfficeTabs();
   renderOfficeList();
   renderOfficeAddForm();
+
+  // WORK: TOURISM OFFICER PLANNER
+  const TOURISM_MAJOR_EVENTS = [
+    'Budget Hearing', 'Field/Inspection', 'Training & Seminar', 'Meeting', 'Planning',
+    'Festival', 'Courtesy Call', 'Leave', 'Team Building', 'Tour', 'Other',
+  ];
+  const TOURISM_SUB_EVENTS = [
+    { value: 'Resort', emoji: '🏖️' },
+    { value: 'Hotel', emoji: '🏨' },
+    { value: 'Restaurant', emoji: '🏨' },
+    { value: 'Beach', emoji: '🏖️' },
+    { value: 'Boardwalk', emoji: '🌊' },
+    { value: 'City Hall', emoji: '🏛️' },
+    { value: 'Expo', emoji: '💼' },
+    { value: 'Meeting', emoji: '💼' },
+    { value: 'Other', emoji: '📋' },
+  ];
+  let tourismEntries = loadJSON('pastelplan.tourismPlanner.v1', []);
+  function saveTourismEntries(){ saveJSON('pastelplan.tourismPlanner.v1', tourismEntries); }
+  function freshTourismEntry(){
+    return { id: uid(), majorEvent: '', majorEventOther: '', subEvent: '', facility: '', dateIn: '', dateOut: '', venue: '', remarks: '', urgent: false };
+  }
+  function multiDayInfo(entry){
+    if (!entry.dateIn || !entry.dateOut) return { label: '—', multi: false };
+    const inDate = new Date(entry.dateIn + 'T00:00:00');
+    const outDate = new Date(entry.dateOut + 'T00:00:00');
+    const days = Math.round((outDate - inDate) / 86400000) + 1;
+    if (!Number.isFinite(days) || days < 1) return { label: '—', multi: false };
+    return { label: days === 1 ? '1 Day' : `${days} Days`, multi: days > 1 };
+  }
+  const tpTableBody = document.getElementById('tpTableBody');
+  function renderTourismTable(){
+    if (!tourismEntries.length) {
+      tpTableBody.innerHTML = `<tr><td class="tp-empty-note" colspan="10">No entries yet. Tap "Add entry" to log an event, inspection, or promo.</td></tr>`;
+      return;
+    }
+    tpTableBody.innerHTML = tourismEntries.map(entry => {
+      const md = multiDayInfo(entry);
+      return `<tr class="${entry.urgent ? 'urgent' : ''}" data-id="${entry.id}">
+        <td>
+          <select class="tp-cell-select" data-field="majorEvent">
+            <option value="">— Select —</option>
+            ${TOURISM_MAJOR_EVENTS.map(ev => `<option value="${ev}" ${entry.majorEvent === ev ? 'selected' : ''}>${ev}</option>`).join('')}
+          </select>
+          ${entry.majorEvent === 'Other' ? `<input type="text" class="tp-cell-input" style="margin-top:4px;" data-field="majorEventOther" placeholder="Specify..." value="${escapeHTML(entry.majorEventOther)}">` : ''}
+        </td>
+        <td>
+          <select class="tp-cell-select" data-field="subEvent">
+            <option value="">—</option>
+            ${TOURISM_SUB_EVENTS.map(s => `<option value="${s.value}" ${entry.subEvent === s.value ? 'selected' : ''}>${s.emoji} ${s.value}</option>`).join('')}
+          </select>
+        </td>
+        <td><input type="text" class="tp-cell-input" data-field="facility" placeholder="e.g. Sunset Resort" value="${escapeHTML(entry.facility)}"></td>
+        <td><input type="date" class="tp-cell-input tp-date" data-field="dateIn" value="${escapeHTML(entry.dateIn)}"></td>
+        <td><input type="date" class="tp-cell-input tp-date" data-field="dateOut" value="${escapeHTML(entry.dateOut)}"></td>
+        <td><span class="tp-multiday-badge ${md.multi ? 'yes' : 'no'}">${md.label}</span></td>
+        <td><input type="text" class="tp-cell-input" data-field="venue" placeholder="Municipal zone" value="${escapeHTML(entry.venue)}"></td>
+        <td><input type="text" class="tp-cell-input tp-remarks" data-field="remarks" placeholder="Compliance / action items..." value="${escapeHTML(entry.remarks)}"></td>
+        <td><button type="button" class="tp-urgent-toggle${entry.urgent ? ' active' : ''}" data-action="urgent" aria-label="Mark urgent">⚡</button></td>
+        <td><button type="button" class="tp-remove-btn" data-action="remove" aria-label="Remove entry">${ICONS.x}</button></td>
+      </tr>`;
+    }).join('');
+
+    tpTableBody.querySelectorAll('tr[data-id]').forEach(row => {
+      const id = row.dataset.id;
+      const entry = tourismEntries.find(e => e.id === id);
+      if (!entry) return;
+      row.querySelectorAll('[data-field]').forEach(el => {
+        const evt = el.tagName === 'SELECT' || el.type === 'date' ? 'change' : 'input';
+        el.addEventListener(evt, () => {
+          entry[el.dataset.field] = el.value;
+          saveTourismEntries();
+          if (el.dataset.field === 'dateIn' || el.dataset.field === 'dateOut' || el.dataset.field === 'majorEvent') renderTourismTable();
+        });
+      });
+      row.querySelector('[data-action="urgent"]').addEventListener('click', () => {
+        entry.urgent = !entry.urgent;
+        saveTourismEntries();
+        renderTourismTable();
+      });
+      row.querySelector('[data-action="remove"]').addEventListener('click', () => {
+        tourismEntries = tourismEntries.filter(e => e.id !== id);
+        saveTourismEntries();
+        renderTourismTable();
+      });
+    });
+  }
+  renderTourismTable();
+  document.getElementById('tpAddBtn').addEventListener('click', () => {
+    tourismEntries = [...tourismEntries, freshTourismEntry()];
+    saveTourismEntries();
+    renderTourismTable();
+  });
 
   // CUSTOMIZE SHEET
   const MAX_BG_BYTES = 4 * 1024 * 1024; // 4MB cap
