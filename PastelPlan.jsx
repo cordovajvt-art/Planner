@@ -148,6 +148,7 @@ const WORK_ROLES = [
   { key: "staff", label: "Staff" },
   { key: "coordinator", label: "Coordinator" },
   { key: "laboratory-incharge", label: "Laboratory In-Charge" },
+  { key: "tourism-officer", label: "Tourism Officer" },
   { key: "others", label: "Others" },
 ];
 
