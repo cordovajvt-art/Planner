@@ -30,6 +30,7 @@ import {
   AlignLeft,
   MapPin,
   Folder,
+  LayoutGrid,
 } from "lucide-react";
 
 /**
@@ -1561,15 +1562,34 @@ function DaysTimeFields({ days, timeIn, timeOut, onChange }) {
 }
 
 function ClassAddForm({ onAdd, onCancel }) {
-  const [draft, setDraft] = useState({ className: "", days: [], timeIn: "", timeOut: "" });
+  const [draft, setDraft] = useState({ className: "", code: "", days: [], timeIn: "", timeOut: "" });
 
   const submit = () => {
     if (!draft.className.trim()) return;
-    onAdd({ id: uid(), className: draft.className.trim(), days: draft.days, timeIn: draft.timeIn, timeOut: draft.timeOut });
+    onAdd({
+      id: uid(),
+      className: draft.className.trim(),
+      code: draft.code.trim(),
+      days: draft.days,
+      timeIn: draft.timeIn,
+      timeOut: draft.timeOut,
+    });
   };
 
   return (
     <div className="pp-card flex flex-col gap-2.5">
+      <div>
+        <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">
+          Course Code <span className="font-medium italic text-[var(--pp-ink-soft)]">(optional)</span>
+        </label>
+        <input
+          type="text"
+          value={draft.code}
+          placeholder="e.g. MATH 3213"
+          onChange={(e) => setDraft((d) => ({ ...d, code: e.target.value }))}
+          className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.82rem] font-medium text-[var(--pp-ink)]"
+        />
+      </div>
       <div>
         <label className="mb-1 block text-[0.7rem] font-bold text-[var(--pp-ink-soft)]">Class</label>
         <input
@@ -1607,7 +1627,10 @@ function ClassRow({ cls, onOpenOutline, onOpenSections, onDelete }) {
   return (
     <div className="flex items-center gap-2.5 border-b border-[var(--pp-line)] py-2.5 last:border-b-0">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[0.83rem] font-semibold text-[var(--pp-ink)]">{cls.className}</p>
+        <p className="truncate text-[0.83rem] font-semibold text-[var(--pp-ink)]">
+          {cls.code && <span className="mr-1.5 text-[var(--pp-sky-ink)]">{cls.code}</span>}
+          {cls.className}
+        </p>
         {subtext && <p className="truncate text-[0.68rem] text-[var(--pp-ink-soft)]">{subtext}</p>}
       </div>
       <button
@@ -1631,8 +1654,113 @@ function ClassRow({ cls, onOpenOutline, onOpenSections, onDelete }) {
   );
 }
 
+function timeToMinutes(t) {
+  if (!t) return null;
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function fmtHourLabel(hour) {
+  const ampm = hour >= 12 ? "PM" : "AM";
+  let h12 = hour % 12;
+  if (h12 === 0) h12 = 12;
+  return `${h12}:00 ${ampm}`;
+}
+
+function ClassScheduleMap({ classSchedule }) {
+  const weekendDays = WEEKDAYS.slice(5).filter((d) => classSchedule.some((c) => c.days.includes(d)));
+  const days = [...WEEKDAYS.slice(0, 5), ...weekendDays];
+
+  const timed = classSchedule.filter(
+    (c) => c.timeIn && c.timeOut && c.days.some((d) => days.includes(d)) && timeToMinutes(c.timeOut) > timeToMinutes(c.timeIn)
+  );
+
+  let startHour = 8;
+  let endHour = 17;
+  if (timed.length) {
+    startHour = Math.floor(Math.min(...timed.map((c) => timeToMinutes(c.timeIn))) / 60);
+    endHour = Math.max(startHour + 1, Math.ceil(Math.max(...timed.map((c) => timeToMinutes(c.timeOut))) / 60));
+  }
+  const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
+
+  const occupied = {};
+  days.forEach((d) => {
+    occupied[d] = new Set();
+  });
+
+  if (!classSchedule.length) {
+    return (
+      <div className="pp-card">
+        <p className="py-3 text-center text-[0.78rem] text-[var(--pp-ink-soft)]">
+          No classes yet — add one from the List tab to see it mapped here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-xl border-[1.5px] border-[var(--pp-line)]">
+      <table className="w-full border-collapse" style={{ minWidth: `${days.length * 108 + 76}px` }}>
+        <thead>
+          <tr>
+            <th className="whitespace-nowrap border-b border-r border-[var(--pp-line)] bg-[var(--pp-paper)] px-2 py-2 text-[0.62rem] font-extrabold uppercase tracking-[0.03em] text-[var(--pp-ink-soft)]" />
+            {days.map((d) => (
+              <th
+                key={d}
+                className="whitespace-nowrap border-b border-[var(--pp-line)] bg-[var(--pp-paper)] px-2 py-2 text-[0.68rem] font-extrabold uppercase tracking-[0.03em] text-[var(--pp-ink-soft)]"
+              >
+                {d.slice(0, 3)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {hours.map((hour, hIdx) => (
+            <tr key={hour}>
+              <td className="whitespace-nowrap border-b border-r border-[var(--pp-line)] px-2 py-2 text-[0.66rem] font-bold text-[var(--pp-ink-soft)]">
+                {fmtHourLabel(hour)}
+              </td>
+              {days.map((day) => {
+                if (occupied[day].has(hIdx)) return null;
+                const cls = classSchedule.find(
+                  (c) =>
+                    c.days.includes(day) &&
+                    c.timeIn &&
+                    timeToMinutes(c.timeIn) >= hour * 60 &&
+                    timeToMinutes(c.timeIn) < (hour + 1) * 60
+                );
+                if (!cls) {
+                  return <td key={day} className="border-b border-[var(--pp-line)] p-1 align-top" />;
+                }
+                const startM = timeToMinutes(cls.timeIn);
+                const endM = cls.timeOut ? timeToMinutes(cls.timeOut) : startM + 60;
+                const span = Math.max(1, Math.min(hours.length - hIdx, Math.ceil((endM - startM) / 60)));
+                for (let s = 1; s < span; s++) occupied[day].add(hIdx + s);
+                const idx = classSchedule.findIndex((c) => c.id === cls.id);
+                const swatch = COLOR_SWATCHES[idx % COLOR_SWATCHES.length];
+                return (
+                  <td key={day} rowSpan={span} className="border-b border-[var(--pp-line)] p-1 align-top">
+                    <div
+                      className="flex h-full flex-col gap-0.5 rounded-lg px-2 py-1.5"
+                      style={{ background: swatch.fill, color: swatch.ink }}
+                    >
+                      {cls.code && <p className="truncate text-[0.68rem] font-extrabold">{cls.code}</p>}
+                      <p className="leading-[1.25] text-[0.66rem] font-semibold">{cls.className}</p>
+                    </div>
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function ClassScheduleList({ classSchedule, setClassSchedule, setCourseOutlines, classSections, setClassSections, setSectionLogs, onOpenOutline, onOpenSections }) {
   const [adding, setAdding] = useState(false);
+  const [view, setView] = useState("list");
 
   const addClass = (cls) => {
     setClassSchedule((prev) => [...prev, cls]);
@@ -1661,8 +1789,40 @@ function ClassScheduleList({ classSchedule, setClassSchedule, setCourseOutlines,
   return (
     <section>
       <SectionTitle icon={Calendar} fill="var(--pp-sky)" ink="var(--pp-sky-ink)" title="Class Schedule" />
+
+      {!adding && (
+        <div className="mb-3 flex gap-1.5">
+          <button
+            type="button"
+            onClick={() => setView("list")}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[0.76rem] font-bold"
+            style={
+              view === "list"
+                ? { background: "var(--pp-sky)", color: "var(--pp-sky-ink)" }
+                : { background: "var(--pp-surface)", border: "1.5px solid var(--pp-line)", color: "var(--pp-ink-soft)" }
+            }
+          >
+            <AlignLeft size={13} strokeWidth={2.2} /> List
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("mapping")}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[0.76rem] font-bold"
+            style={
+              view === "mapping"
+                ? { background: "var(--pp-sky)", color: "var(--pp-sky-ink)" }
+                : { background: "var(--pp-surface)", border: "1.5px solid var(--pp-line)", color: "var(--pp-ink-soft)" }
+            }
+          >
+            <LayoutGrid size={13} strokeWidth={2.2} /> Class Schedule Mapping
+          </button>
+        </div>
+      )}
+
       {adding ? (
         <ClassAddForm onAdd={addClass} onCancel={() => setAdding(false)} />
+      ) : view === "mapping" ? (
+        <ClassScheduleMap classSchedule={classSchedule} />
       ) : (
         <>
           <div className="pp-card">
@@ -1946,6 +2106,7 @@ function TeacherWorkspace({
           <ChevronLeft size={14} strokeWidth={2.2} /> Back to Class Schedule
         </button>
         <p className="mb-3 -mt-1 text-[0.9rem] font-semibold text-[var(--pp-ink)]">
+          {activeClass.code && <span className="mr-1.5 text-[var(--pp-sky-ink)]">{activeClass.code}</span>}
           {activeClass.className}
           <span className="ml-1.5 text-[0.72rem] font-medium text-[var(--pp-ink-soft)]">{fmtDaysTime(activeClass)}</span>
         </p>
@@ -2587,6 +2748,13 @@ function TourismOfficerPlanner({ tourismEntries, setTourismEntries }) {
 
 function TourismEntryCard({ entry, onChange, onRemove }) {
   const days = tourismDaysInfo(entry);
+  const [justSaved, setJustSaved] = useState(false);
+  const saveTimerRef = useRef(null);
+  const handleSave = () => {
+    setJustSaved(true);
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => setJustSaved(false), 1500);
+  };
 
   return (
     <div
@@ -2717,6 +2885,19 @@ function TourismEntryCard({ entry, onChange, onRemove }) {
         onChange={(v) => onChange("remarks", v)}
         placeholder="Notes & remarks — compliance checks, action items, safety notes, status updates..."
       />
+
+      <button
+        type="button"
+        onClick={handleSave}
+        className="flex items-center justify-center gap-1.5 rounded-xl border-none py-2 text-[0.78rem] font-bold"
+        style={
+          justSaved
+            ? { background: "var(--pp-mint)", color: "var(--pp-mint-ink)" }
+            : { background: "var(--pp-seafoam)", color: "var(--pp-seafoam-ink)" }
+        }
+      >
+        <Check size={13} strokeWidth={2.4} /> {justSaved ? "Saved!" : "Save"}
+      </button>
     </div>
   );
 }

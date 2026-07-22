@@ -442,6 +442,13 @@
     color: var(--ink-soft); display: flex; align-items: center; justify-content: center; cursor: pointer;
   }
   .tp-remove-btn svg { width: 13px; height: 13px; }
+  .tp-save-btn {
+    display: flex; align-items: center; gap: 4px; white-space: nowrap; border: none; border-radius: 8px;
+    padding: 6px 9px; background: var(--seafoam); color: var(--seafoam-ink);
+    font-family: var(--font-body); font-size: 0.68rem; font-weight: 800; cursor: pointer;
+  }
+  .tp-save-btn svg { width: 11px; height: 11px; }
+  .tp-save-btn.saved { background: var(--mint); color: var(--mint-ink); }
   .tp-empty-note { padding: 16px; text-align: center; font-size: 0.78rem; font-style: italic; color: var(--ink-soft); }
 
   .outline-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; }
@@ -492,6 +499,32 @@
   .class-row .class-outline-btn svg { width: 13px; height: 13px; }
   .class-row .class-del { border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; flex-shrink: 0; padding: 2px; }
   .class-row .class-del svg { width: 15px; height: 15px; }
+  .class-row .class-code { color: var(--sky-ink); margin-right: 6px; }
+  .cs-view-toggle { display: flex; gap: 6px; margin-bottom: 10px; }
+  .cs-view-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-soft);
+    font-family: var(--font-body); font-size: 0.76rem; font-weight: 700;
+    border-radius: 12px; padding: 8px; cursor: pointer;
+  }
+  .cs-view-btn.active { background: var(--sky); border-color: var(--sky); color: var(--sky-ink); }
+  .cs-map-wrap { overflow-x: auto; border: 1.5px solid var(--line); border-radius: 12px; }
+  .cs-map-table { width: 100%; border-collapse: collapse; font-family: var(--font-body); }
+  .cs-map-table th, .cs-map-table td {
+    border-bottom: 1px solid var(--line); border-right: 1px solid var(--line);
+    padding: 4px; text-align: center; vertical-align: top; font-size: 0.68rem;
+  }
+  .cs-map-table th:last-child, .cs-map-table td:last-child { border-right: none; }
+  .cs-map-table tr:last-child td { border-bottom: none; }
+  .cs-map-table th {
+    background: var(--paper); font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em;
+    color: var(--ink-soft); white-space: nowrap;
+  }
+  .cs-map-time { white-space: nowrap; font-size: 0.64rem; font-weight: 700; color: var(--ink-soft); }
+  .cs-map-block { border-radius: 8px; padding: 6px; height: 100%; text-align: left; }
+  .cs-map-block .cs-map-code { display: block; font-size: 0.66rem; font-weight: 800; }
+  .cs-map-block .cs-map-name { display: block; font-size: 0.64rem; font-weight: 600; line-height: 1.25; }
+  .cs-map-empty { padding: 16px; text-align: center; font-size: 0.78rem; font-style: italic; color: var(--ink-soft); }
   .back-to-classes-btn {
     display: flex; align-items: center; gap: 5px; border: none; background: transparent;
     color: var(--ink-soft); font-family: var(--font-body); font-size: 0.76rem; font-weight: 700;
@@ -1218,11 +1251,16 @@
           </span>
           Class Schedule
         </h2>
-        <div class="card">
+        <div class="cs-view-toggle" id="classViewToggle">
+          <button type="button" class="cs-view-btn active" data-view="list" id="classViewListBtn">List</button>
+          <button type="button" class="cs-view-btn" data-view="mapping" id="classViewMappingBtn">Class Schedule Mapping</button>
+        </div>
+        <div class="card" id="classListCard">
           <ul class="class-list" id="classList"></ul>
           <div id="classAddForm" style="display:none"></div>
         </div>
         <button class="t-add-block" id="classAddBtn" type="button" style="margin-top:10px"></button>
+        <div id="classMapBox" style="display:none"></div>
       </div>
 
       <div id="classOutlineBox" style="display:none">
@@ -1325,7 +1363,7 @@
         <table class="tp-table">
           <thead>
             <tr>
-              <th>Major Event</th><th>Sub-Event</th><th>Facility Name</th><th>Dates</th><th>Days</th><th>Venue / Location</th><th>Notes & Remarks</th><th>⚡</th><th></th>
+              <th>Major Event</th><th>Sub-Event</th><th>Facility Name</th><th>Dates</th><th>Days</th><th>Venue / Location</th><th>Notes & Remarks</th><th>Save</th><th>⚡</th><th></th>
             </tr>
           </thead>
           <tbody id="tpTableBody"></tbody>
@@ -2652,6 +2690,10 @@
   const classListBox = document.getElementById('classList');
   const classAddForm = document.getElementById('classAddForm');
   const classAddBtn = document.getElementById('classAddBtn');
+  const classListCard = document.getElementById('classListCard');
+  const classMapBox = document.getElementById('classMapBox');
+  const classViewListBtn = document.getElementById('classViewListBtn');
+  const classViewMappingBtn = document.getElementById('classViewMappingBtn');
   const classScheduleBox = document.getElementById('classScheduleBox');
   const classOutlineBox = document.getElementById('classOutlineBox');
   const activeClassLabel = document.getElementById('activeClassLabel');
@@ -2685,7 +2727,7 @@
       li.className = 'class-row';
       const meta = fmtDaysTime(cls);
       li.innerHTML = `<div class="class-info">
-          <p class="class-name">${escapeHTML(cls.className)}</p>
+          <p class="class-name">${cls.code ? `<span class="class-code">${escapeHTML(cls.code)}</span>` : ''}${escapeHTML(cls.className)}</p>
           ${meta ? `<p class="class-meta">${escapeHTML(meta)}</p>` : ''}
         </div>
         <button type="button" class="class-outline-btn" data-action="sections" data-id="${cls.id}">
@@ -2710,6 +2752,7 @@
         saveClassSections();
         saveSectionLogs();
         renderClassList();
+        renderClassMap();
       });
       classListBox.appendChild(li);
     });
@@ -2719,13 +2762,15 @@
     if (!classAdding) {
       classAddForm.style.display = 'none';
       classAddForm.innerHTML = '';
-      classAddBtn.style.display = 'flex';
+      classAddBtn.style.display = classView === 'list' ? 'flex' : 'none';
       classAddBtn.innerHTML = `${ICONS.plus} Add class`;
       return;
     }
     classAddBtn.style.display = 'none';
     classAddForm.style.display = 'block';
     classAddForm.innerHTML = `
+      <label class="t-edit-caption">Course Code <span style="font-weight:500;font-style:italic;">(optional)</span></label>
+      <input type="text" class="t-input-title" id="classFieldCode" placeholder="e.g. MATH 3213">
       <label class="t-edit-caption">Class</label>
       <input type="text" class="t-input-title" id="classFieldName" placeholder="e.g. Grade 10 Biology">
       <label class="t-edit-caption">Days</label>
@@ -2751,6 +2796,7 @@
       classSchedule = [...classSchedule, {
         id: uid(),
         className: nameEl.value.trim(),
+        code: document.getElementById('classFieldCode').value.trim(),
         days,
         timeIn: document.getElementById('classFieldTimeIn').value,
         timeOut: document.getElementById('classFieldTimeOut').value,
@@ -2759,6 +2805,7 @@
       classAdding = false;
       renderClassList();
       renderClassAddForm();
+      renderClassMap();
     });
   }
 
@@ -2766,6 +2813,82 @@
     classAdding = true;
     renderClassAddForm();
   });
+
+  let classView = 'list';
+  function timeToMinutes(t){
+    if (!t) return null;
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  }
+  function fmtHourLabel(hour){
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    let h12 = hour % 12;
+    if (h12 === 0) h12 = 12;
+    return `${h12}:00 ${ampm}`;
+  }
+  function renderClassMap(){
+    if (classView !== 'mapping') return;
+    if (!classSchedule.length) {
+      classMapBox.innerHTML = '<div class="card"><p class="cs-map-empty">No classes yet — add one from the List tab to see it mapped here.</p></div>';
+      return;
+    }
+    const weekendDays = WEEKDAYS.slice(5).filter(d => classSchedule.some(c => c.days.includes(d)));
+    const days = [...WEEKDAYS.slice(0, 5), ...weekendDays];
+
+    const timed = classSchedule.filter(c => c.timeIn && c.timeOut && c.days.some(d => days.includes(d)) && timeToMinutes(c.timeOut) > timeToMinutes(c.timeIn));
+    let startHour = 8, endHour = 17;
+    if (timed.length) {
+      startHour = Math.floor(Math.min(...timed.map(c => timeToMinutes(c.timeIn))) / 60);
+      endHour = Math.max(startHour + 1, Math.ceil(Math.max(...timed.map(c => timeToMinutes(c.timeOut))) / 60));
+    }
+    const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
+
+    const occupied = {};
+    days.forEach(d => { occupied[d] = new Set(); });
+
+    const rowsHTML = hours.map((hour, hIdx) => {
+      const cellsHTML = days.map(day => {
+        if (occupied[day].has(hIdx)) return '';
+        const cls = classSchedule.find(c =>
+          c.days.includes(day) && c.timeIn &&
+          timeToMinutes(c.timeIn) >= hour * 60 && timeToMinutes(c.timeIn) < (hour + 1) * 60
+        );
+        if (!cls) return '<td></td>';
+        const startM = timeToMinutes(cls.timeIn);
+        const endM = cls.timeOut ? timeToMinutes(cls.timeOut) : startM + 60;
+        const span = Math.max(1, Math.min(hours.length - hIdx, Math.ceil((endM - startM) / 60)));
+        for (let s = 1; s < span; s++) occupied[day].add(hIdx + s);
+        const idx = classSchedule.findIndex(c => c.id === cls.id);
+        const swatch = COLOR_SWATCHES[idx % COLOR_SWATCHES.length];
+        return `<td rowspan="${span}">
+          <div class="cs-map-block" style="background:${swatch.fill};color:${swatch.ink}">
+            ${cls.code ? `<span class="cs-map-code">${escapeHTML(cls.code)}</span>` : ''}
+            <span class="cs-map-name">${escapeHTML(cls.className)}</span>
+          </div>
+        </td>`;
+      }).join('');
+      return `<tr><td class="cs-map-time">${fmtHourLabel(hour)}</td>${cellsHTML}</tr>`;
+    }).join('');
+
+    classMapBox.innerHTML = `<div class="cs-map-wrap">
+      <table class="cs-map-table" style="min-width:${days.length * 108 + 76}px">
+        <thead><tr><th></th>${days.map(d => `<th>${d.slice(0, 3)}</th>`).join('')}</tr></thead>
+        <tbody>${rowsHTML}</tbody>
+      </table>
+    </div>`;
+  }
+
+  function setClassView(view){
+    classView = view;
+    classViewListBtn.classList.toggle('active', view === 'list');
+    classViewMappingBtn.classList.toggle('active', view === 'mapping');
+    classListCard.style.display = view === 'list' ? 'block' : 'none';
+    classAddBtn.style.display = view === 'list' && !classAdding ? 'flex' : 'none';
+    classMapBox.style.display = view === 'mapping' ? 'block' : 'none';
+    if (view === 'mapping') renderClassMap();
+  }
+  classViewListBtn.addEventListener('click', () => setClassView('list'));
+  classViewMappingBtn.addEventListener('click', () => setClassView('mapping'));
 
   function openClassFolder(classId){
     activeClassId = classId;
@@ -3369,7 +3492,7 @@
   const tpTableBody = document.getElementById('tpTableBody');
   function renderTourismTable(){
     if (!tourismEntries.length) {
-      tpTableBody.innerHTML = `<tr><td class="tp-empty-note" colspan="9">No entries yet. Tap "Add entry" to log an event, inspection, or promo.</td></tr>`;
+      tpTableBody.innerHTML = `<tr><td class="tp-empty-note" colspan="10">No entries yet. Tap "Add entry" to log an event, inspection, or promo.</td></tr>`;
       return;
     }
     tpTableBody.innerHTML = tourismEntries.map(entry => {
@@ -3399,6 +3522,7 @@
         <td><span class="tp-multiday-badge ${md.multi ? 'yes' : 'no'}">${md.label}</span></td>
         <td><input type="text" class="tp-cell-input" data-field="venue" placeholder="Municipal zone" value="${escapeHTML(entry.venue)}"></td>
         <td><input type="text" class="tp-cell-input tp-remarks" data-field="remarks" placeholder="Compliance / action items..." value="${escapeHTML(entry.remarks)}"></td>
+        <td><button type="button" class="tp-save-btn" data-action="save">${ICONS.check} Save</button></td>
         <td><button type="button" class="tp-urgent-toggle${entry.urgent ? ' active' : ''}" data-action="urgent" aria-label="Mark urgent">⚡</button></td>
         <td><button type="button" class="tp-remove-btn" data-action="remove" aria-label="Remove entry">${ICONS.x}</button></td>
       </tr>`;
@@ -3432,6 +3556,18 @@
           saveTourismEntries();
           renderTourismTable();
         });
+      });
+      const saveBtn = row.querySelector('[data-action="save"]');
+      let saveResetTimer = null;
+      saveBtn.addEventListener('click', () => {
+        saveTourismEntries();
+        saveBtn.classList.add('saved');
+        saveBtn.innerHTML = `${ICONS.check} Saved!`;
+        clearTimeout(saveResetTimer);
+        saveResetTimer = setTimeout(() => {
+          saveBtn.classList.remove('saved');
+          saveBtn.innerHTML = `${ICONS.check} Save`;
+        }, 1500);
       });
       row.querySelector('[data-action="urgent"]').addEventListener('click', () => {
         entry.urgent = !entry.urgent;
