@@ -1,0 +1,8 @@
+node_modules/
+www/
+
+# Capacitor native platform projects (regenerated via `npx cap add`)
+ios/
+android/
+
+.DS_Store

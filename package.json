@@ -1,0 +1,19 @@
+{
+  "name": "giya",
+  "version": "1.0.0",
+  "description": "GIYA — a mobile-first daily planner with role-based work workspaces (Teacher, Office Head, Tourism Officer)",
+  "private": true,
+  "scripts": {
+    "build": "mkdir -p www && cp index.html www/index.html",
+    "sync": "npm run build && npx cap sync",
+    "ios": "npx cap open ios",
+    "android": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/app": "latest",
+    "@capacitor/core": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "latest"
+  }
+}
