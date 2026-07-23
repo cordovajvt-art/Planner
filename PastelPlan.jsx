@@ -1412,7 +1412,6 @@ function DashboardView({
       </section>
 
       <section>
-        <SectionTitle icon={Calendar} fill="var(--pp-blush)" ink="var(--pp-blush-ink)" title="Class Schedule Mapping" />
         <ClassScheduleOverviewCard classSchedule={classSchedule} onOpen={onOpenClassMap} />
       </section>
     </div>
@@ -1427,9 +1426,8 @@ function ClassScheduleOverviewCard({ classSchedule, onOpen }) {
       type="button"
       onClick={onOpen}
       className="flex h-[152px] w-[152px] flex-col gap-2 rounded-[24px] p-3.5 text-left"
-      style={{ background: "var(--pp-blush)", color: "var(--pp-blush-ink)" }}
+      style={{ background: "var(--pp-mint)", color: "var(--pp-mint-ink)" }}
     >
-      <span className="text-[0.62rem] font-extrabold uppercase tracking-[.03em] opacity-75">Class Schedule Mapping</span>
       {classSchedule.length === 0 ? (
         <span className="m-auto text-[0.74rem] font-bold">No classes yet</span>
       ) : (
@@ -1441,7 +1439,7 @@ function ClassScheduleOverviewCard({ classSchedule, onOpen }) {
                 <span className="text-[0.56rem] font-extrabold opacity-65">{d.slice(0, 1)}</span>
                 <div
                   className="flex w-full flex-1 flex-col overflow-hidden rounded-[5px]"
-                  style={{ background: "color-mix(in srgb, var(--pp-blush-ink) 12%, transparent)" }}
+                  style={{ background: "color-mix(in srgb, var(--pp-mint-ink) 12%, transparent)" }}
                 >
                   {classesToday.map((c) => {
                     const idx = classSchedule.findIndex((x) => x.id === c.id);
