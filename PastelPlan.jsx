@@ -29,7 +29,6 @@ import {
   AlignLeft,
   MapPin,
   Folder,
-  LayoutGrid,
 } from "lucide-react";
 
 /**
@@ -210,9 +209,9 @@ const ACTION_TYPES = ["QUIZ", "LECTURE", "GROUP ACTIVITY", "LAB ACTIVITY", "REMI
 
 function fmtDaysTime(item) {
   const days = (item.days || []).map((d) => d.slice(0, 3)).join(", ");
-  const inLabel = item.timeIn ? `${fmtTime(item.timeIn).num} ${fmtTime(item.timeIn).ampm}` : "";
-  const outLabel = item.timeOut ? `${fmtTime(item.timeOut).num} ${fmtTime(item.timeOut).ampm}` : "";
-  const timeRange = inLabel && outLabel ? `${inLabel}–${outLabel}` : inLabel || outLabel;
+  const inLabel = item.timeIn ? fmt12(item.timeIn) : "";
+  const outLabel = item.timeOut ? fmt12(item.timeOut) : "";
+  const timeRange = inLabel && outLabel ? `${inLabel}-${outLabel}` : inLabel || outLabel;
   return [days, timeRange].filter(Boolean).join(" · ");
 }
 
@@ -370,6 +369,13 @@ function fmtTime(time24) {
   return { num: `${h12}:${String(mm).padStart(2, "0")}`, ampm };
 }
 
+function fmt12(time24) {
+  const [hh, mm] = time24.split(":").map(Number);
+  let h12 = hh % 12;
+  if (h12 === 0) h12 = 12;
+  return `${h12}:${String(mm).padStart(2, "0")}`;
+}
+
 function todayISO(d) {
   d = d || new Date();
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -491,7 +497,6 @@ export default function PastelPlan() {
   const [sectionLogs, setSectionLogs] = useLocalStorageState("pastelplan.sectionLogs.v1", {});
   const [activeClassId, setActiveClassId] = useState(null);
   const [outlineJumpWeek, setOutlineJumpWeek] = useState(null);
-  const [classViewJump, setClassViewJump] = useState(null);
   const [activeSectionsClassId, setActiveSectionsClassId] = useState(null);
   const [activeSectionId, setActiveSectionId] = useState(null);
   const [officeHead, setOfficeHead] = useLocalStorageState("pastelplan.officeHead.v1", () => ({ ...DEFAULT_OFFICE_HEAD }));
@@ -570,7 +575,6 @@ export default function PastelPlan() {
   function goToWorkClassMap() {
     setMainPage("work");
     setWorkRole("teacher");
-    setClassViewJump("mapping");
   }
   const leftCount = schedule.filter((s) => !s.done).length;
 
@@ -1079,8 +1083,6 @@ export default function PastelPlan() {
             setActiveClassId={setActiveClassId}
             outlineJumpWeek={outlineJumpWeek}
             setOutlineJumpWeek={setOutlineJumpWeek}
-            classViewJump={classViewJump}
-            setClassViewJump={setClassViewJump}
             activeSectionsClassId={activeSectionsClassId}
             setActiveSectionsClassId={setActiveSectionsClassId}
             activeSectionId={activeSectionId}
@@ -1419,72 +1421,9 @@ function DashboardView({
 }
 
 function ClassScheduleOverviewCard({ classSchedule, onOpen }) {
-  const weekendDays = WEEKDAYS.slice(5).filter((d) => classSchedule.some((c) => (c.days || []).includes(d)));
-  const days = [...WEEKDAYS.slice(0, 5), ...weekendDays];
-
-  const timed = classSchedule.filter((c) => c.timeIn && c.timeOut && timeToMinutes(c.timeOut) > timeToMinutes(c.timeIn));
-  let startHour = 8;
-  let endHour = 17;
-  if (timed.length) {
-    startHour = Math.floor(Math.min(...timed.map((c) => timeToMinutes(c.timeIn))) / 60);
-    endHour = Math.max(startHour + 1, Math.ceil(Math.max(...timed.map((c) => timeToMinutes(c.timeOut))) / 60));
-  }
-  const rangeStart = startHour * 60;
-  const rangeEnd = endHour * 60;
-
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="flex h-[152px] w-[152px] flex-col gap-1.5 rounded-2xl border-[1.5px] p-2 text-left"
-      style={{ background: "var(--pp-surface)", borderColor: "var(--pp-mint)", color: "var(--pp-ink-soft)" }}
-    >
-      {classSchedule.length === 0 ? (
-        <span className="m-auto text-[0.7rem] font-bold">No classes yet</span>
-      ) : (
-        <div className="flex flex-1 items-stretch gap-[3px]">
-          {days.map((d) => {
-            const classesToday = timed
-              .filter((c) => (c.days || []).includes(d))
-              .sort((a, b) => timeToMinutes(a.timeIn) - timeToMinutes(b.timeIn));
-            let cursor = rangeStart;
-            const parts = [];
-            classesToday.forEach((c) => {
-              const startM = Math.max(rangeStart, timeToMinutes(c.timeIn));
-              const endM = Math.min(rangeEnd, timeToMinutes(c.timeOut));
-              if (endM <= startM) return;
-              if (startM > cursor) parts.push({ kind: "gap", flex: startM - cursor, key: `${d}-gap-${cursor}` });
-              const idx = classSchedule.findIndex((x) => x.id === c.id);
-              const swatch = c.color ? swatchByKey(c.color) : COLOR_SWATCHES[idx % COLOR_SWATCHES.length];
-              parts.push({ kind: "seg", flex: endM - startM, fill: swatch.fill, key: c.id });
-              cursor = endM;
-            });
-            if (cursor < rangeEnd) parts.push({ kind: "gap", flex: rangeEnd - cursor, key: `${d}-gap-end` });
-            return (
-              <div key={d} className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
-                <span
-                  className="text-[0.5rem] font-extrabold uppercase tracking-[.02em] opacity-85"
-                  style={{ color: "var(--pp-mint-ink)" }}
-                >
-                  {d.slice(0, 1)}
-                </span>
-                <div
-                  className="flex w-full flex-1 flex-col gap-px overflow-hidden rounded-[6px] border"
-                  style={{ background: "var(--pp-paper)", borderColor: "var(--pp-line)" }}
-                >
-                  {parts.map((part) =>
-                    part.kind === "seg" ? (
-                      <span key={part.key} className="w-full rounded-[3px]" style={{ flex: `${part.flex} 0 0`, background: part.fill }} />
-                    ) : (
-                      <span key={part.key} className="w-full" style={{ flex: `${part.flex} 0 0` }} />
-                    )
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+    <button type="button" onClick={onOpen} className="block w-full max-w-[320px] text-left">
+      <ClassScheduleMap classSchedule={classSchedule} compact />
     </button>
   );
 }
@@ -1504,8 +1443,6 @@ function WorkView({
   setActiveClassId,
   outlineJumpWeek,
   setOutlineJumpWeek,
-  classViewJump,
-  setClassViewJump,
   activeSectionsClassId,
   setActiveSectionsClassId,
   activeSectionId,
@@ -1577,8 +1514,6 @@ function WorkView({
           setActiveClassId={setActiveClassId}
           outlineJumpWeek={outlineJumpWeek}
           setOutlineJumpWeek={setOutlineJumpWeek}
-          classViewJump={classViewJump}
-          setClassViewJump={setClassViewJump}
           activeSectionsClassId={activeSectionsClassId}
           setActiveSectionsClassId={setActiveSectionsClassId}
           activeSectionId={activeSectionId}
@@ -1811,14 +1746,15 @@ function timeToMinutes(t) {
   return h * 60 + m;
 }
 
-function fmtHourLabel(hour) {
-  const ampm = hour >= 12 ? "PM" : "AM";
-  let h12 = hour % 12;
+function fmtSlotLabel(mins) {
+  const hh = Math.floor(mins / 60);
+  const mm = mins % 60;
+  let h12 = hh % 12;
   if (h12 === 0) h12 = 12;
-  return `${h12}:00 ${ampm}`;
+  return `${h12}:${String(mm).padStart(2, "0")}`;
 }
 
-function ClassScheduleMap({ classSchedule }) {
+function ClassScheduleMap({ classSchedule, compact }) {
   const weekendDays = WEEKDAYS.slice(5).filter((d) => classSchedule.some((c) => c.days.includes(d)));
   const days = [...WEEKDAYS.slice(0, 5), ...weekendDays];
 
@@ -1832,7 +1768,9 @@ function ClassScheduleMap({ classSchedule }) {
     startHour = Math.floor(Math.min(...timed.map((c) => timeToMinutes(c.timeIn))) / 60);
     endHour = Math.max(startHour + 1, Math.ceil(Math.max(...timed.map((c) => timeToMinutes(c.timeOut))) / 60));
   }
-  const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
+  const SLOT = 30;
+  const slotCount = Math.ceil(((endHour - startHour) * 60) / SLOT);
+  const slots = Array.from({ length: slotCount }, (_, i) => startHour * 60 + i * SLOT);
 
   const occupied = {};
   days.forEach((d) => {
@@ -1841,24 +1779,31 @@ function ClassScheduleMap({ classSchedule }) {
 
   if (!classSchedule.length) {
     return (
-      <div className="pp-card">
+      <div className="pp-card mb-3">
         <p className="py-3 text-center text-[0.78rem] text-[var(--pp-ink-soft)]">
-          No classes yet — add one from the List tab to see it mapped here.
+          No classes yet{compact ? "" : " — add one below to see it mapped here"}.
         </p>
       </div>
     );
   }
 
+  const thPad = compact ? "px-1 py-1" : "px-2 py-2";
+  const thFont = compact ? "text-[0.5rem]" : "text-[0.68rem]";
+  const timeFont = compact ? "text-[0.48rem]" : "text-[0.66rem]";
+  const blockPad = compact ? "px-1 py-0.5" : "px-2 py-1.5";
+  const codeFont = compact ? "text-[0.5rem]" : "text-[0.68rem]";
+  const nameFont = compact ? "text-[0.48rem]" : "text-[0.66rem]";
+
   return (
-    <div className="overflow-x-auto rounded-xl border-[1.5px] border-[var(--pp-line)]">
-      <table className="w-full border-collapse" style={{ minWidth: `${days.length * 108 + 76}px` }}>
+    <div className={`${compact ? "" : "mb-3"} overflow-x-auto rounded-xl border-[1.5px] border-[var(--pp-line)]`}>
+      <table className="w-full border-collapse" style={{ minWidth: `${days.length * (compact ? 62 : 108) + (compact ? 44 : 76)}px` }}>
         <thead>
           <tr>
-            <th className="whitespace-nowrap border-b border-r border-[var(--pp-line)] bg-[var(--pp-paper)] px-2 py-2 text-[0.62rem] font-extrabold uppercase tracking-[0.03em] text-[var(--pp-ink-soft)]" />
+            <th className={`whitespace-nowrap border-b border-r border-[var(--pp-line)] bg-[var(--pp-paper)] ${thPad} text-[0.62rem] font-extrabold uppercase tracking-[0.03em] text-[var(--pp-ink-soft)]`} />
             {days.map((d) => (
               <th
                 key={d}
-                className="whitespace-nowrap border-b border-[var(--pp-line)] bg-[var(--pp-paper)] px-2 py-2 text-[0.68rem] font-extrabold uppercase tracking-[0.03em] text-[var(--pp-ink-soft)]"
+                className={`whitespace-nowrap border-b border-[var(--pp-line)] bg-[var(--pp-paper)] ${thPad} ${thFont} font-extrabold uppercase tracking-[0.03em] text-[var(--pp-ink-soft)]`}
               >
                 {d.slice(0, 3)}
               </th>
@@ -1866,37 +1811,37 @@ function ClassScheduleMap({ classSchedule }) {
           </tr>
         </thead>
         <tbody>
-          {hours.map((hour, hIdx) => (
-            <tr key={hour}>
-              <td className="whitespace-nowrap border-b border-r border-[var(--pp-line)] px-2 py-2 text-[0.66rem] font-bold text-[var(--pp-ink-soft)]">
-                {fmtHourLabel(hour)}
+          {slots.map((slotStart, sIdx) => (
+            <tr key={slotStart}>
+              <td className={`whitespace-nowrap border-b border-r border-[var(--pp-line)] ${thPad} ${timeFont} font-bold text-[var(--pp-ink-soft)]`}>
+                {fmtSlotLabel(slotStart)}
               </td>
               {days.map((day) => {
-                if (occupied[day].has(hIdx)) return null;
+                if (occupied[day].has(sIdx)) return null;
                 const cls = classSchedule.find(
                   (c) =>
                     c.days.includes(day) &&
                     c.timeIn &&
-                    timeToMinutes(c.timeIn) >= hour * 60 &&
-                    timeToMinutes(c.timeIn) < (hour + 1) * 60
+                    timeToMinutes(c.timeIn) >= slotStart &&
+                    timeToMinutes(c.timeIn) < slotStart + SLOT
                 );
                 if (!cls) {
                   return <td key={day} className="border-b border-[var(--pp-line)] p-1 align-top" />;
                 }
                 const startM = timeToMinutes(cls.timeIn);
-                const endM = cls.timeOut ? timeToMinutes(cls.timeOut) : startM + 60;
-                const span = Math.max(1, Math.min(hours.length - hIdx, Math.ceil((endM - startM) / 60)));
-                for (let s = 1; s < span; s++) occupied[day].add(hIdx + s);
+                const endM = cls.timeOut ? timeToMinutes(cls.timeOut) : startM + SLOT;
+                const span = Math.max(1, Math.min(slots.length - sIdx, Math.ceil((endM - startM) / SLOT)));
+                for (let s = 1; s < span; s++) occupied[day].add(sIdx + s);
                 const idx = classSchedule.findIndex((c) => c.id === cls.id);
                 const swatch = cls.color ? swatchByKey(cls.color) : COLOR_SWATCHES[idx % COLOR_SWATCHES.length];
                 return (
                   <td key={day} rowSpan={span} className="border-b border-[var(--pp-line)] p-1 align-top">
                     <div
-                      className="flex h-full flex-col gap-0.5 rounded-lg px-2 py-1.5"
+                      className={`flex h-full flex-col gap-0.5 rounded-lg ${blockPad}`}
                       style={{ background: swatch.fill, color: swatch.ink }}
                     >
-                      {cls.code && <p className="truncate text-[0.68rem] font-extrabold">{cls.code}</p>}
-                      <p className="leading-[1.25] text-[0.66rem] font-semibold">{cls.className}</p>
+                      {cls.code && <p className={`truncate ${codeFont} font-extrabold`}>{cls.code}</p>}
+                      {!compact && <p className={`leading-[1.25] ${nameFont} font-semibold`}>{cls.className}</p>}
                     </div>
                   </td>
                 );
@@ -1918,22 +1863,10 @@ function ClassScheduleList({
   setSectionLogs,
   onOpenOutline,
   onOpenSections,
-  jumpToView,
-  onConsumeViewJump,
 }) {
   const [adding, setAdding] = useState(false);
-  const [view, setView] = useState("list");
   const [editingClassId, setEditingClassId] = useState(null);
   const editingClass = editingClassId ? classSchedule.find((c) => c.id === editingClassId) : null;
-
-  useEffect(() => {
-    if (jumpToView) {
-      setView(jumpToView);
-      setAdding(false);
-      onConsumeViewJump?.();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jumpToView]);
 
   const saveClass = (cls) => {
     setClassSchedule((prev) => (prev.some((c) => c.id === cls.id) ? prev.map((c) => (c.id === cls.id ? cls : c)) : [...prev, cls]));
@@ -1963,35 +1896,6 @@ function ClassScheduleList({
     <section>
       <SectionTitle icon={Calendar} fill="var(--pp-sky)" ink="var(--pp-sky-ink)" title="Class Schedule" />
 
-      {!adding && (
-        <div className="mb-3 flex gap-1.5">
-          <button
-            type="button"
-            onClick={() => setView("list")}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[0.76rem] font-bold"
-            style={
-              view === "list"
-                ? { background: "var(--pp-sky)", color: "var(--pp-sky-ink)" }
-                : { background: "var(--pp-surface)", border: "1.5px solid var(--pp-line)", color: "var(--pp-ink-soft)" }
-            }
-          >
-            <AlignLeft size={13} strokeWidth={2.2} /> List
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("mapping")}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[0.76rem] font-bold"
-            style={
-              view === "mapping"
-                ? { background: "var(--pp-sky)", color: "var(--pp-sky-ink)" }
-                : { background: "var(--pp-surface)", border: "1.5px solid var(--pp-line)", color: "var(--pp-ink-soft)" }
-            }
-          >
-            <LayoutGrid size={13} strokeWidth={2.2} /> Class Schedule Mapping
-          </button>
-        </div>
-      )}
-
       {adding ? (
         <ClassAddForm
           onAdd={saveClass}
@@ -2001,10 +1905,9 @@ function ClassScheduleList({
           }}
           editingClass={editingClass}
         />
-      ) : view === "mapping" ? (
-        <ClassScheduleMap classSchedule={classSchedule} />
       ) : (
         <>
+          <ClassScheduleMap classSchedule={classSchedule} />
           <div className="pp-card">
             {classSchedule.length === 0 ? (
               <p className="py-3 text-center text-[0.78rem] text-[var(--pp-ink-soft)]">No classes yet.</p>
@@ -2263,8 +2166,6 @@ function TeacherWorkspace({
   setActiveClassId,
   outlineJumpWeek,
   setOutlineJumpWeek,
-  classViewJump,
-  setClassViewJump,
   activeSectionsClassId,
   setActiveSectionsClassId,
   activeSectionId,
@@ -2346,8 +2247,6 @@ function TeacherWorkspace({
         setActiveSectionsClassId(id);
         setActiveSectionId(null);
       }}
-      jumpToView={classViewJump}
-      onConsumeViewJump={() => setClassViewJump(null)}
     />
   );
 }
