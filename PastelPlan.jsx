@@ -1421,31 +1421,64 @@ function DashboardView({
 function ClassScheduleOverviewCard({ classSchedule, onOpen }) {
   const weekendDays = WEEKDAYS.slice(5).filter((d) => classSchedule.some((c) => (c.days || []).includes(d)));
   const days = [...WEEKDAYS.slice(0, 5), ...weekendDays];
+
+  const timed = classSchedule.filter((c) => c.timeIn && c.timeOut && timeToMinutes(c.timeOut) > timeToMinutes(c.timeIn));
+  let startHour = 8;
+  let endHour = 17;
+  if (timed.length) {
+    startHour = Math.floor(Math.min(...timed.map((c) => timeToMinutes(c.timeIn))) / 60);
+    endHour = Math.max(startHour + 1, Math.ceil(Math.max(...timed.map((c) => timeToMinutes(c.timeOut))) / 60));
+  }
+  const rangeStart = startHour * 60;
+  const rangeEnd = endHour * 60;
+
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="flex h-[152px] w-[152px] flex-col gap-2 rounded-[24px] p-3.5 text-left"
-      style={{ background: "var(--pp-mint)", color: "var(--pp-mint-ink)" }}
+      className="flex h-[152px] w-[152px] flex-col gap-1.5 rounded-2xl border-[1.5px] p-2 text-left"
+      style={{ background: "var(--pp-surface)", borderColor: "var(--pp-mint)", color: "var(--pp-ink-soft)" }}
     >
       {classSchedule.length === 0 ? (
-        <span className="m-auto text-[0.74rem] font-bold">No classes yet</span>
+        <span className="m-auto text-[0.7rem] font-bold">No classes yet</span>
       ) : (
-        <div className="flex flex-1 items-stretch gap-1">
+        <div className="flex flex-1 items-stretch gap-[3px]">
           {days.map((d) => {
-            const classesToday = classSchedule.filter((c) => (c.days || []).includes(d));
+            const classesToday = timed
+              .filter((c) => (c.days || []).includes(d))
+              .sort((a, b) => timeToMinutes(a.timeIn) - timeToMinutes(b.timeIn));
+            let cursor = rangeStart;
+            const parts = [];
+            classesToday.forEach((c) => {
+              const startM = Math.max(rangeStart, timeToMinutes(c.timeIn));
+              const endM = Math.min(rangeEnd, timeToMinutes(c.timeOut));
+              if (endM <= startM) return;
+              if (startM > cursor) parts.push({ kind: "gap", flex: startM - cursor, key: `${d}-gap-${cursor}` });
+              const idx = classSchedule.findIndex((x) => x.id === c.id);
+              const swatch = c.color ? swatchByKey(c.color) : COLOR_SWATCHES[idx % COLOR_SWATCHES.length];
+              parts.push({ kind: "seg", flex: endM - startM, fill: swatch.fill, key: c.id });
+              cursor = endM;
+            });
+            if (cursor < rangeEnd) parts.push({ kind: "gap", flex: rangeEnd - cursor, key: `${d}-gap-end` });
             return (
-              <div key={d} className="flex flex-1 flex-col items-center gap-1">
-                <span className="text-[0.56rem] font-extrabold opacity-65">{d.slice(0, 1)}</span>
-                <div
-                  className="flex w-full flex-1 flex-col overflow-hidden rounded-[5px]"
-                  style={{ background: "color-mix(in srgb, var(--pp-mint-ink) 12%, transparent)" }}
+              <div key={d} className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
+                <span
+                  className="text-[0.5rem] font-extrabold uppercase tracking-[.02em] opacity-85"
+                  style={{ color: "var(--pp-mint-ink)" }}
                 >
-                  {classesToday.map((c) => {
-                    const idx = classSchedule.findIndex((x) => x.id === c.id);
-                    const swatch = c.color ? swatchByKey(c.color) : COLOR_SWATCHES[idx % COLOR_SWATCHES.length];
-                    return <span key={c.id} className="w-full flex-1" style={{ background: swatch.fill }} />;
-                  })}
+                  {d.slice(0, 1)}
+                </span>
+                <div
+                  className="flex w-full flex-1 flex-col gap-px overflow-hidden rounded-[6px] border"
+                  style={{ background: "var(--pp-paper)", borderColor: "var(--pp-line)" }}
+                >
+                  {parts.map((part) =>
+                    part.kind === "seg" ? (
+                      <span key={part.key} className="w-full rounded-[3px]" style={{ flex: `${part.flex} 0 0`, background: part.fill }} />
+                    ) : (
+                      <span key={part.key} className="w-full" style={{ flex: `${part.flex} 0 0` }} />
+                    )
+                  )}
                 </div>
               </div>
             );
