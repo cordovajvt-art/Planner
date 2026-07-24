@@ -184,6 +184,12 @@
     pointer-events:none;
   }
   .header-row { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .header-text { flex: 1; min-width: 0; }
+  .dash-back-icon {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-soft); cursor: pointer;
+  }
   .eyebrow {
     display:flex; align-items:center; gap:6px;
     font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
@@ -1101,8 +1107,8 @@
 
   /* ---------- Dashboard glassmorphic redesign ---------- */
   body.dash-glass {
-    background-color: #FBD9E3;
-    background-image: linear-gradient(150deg, #FBD9E3 0%, #E7D4F5 26%, #D6E4FB 52%, #D2F1E6 76%, #FBF0C9 100%);
+    background-color: #E7DBF3;
+    background-image: linear-gradient(150deg, #E3D6F5 0%, #EEDAEA 26%, #F5DCE0 50%, #DEE0F2 75%, #D8E6F7 100%);
     background-attachment: fixed;
   }
   body.dash-glass .header { background: transparent; }
@@ -1111,40 +1117,45 @@
   body.dash-glass .headline { color: #2E1A47; font-weight: 800; }
   body.dash-glass .quote {
     position: relative;
-    background: rgba(255,255,255,0.4);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.6);
+    font-family: var(--font-body);
+    font-style: normal;
+    font-weight: 500;
+    background: rgba(255,255,255,0.42);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.65);
     border-left: none;
-    border-radius: 22px;
+    border-radius: 26px;
     padding: 16px 18px 16px 24px;
-    color: color-mix(in srgb, #2E1A47 90%, transparent);
-    box-shadow: 0 4px 24px -8px rgba(80,50,110,0.15);
+    color: color-mix(in srgb, #2E1A47 88%, transparent);
+    box-shadow: 0 8px 28px -10px rgba(120,90,150,0.18);
+    letter-spacing: 0.01em;
   }
   body.dash-glass .quote::before {
     content: ''; position: absolute; left: 10px; top: 14px; bottom: 14px; width: 4px;
-    border-radius: 4px; background: linear-gradient(180deg,#C9A6E8,#F5A6C9);
+    border-radius: 4px; background: linear-gradient(180deg,#E9CA7A,#F5DCE0,#C9DCF0);
   }
   body.dash-glass .cz-badge {
-    background: rgba(255,255,255,0.45);
+    background: linear-gradient(135deg, #FFFDF8, #F0DFB8);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.65);
-    color: #E8A6C1;
-    box-shadow: 0 2px 10px -4px rgba(80,50,110,0.2);
+    border: 1px solid rgba(255,255,255,0.7);
+    color: #9C7A24;
+    box-shadow: 0 2px 12px -4px rgba(156,122,36,0.35);
   }
   body.dash-glass .sun-badge { color: #fff; }
+  body.dash-glass .header-badges { flex-direction: row; align-items: center; }
 
   body.dash-glass .main-page-tab,
   body.dash-glass .view-tab,
   body.dash-glass .view-tab.active {
-    background: rgba(255,255,255,0.45);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255,255,255,0.42);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(255,255,255,0.65);
     color: #2E1A47;
-    border-radius: 16px;
-    box-shadow: 0 2px 10px -4px rgba(80,50,110,0.15);
+    border-radius: 18px;
+    box-shadow: 0 6px 20px -8px rgba(120,90,150,0.16);
   }
   body.dash-glass .main-page-tab.active {
     background: rgba(0,0,0,0.3);
@@ -1152,38 +1163,48 @@
     color: #fff;
   }
   body.dash-glass .main-page-tab.active svg { color: #fff; }
-  body.dash-glass .main-page-tab[data-mainpage="work"]:not(.active) svg { color: #B08968; }
-  body.dash-glass .view-tab[data-view="planner"] svg { color: #D4B26A; }
+  body.dash-glass .main-page-tab[data-mainpage="work"]:not(.active) svg { color: #9C7A24; }
+  body.dash-glass .view-tab[data-view="planner"] svg { color: #9C7A24; }
 
-  body.dash-glass .dash-tool-btn#dashRefreshBtn,
-  body.dash-glass .dash-tool-btn#dashBackBtn {
-    background: rgba(255,255,255,0.45);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+  body.dash-glass .dash-tool-btn#dashRefreshBtn {
+    background: rgba(255,255,255,0.42);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(255,255,255,0.65);
     color: #2E1A47;
-    border-radius: 16px;
-    box-shadow: 0 2px 10px -4px rgba(80,50,110,0.15);
+    border-radius: 18px;
+    box-shadow: 0 6px 20px -8px rgba(120,90,150,0.16);
   }
-  body.dash-glass .dash-tool-btn#dashRefreshBtn svg { color: #5FB4E8; }
-  body.dash-glass .dash-tool-btn#dashBackBtn svg { color: #7C93A8; }
-
-  #dashUpNext {
-    background: rgba(255,255,255,0.4);
+  body.dash-glass .dash-tool-btn#dashRefreshBtn svg { color: #9C7A24; }
+  body.dash-glass .dash-back-icon {
+    background: linear-gradient(135deg, #FFFDF8, #F0DFB8);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.6);
-    box-shadow: 0 4px 24px -8px rgba(80,50,110,0.15);
+    border: 1px solid rgba(255,255,255,0.7);
+    color: #9C7A24;
+    box-shadow: 0 2px 12px -4px rgba(156,122,36,0.35);
+  }
+
+  #dashUpNext {
+    background: rgba(255,255,255,0.42);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.65);
+    border-radius: 26px;
+    box-shadow: 0 8px 28px -10px rgba(120,90,150,0.18);
+    font-family: var(--font-body);
   }
   .dash-mini-cal,
   .cs-map-wrap--compact.cs-map-wrap {
-    background: rgba(255,255,255,0.4);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.6);
-    box-shadow: 0 4px 24px -8px rgba(80,50,110,0.15);
+    background: rgba(255,255,255,0.42);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.65);
+    border-radius: 18px;
+    box-shadow: 0 8px 28px -10px rgba(120,90,150,0.18);
   }
   .dash-mini-cal-cell.today { background: rgba(240,120,110,0.65); }
+  .dash-mini-cal-head { color: #9C7A24; }
 </style>
 
 <div class="app-frame" id="frame">
@@ -1197,10 +1218,12 @@
 
   <header class="header">
     <div class="header-row">
-      <div>
+      <button type="button" class="dash-back-icon" id="dashBackBtn" aria-label="Back to Planner" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M19 12H5M5 12L11 6M5 12L11 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="header-text">
         <div class="eyebrow" id="dayName">TUESDAY · WEEK 8</div>
         <h1 class="headline" id="dateHeadline" role="button" tabindex="0" aria-label="Open calendar">October 14</h1>
-        <p class="quote" id="quoteText">"You don't have to finish the whole list today — just the next right thing."</p>
         <button type="button" class="date-jump-btn" id="jumpTodayBtn" style="display:none">
           <svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M12 5L6 11M12 5L18 11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Jump to today
@@ -1215,6 +1238,7 @@
         </div>
       </div>
     </div>
+    <p class="quote" id="quoteText">"You don't have to finish the whole list today — just the next right thing."</p>
   </header>
 
   <div class="main-page-tabs">
@@ -1235,7 +1259,7 @@
       Planner
     </button>
     <button type="button" class="view-tab active" data-view="dashboard">
-      <svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="12" width="4.5" height="8.5" rx="1.2" fill="#7CC9A6"/><rect x="9.75" y="6" width="4.5" height="14.5" rx="1.2" fill="#7FB3E8"/><rect x="16" y="9.5" width="4.5" height="11" rx="1.2" fill="#F0A6C9"/></svg>
+      <svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="12" width="4.5" height="8.5" rx="1.2" fill="#E9CA7A"/><rect x="9.75" y="6" width="4.5" height="14.5" rx="1.2" fill="#C9A24A"/><rect x="16" y="9.5" width="4.5" height="11" rx="1.2" fill="#9C7A24"/></svg>
       Dashboard
     </button>
   </div>
@@ -1325,10 +1349,6 @@
         <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M20 11A8 8 0 0 0 6.3 6.3L4 8.6M4 8.6V4M4 8.6H8.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 13A8 8 0 0 0 17.7 17.7L20 15.4M20 15.4V20M20 15.4H15.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Refresh
       </button>
-      <button type="button" class="dash-tool-btn" id="dashBackBtn">
-        <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M19 12H5M5 12L11 6M5 12L11 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Back
-      </button>
     </div>
     <section>
       <h2 class="section-title">
@@ -1343,7 +1363,7 @@
       <div class="dash-pair">
         <div class="dash-pair-col">
           <h2 class="section-title">
-            <span class="icon-chip" style="background:var(--lavender);color:var(--lavender-ink)">
+            <span class="icon-chip" style="background:linear-gradient(135deg, #FFFDF8, #F0DFB8);color:#9C7A24">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5H20.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V6M16 3V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             </span>
             This Week
@@ -1352,7 +1372,7 @@
         </div>
         <div class="dash-pair-col">
           <h2 class="section-title">
-            <span class="icon-chip" style="background:var(--lavender);color:var(--lavender-ink)">
+            <span class="icon-chip" style="background:linear-gradient(135deg, #FFFDF8, #F0DFB8);color:#9C7A24">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5H20.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V6M16 3V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             </span>
             Class Schedule
@@ -2761,6 +2781,7 @@
     dashboardView.style.display = view === 'dashboard' ? 'flex' : 'none';
     document.querySelectorAll('.view-tab').forEach(b => b.classList.toggle('active', b.dataset.view === view));
     document.body.classList.toggle('dash-glass', view === 'dashboard');
+    document.getElementById('dashBackBtn').style.display = view === 'dashboard' ? 'flex' : 'none';
     if (view === 'dashboard') { renderUpNext(); renderDashboardWeek(); renderScheduleMappingOverview(); }
   }
   document.querySelectorAll('.view-tab').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
@@ -2782,7 +2803,9 @@
     personalPage.style.display = page === 'personal' ? 'block' : 'none';
     workPage.style.display = page === 'work' ? 'block' : 'none';
     document.querySelectorAll('.main-page-tab').forEach(b => b.classList.toggle('active', b.dataset.mainpage === page));
-    document.body.classList.toggle('dash-glass', page === 'personal' && dashboardView.style.display !== 'none');
+    const showDashboard = page === 'personal' && dashboardView.style.display !== 'none';
+    document.body.classList.toggle('dash-glass', showDashboard);
+    document.getElementById('dashBackBtn').style.display = showDashboard ? 'flex' : 'none';
     if (page === 'personal') {
       // Work Notes data (classes/sections/logs) may have changed while we were away — refresh every synced view.
       render();

@@ -667,8 +667,8 @@ export default function PastelPlan() {
         }
       : isDashGlass
       ? {
-          backgroundColor: "#FBD9E3",
-          backgroundImage: "linear-gradient(150deg, #FBD9E3 0%, #E7D4F5 26%, #D6E4FB 52%, #D2F1E6 76%, #FBF0C9 100%)",
+          backgroundColor: "#E7DBF3",
+          backgroundImage: "linear-gradient(150deg, #E3D6F5 0%, #EEDAEA 26%, #F5DCE0 50%, #DEE0F2 75%, #D8E6F7 100%)",
           backgroundAttachment: "fixed",
         }
       : {}),
@@ -713,7 +713,25 @@ export default function PastelPlan() {
         {/* header */}
         <header className="pp-header relative overflow-hidden px-5.5 pb-5.5 pt-1.5" style={isDashGlass ? { background: "transparent" } : undefined}>
           <div className="relative flex items-start justify-between gap-3">
-            <div>
+            {isDashGlass && (
+              <button
+                type="button"
+                onClick={() => setActiveView("planner")}
+                aria-label="Back to Planner"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full"
+                style={{
+                  background: "linear-gradient(135deg, #FFFDF8, #F0DFB8)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                  border: "1px solid rgba(255,255,255,0.7)",
+                  color: "#9C7A24",
+                  boxShadow: "0 2px 12px -4px rgba(156,122,36,0.35)",
+                }}
+              >
+                <ArrowLeft size={16} strokeWidth={2} />
+              </button>
+            )}
+            <div className="flex-1 min-w-0">
               <div
                 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.09em]"
                 style={{ color: isDashGlass ? "color-mix(in srgb, #2E1A47 60%, transparent)" : "var(--pp-ink-soft)" }}
@@ -732,30 +750,6 @@ export default function PastelPlan() {
               >
                 {dateLabel}
               </h1>
-              {isDashGlass ? (
-                <div
-                  className="relative mt-3 rounded-[22px] py-4 pl-6 pr-4.5"
-                  style={{
-                    background: "rgba(255,255,255,0.4)",
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
-                    border: "1px solid rgba(255,255,255,0.6)",
-                    boxShadow: "0 4px 24px -8px rgba(80,50,110,0.15)",
-                  }}
-                >
-                  <span
-                    className="absolute bottom-3.5 left-2.5 top-3.5 w-1 rounded-full"
-                    style={{ background: "linear-gradient(180deg,#C9A6E8,#F5A6C9)" }}
-                  />
-                  <p className="pp-font-display text-[0.95rem] italic leading-[1.4]" style={{ color: "color-mix(in srgb, #2E1A47 90%, transparent)" }}>
-                    "{quote}"
-                  </p>
-                </div>
-              ) : (
-                <p className="pp-font-display mt-3 border-l-2 border-[var(--pp-lavender-ink)]/60 pl-3.5 text-[0.95rem] italic leading-[1.4] text-[var(--pp-ink-soft)]">
-                  "{quote}"
-                </p>
-              )}
               {!isToday && (
                 <button
                   type="button"
@@ -766,7 +760,7 @@ export default function PastelPlan() {
                 </button>
               )}
             </div>
-            <div className="flex shrink-0 flex-col gap-2">
+            <div className={`flex shrink-0 items-center gap-2 ${isDashGlass ? "flex-row" : "flex-col"}`}>
               <button
                 type="button"
                 onClick={() => setShowCustomize(true)}
@@ -775,12 +769,12 @@ export default function PastelPlan() {
                 style={
                   isDashGlass
                     ? {
-                        background: "rgba(255,255,255,0.45)",
+                        background: "linear-gradient(135deg, #FFFDF8, #F0DFB8)",
                         backdropFilter: "blur(12px)",
                         WebkitBackdropFilter: "blur(12px)",
-                        borderColor: "rgba(255,255,255,0.65)",
-                        color: "#E8A6C1",
-                        boxShadow: "0 2px 10px -4px rgba(80,50,110,0.2)",
+                        borderColor: "rgba(255,255,255,0.7)",
+                        color: "#9C7A24",
+                        boxShadow: "0 2px 12px -4px rgba(156,122,36,0.35)",
                       }
                     : { background: "color-mix(in srgb, var(--pp-surface) 70%, transparent)", borderColor: "color-mix(in srgb, var(--pp-ink) 10%, transparent)", color: "var(--pp-ink-soft)" }
                 }
@@ -798,6 +792,33 @@ export default function PastelPlan() {
               </div>
             </div>
           </div>
+          {isDashGlass ? (
+            <div
+              className="relative mt-3 rounded-[26px] py-4 pl-6 pr-4.5"
+              style={{
+                background: "rgba(255,255,255,0.42)",
+                backdropFilter: "blur(14px)",
+                WebkitBackdropFilter: "blur(14px)",
+                border: "1px solid rgba(255,255,255,0.65)",
+                boxShadow: "0 8px 28px -10px rgba(120,90,150,0.18)",
+              }}
+            >
+              <span
+                className="absolute bottom-3.5 left-2.5 top-3.5 w-1 rounded-full"
+                style={{ background: "linear-gradient(180deg,#E9CA7A,#F5DCE0,#C9DCF0)" }}
+              />
+              <p
+                className="text-[0.95rem] font-medium leading-[1.4] tracking-[0.01em]"
+                style={{ color: "color-mix(in srgb, #2E1A47 88%, transparent)" }}
+              >
+                "{quote}"
+              </p>
+            </div>
+          ) : (
+            <p className="pp-font-display relative mt-3 border-l-2 border-[var(--pp-lavender-ink)]/60 pl-3.5 text-[0.95rem] italic leading-[1.4] text-[var(--pp-ink-soft)]">
+              "{quote}"
+            </p>
+          )}
         </header>
 
         {/* personal / work switcher */}
@@ -813,12 +834,12 @@ export default function PastelPlan() {
                   : { background: "var(--pp-ink)", color: "var(--pp-surface)" }
                 : isDashGlass
                 ? {
-                    background: "rgba(255,255,255,0.45)",
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
+                    background: "rgba(255,255,255,0.42)",
+                    backdropFilter: "blur(14px)",
+                    WebkitBackdropFilter: "blur(14px)",
                     border: "1px solid rgba(255,255,255,0.65)",
                     color: "#2E1A47",
-                    boxShadow: "0 2px 10px -4px rgba(80,50,110,0.15)",
+                    boxShadow: "0 6px 20px -8px rgba(120,90,150,0.16)",
                   }
                 : { background: "transparent", color: "var(--pp-ink-soft)", border: "1.5px solid var(--pp-line)" }
             }
@@ -837,17 +858,17 @@ export default function PastelPlan() {
                   : { background: "var(--pp-ink)", color: "var(--pp-surface)" }
                 : isDashGlass
                 ? {
-                    background: "rgba(255,255,255,0.45)",
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
+                    background: "rgba(255,255,255,0.42)",
+                    backdropFilter: "blur(14px)",
+                    WebkitBackdropFilter: "blur(14px)",
                     border: "1px solid rgba(255,255,255,0.65)",
                     color: "#2E1A47",
-                    boxShadow: "0 2px 10px -4px rgba(80,50,110,0.15)",
+                    boxShadow: "0 6px 20px -8px rgba(120,90,150,0.16)",
                   }
                 : { background: "transparent", color: "var(--pp-ink-soft)", border: "1.5px solid var(--pp-line)" }
             }
           >
-            <Briefcase size={15} strokeWidth={2} color={isDashGlass && mainPage !== "work" ? "#B08968" : isDashGlass && mainPage === "work" ? "#fff" : undefined} />
+            <Briefcase size={15} strokeWidth={2} color={isDashGlass && mainPage !== "work" ? "#9C7A24" : isDashGlass && mainPage === "work" ? "#fff" : undefined} />
             Work Notes
           </button>
         </div>
@@ -863,19 +884,19 @@ export default function PastelPlan() {
             style={
               isDashGlass
                 ? {
-                    background: "rgba(255,255,255,0.45)",
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
+                    background: "rgba(255,255,255,0.42)",
+                    backdropFilter: "blur(14px)",
+                    WebkitBackdropFilter: "blur(14px)",
                     borderColor: "rgba(255,255,255,0.65)",
                     color: "#2E1A47",
-                    boxShadow: "0 2px 10px -4px rgba(80,50,110,0.15)",
+                    boxShadow: "0 6px 20px -8px rgba(120,90,150,0.16)",
                   }
                 : activeView === "planner"
                 ? { background: "var(--pp-lavender)", borderColor: "var(--pp-lavender)", color: "var(--pp-lavender-ink)" }
                 : { background: "var(--pp-surface)", borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }
             }
           >
-            <ClipboardList size={15} strokeWidth={2} color={isDashGlass ? "#D4B26A" : undefined} />
+            <ClipboardList size={15} strokeWidth={2} color={isDashGlass ? "#9C7A24" : undefined} />
             Planner
           </button>
           <button
@@ -885,12 +906,12 @@ export default function PastelPlan() {
             style={
               isDashGlass
                 ? {
-                    background: "rgba(255,255,255,0.45)",
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
+                    background: "rgba(255,255,255,0.42)",
+                    backdropFilter: "blur(14px)",
+                    WebkitBackdropFilter: "blur(14px)",
                     borderColor: "rgba(255,255,255,0.65)",
                     color: "#2E1A47",
-                    boxShadow: "0 2px 10px -4px rgba(80,50,110,0.15)",
+                    boxShadow: "0 6px 20px -8px rgba(120,90,150,0.16)",
                   }
                 : activeView === "dashboard"
                 ? { background: "var(--pp-lavender)", borderColor: "var(--pp-lavender)", color: "var(--pp-lavender-ink)" }
@@ -898,9 +919,9 @@ export default function PastelPlan() {
             }
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-              <rect x="3.5" y="12" width="4.5" height="8.5" rx="1.2" fill="#7CC9A6" />
-              <rect x="9.75" y="6" width="4.5" height="14.5" rx="1.2" fill="#7FB3E8" />
-              <rect x="16" y="9.5" width="4.5" height="11" rx="1.2" fill="#F0A6C9" />
+              <rect x="3.5" y="12" width="4.5" height="8.5" rx="1.2" fill="#E9CA7A" />
+              <rect x="9.75" y="6" width="4.5" height="14.5" rx="1.2" fill="#C9A24A" />
+              <rect x="16" y="9.5" width="4.5" height="11" rx="1.2" fill="#9C7A24" />
             </svg>
             Dashboard
           </button>
@@ -1124,7 +1145,6 @@ export default function PastelPlan() {
               refreshFromStorage("pastelplan.water.v1", setWaterFilled, 0);
               setSchedule(loadScheduleFor(selectedDate));
             }}
-            onBack={() => setActiveView("planner")}
             classSchedule={classSchedule}
             onOpenClassMap={goToWorkClassMap}
           />
@@ -1389,7 +1409,7 @@ function DashboardMiniCal({ todayIso, selectedDate, onSelectDay }) {
 
   return (
     <div className="pp-card-float flex h-[100px] w-full flex-col gap-[3px]">
-      <span className="text-center text-[0.6rem] font-extrabold uppercase tracking-[.03em] text-[var(--pp-lavender-ink)]">{monthLabel}</span>
+      <span className="text-center text-[0.6rem] font-extrabold uppercase tracking-[.03em]" style={{ color: "#9C7A24" }}>{monthLabel}</span>
       <div className="grid flex-1 grid-cols-7 gap-px">
         {["S", "M", "T", "W", "T", "F", "S"].map((l, i) => (
           <span key={i} className="text-center text-[0.42rem] font-extrabold text-[var(--pp-ink-soft)] opacity-70">
@@ -1431,7 +1451,6 @@ function DashboardView({
   onSelectDay,
   onOpenSyncedClass,
   onRefresh,
-  onBack,
   classSchedule,
   onOpenClassMap,
 }) {
@@ -1453,32 +1472,16 @@ function DashboardView({
           onClick={onRefresh}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl py-2 text-[0.74rem] font-bold"
           style={{
-            background: "rgba(255,255,255,0.45)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
+            background: "rgba(255,255,255,0.42)",
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
             border: "1px solid rgba(255,255,255,0.65)",
             color: "#2E1A47",
-            boxShadow: "0 2px 10px -4px rgba(80,50,110,0.15)",
+            boxShadow: "0 6px 20px -8px rgba(120,90,150,0.16)",
           }}
         >
-          <RefreshCw size={14} strokeWidth={2} color="#5FB4E8" />
+          <RefreshCw size={14} strokeWidth={2} color="#9C7A24" />
           Refresh
-        </button>
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl py-2 text-[0.74rem] font-bold"
-          style={{
-            background: "rgba(255,255,255,0.45)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            border: "1px solid rgba(255,255,255,0.65)",
-            color: "#2E1A47",
-            boxShadow: "0 2px 10px -4px rgba(80,50,110,0.15)",
-          }}
-        >
-          <ArrowLeft size={14} strokeWidth={2} color="#7C93A8" />
-          Back
         </button>
       </div>
       <section>
@@ -1512,11 +1515,11 @@ function DashboardView({
       <section>
         <div className="flex items-stretch gap-3">
           <div className="min-w-0 flex-1">
-            <SectionTitle icon={Calendar} fill="var(--pp-lavender)" ink="var(--pp-lavender-ink)" title="This Week" />
+            <SectionTitle icon={Calendar} fill="linear-gradient(135deg, #FFFDF8, #F0DFB8)" ink="#9C7A24" title="This Week" />
             <DashboardMiniCal todayIso={todayIso} selectedDate={selectedDate} onSelectDay={onSelectDay} />
           </div>
           <div className="min-w-0 flex-1">
-            <SectionTitle icon={Calendar} fill="var(--pp-lavender)" ink="var(--pp-lavender-ink)" title="Class Schedule" />
+            <SectionTitle icon={Calendar} fill="linear-gradient(135deg, #FFFDF8, #F0DFB8)" ink="#9C7A24" title="Class Schedule" />
             <ClassScheduleOverviewCard classSchedule={classSchedule} onOpen={onOpenClassMap} />
           </div>
         </div>
@@ -3991,13 +3994,13 @@ function PastelPlanStyles() {
       .pp-card { background: var(--pp-surface); border: 1px solid var(--pp-line); border-radius: 20px; padding: 14px; }
 
       .pp-card-float {
-        background: rgba(255, 255, 255, 0.4);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.42);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(255, 255, 255, 0.65);
+        border-radius: 26px;
         padding: 14px;
-        box-shadow: 0 4px 24px -8px rgba(80, 50, 110, 0.15);
+        box-shadow: 0 8px 28px -10px rgba(120, 90, 150, 0.18);
       }
 
       .pp-row-grid { grid-template-columns: 44px 20px minmax(0, 1fr); }
