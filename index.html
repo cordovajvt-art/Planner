@@ -533,21 +533,18 @@
     border-radius: 10px; padding: 8px 10px; cursor: pointer;
   }
   #classMapBox { margin-bottom: 14px; }
-  .cs-map-wrap { overflow-x: auto; border: 1.5px solid var(--line); border-radius: 12px; }
-  .cs-map-table { width: 100%; border-collapse: collapse; font-family: var(--font-body); }
+  .cs-map-wrap { overflow-x: auto; border: 1.5px solid var(--line); border-radius: 12px; padding: 6px; background: var(--surface); }
+  .cs-map-table { width: 100%; border-collapse: separate; border-spacing: 4px; table-layout: fixed; font-family: var(--font-body); }
   .cs-map-table th, .cs-map-table td {
-    border-bottom: 1px solid var(--line); border-right: 1px solid var(--line);
-    padding: 4px; text-align: center; vertical-align: top; font-size: 0.68rem;
+    padding: 2px; text-align: center; vertical-align: top; font-size: 0.68rem;
   }
-  .cs-map-table th:last-child, .cs-map-table td:last-child { border-right: none; }
-  .cs-map-table tr:last-child td { border-bottom: none; }
   .cs-map-table th {
-    background: var(--paper); font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em;
+    background: var(--paper); border-radius: 6px; font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em;
     color: var(--ink-soft); white-space: nowrap;
   }
-  .cs-map-time { white-space: nowrap; font-size: 0.64rem; font-weight: 700; color: var(--ink-soft); }
-  .cs-map-block { border-radius: 8px; padding: 6px; height: 100%; text-align: left; }
-  .cs-map-block .cs-map-code { display: block; font-size: 0.66rem; font-weight: 800; }
+  .cs-map-time { background: var(--paper); border-radius: 6px; white-space: nowrap; font-size: 0.64rem; font-weight: 700; color: var(--ink-soft); }
+  .cs-map-block { border-radius: 10px; padding: 6px; height: 100%; text-align: left; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .cs-map-block .cs-map-code { display: block; font-size: 0.66rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .cs-map-block .cs-map-name { display: block; font-size: 0.64rem; font-weight: 600; line-height: 1.25; }
   .cs-map-empty { padding: 16px; text-align: center; font-size: 0.78rem; font-style: italic; color: var(--ink-soft); }
   .back-to-classes-btn {
@@ -587,25 +584,37 @@
     padding: 9px 0; font-family: var(--font-body); font-size: 0.8rem; font-weight: 700; color: var(--ink-soft); cursor: pointer;
   }
   .view-tab.active { background: var(--lavender); border-color: var(--lavender); color: var(--lavender-ink); }
+  .view-tab svg { width: 15px; height: 15px; flex-shrink: 0; }
   .dash-view { display: flex; flex-direction: column; gap: 20px; padding: 4px 18px 6px; }
-  .dash-week { display: flex; justify-content: space-between; gap: 3px; }
-  .dash-day { display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; padding: 5px 3px; border-radius: 12px; }
-  .dash-day.selected { background: var(--surface-alt); }
-  .dash-day-letter { font-size: 0.64rem; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; }
-  .dash-day-ring { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-  .dash-day-num { width: 26px; height: 26px; border-radius: 50%; background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--ink); }
-  .dash-day-num.today { box-shadow: 0 0 0 1.5px var(--lavender-ink); }
+  .dash-pair { display: flex; gap: 12px; align-items: stretch; }
+  .dash-pair-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .dash-pair-col .section-title { margin-bottom: 0; }
   .dash-map-overview {
-    display: block; width: 100%; max-width: 320px; border: none; background: transparent;
+    display: block; width: 100%; height: 100px; border: none; background: transparent;
     padding: 0; text-align: left; cursor: pointer; font-family: var(--font-body);
   }
-  .cs-map-wrap--compact.cs-map-wrap { border-radius: 10px; }
+  .dash-mini-cal {
+    width: 100%; height: 100px; border-radius: 10px; padding: 6px;
+    display: flex; flex-direction: column; gap: 3px; font-family: var(--font-body);
+  }
+  .dash-mini-cal-head { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--lavender-ink); text-align: center; }
+  .dash-mini-cal-grid { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+  .dash-mini-cal-wd { font-size: 0.42rem; font-weight: 800; color: var(--ink-soft); text-align: center; opacity: 0.7; }
+  .dash-mini-cal-cell {
+    border: none; background: transparent; font-size: 0.48rem; font-weight: 600; color: var(--ink);
+    border-radius: 4px; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .dash-mini-cal-cell.empty { cursor: default; }
+  .dash-mini-cal-cell.today { background: var(--lavender); color: var(--lavender-ink); font-weight: 800; }
+  .dash-mini-cal-cell.selected:not(.today) { box-shadow: inset 0 0 0 1.5px var(--lavender-ink); }
+  .cs-map-wrap--compact.cs-map-wrap { width: 100%; height: 100%; overflow: auto; border-radius: 10px; padding: 3px; }
+  .cs-map-table--compact.cs-map-table { border-spacing: 1px; table-layout: fixed; }
   .cs-map-table--compact.cs-map-table th,
-  .cs-map-table--compact.cs-map-table td { padding: 2px 3px; font-size: 0.52rem; }
-  .cs-map-table--compact.cs-map-table th { font-size: 0.5rem; }
-  .cs-map-table--compact .cs-map-time { font-size: 0.48rem; }
-  .cs-map-table--compact .cs-map-block { border-radius: 5px; padding: 3px 4px; }
-  .cs-map-table--compact .cs-map-block .cs-map-code { font-size: 0.5rem; }
+  .cs-map-table--compact.cs-map-table td { padding: 0 1px; font-size: 0.38rem; }
+  .cs-map-table--compact.cs-map-table th { font-size: 0.36rem; }
+  .cs-map-table--compact .cs-map-time { font-size: 0.34rem; white-space: nowrap; line-height: 1.15; }
+  .cs-map-table--compact .cs-map-block { border-radius: 3px; padding: 1px 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+  .cs-map-table--compact .cs-map-block .cs-map-code { font-size: 0.36rem; }
   .dash-empty { font-size: 0.78rem; color: var(--ink-soft); text-align: center; padding: 14px; }
   .dash-upnext-row { display: flex; align-items: center; gap: 12px; }
   .dash-upnext-icon { width: 42px; height: 42px; border-radius: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -1089,6 +1098,92 @@
   }
 
   :focus-visible { outline: 2px solid var(--sky-ink); outline-offset: 2px; }
+
+  /* ---------- Dashboard glassmorphic redesign ---------- */
+  body.dash-glass {
+    background-color: #FBD9E3;
+    background-image: linear-gradient(150deg, #FBD9E3 0%, #E7D4F5 26%, #D6E4FB 52%, #D2F1E6 76%, #FBF0C9 100%);
+    background-attachment: fixed;
+  }
+  body.dash-glass .header { background: transparent; }
+  body.dash-glass .header::after { display: none; }
+  body.dash-glass .eyebrow { color: color-mix(in srgb, #2E1A47 60%, transparent); }
+  body.dash-glass .headline { color: #2E1A47; font-weight: 800; }
+  body.dash-glass .quote {
+    position: relative;
+    background: rgba(255,255,255,0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-left: none;
+    border-radius: 22px;
+    padding: 16px 18px 16px 24px;
+    color: color-mix(in srgb, #2E1A47 90%, transparent);
+    box-shadow: 0 4px 24px -8px rgba(80,50,110,0.15);
+  }
+  body.dash-glass .quote::before {
+    content: ''; position: absolute; left: 10px; top: 14px; bottom: 14px; width: 4px;
+    border-radius: 4px; background: linear-gradient(180deg,#C9A6E8,#F5A6C9);
+  }
+  body.dash-glass .cz-badge {
+    background: rgba(255,255,255,0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.65);
+    color: #E8A6C1;
+    box-shadow: 0 2px 10px -4px rgba(80,50,110,0.2);
+  }
+  body.dash-glass .sun-badge { color: #fff; }
+
+  body.dash-glass .main-page-tab,
+  body.dash-glass .view-tab,
+  body.dash-glass .view-tab.active {
+    background: rgba(255,255,255,0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.65);
+    color: #2E1A47;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px -4px rgba(80,50,110,0.15);
+  }
+  body.dash-glass .main-page-tab.active {
+    background: rgba(0,0,0,0.3);
+    border-color: transparent;
+    color: #fff;
+  }
+  body.dash-glass .main-page-tab.active svg { color: #fff; }
+  body.dash-glass .main-page-tab[data-mainpage="work"]:not(.active) svg { color: #B08968; }
+  body.dash-glass .view-tab[data-view="planner"] svg { color: #D4B26A; }
+
+  body.dash-glass .dash-tool-btn#dashRefreshBtn,
+  body.dash-glass .dash-tool-btn#dashBackBtn {
+    background: rgba(255,255,255,0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.65);
+    color: #2E1A47;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px -4px rgba(80,50,110,0.15);
+  }
+  body.dash-glass .dash-tool-btn#dashRefreshBtn svg { color: #5FB4E8; }
+  body.dash-glass .dash-tool-btn#dashBackBtn svg { color: #7C93A8; }
+
+  #dashUpNext {
+    background: rgba(255,255,255,0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow: 0 4px 24px -8px rgba(80,50,110,0.15);
+  }
+  .dash-mini-cal,
+  .cs-map-wrap--compact.cs-map-wrap {
+    background: rgba(255,255,255,0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow: 0 4px 24px -8px rgba(80,50,110,0.15);
+  }
+  .dash-mini-cal-cell.today { background: rgba(240,120,110,0.65); }
 </style>
 
 <div class="app-frame" id="frame">
@@ -1135,8 +1230,14 @@
 
   <div id="personalPage">
   <div class="view-tabs">
-    <button type="button" class="view-tab" data-view="planner">📋 Planner</button>
-    <button type="button" class="view-tab active" data-view="dashboard">📊 Dashboard</button>
+    <button type="button" class="view-tab" data-view="planner">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="5" y="4.5" width="14" height="17" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M9 4.5V3.8C9 3.1 9.6 2.5 10.3 2.5H13.7C14.4 2.5 15 3.1 15 3.8V4.5" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 11H15.5M8.5 15H13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      Planner
+    </button>
+    <button type="button" class="view-tab active" data-view="dashboard">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="12" width="4.5" height="8.5" rx="1.2" fill="#7CC9A6"/><rect x="9.75" y="6" width="4.5" height="14.5" rx="1.2" fill="#7FB3E8"/><rect x="16" y="9.5" width="4.5" height="11" rx="1.2" fill="#F0A6C9"/></svg>
+      Dashboard
+    </button>
   </div>
 
   <main>
@@ -1220,8 +1321,14 @@
 
   <div class="dash-view" id="dashboardView" style="display:none">
     <div class="dash-toolbar">
-      <button type="button" class="dash-tool-btn" id="dashRefreshBtn">🔄 Refresh</button>
-      <button type="button" class="dash-tool-btn" id="dashBackBtn">← Back</button>
+      <button type="button" class="dash-tool-btn" id="dashRefreshBtn">
+        <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M20 11A8 8 0 0 0 6.3 6.3L4 8.6M4 8.6V4M4 8.6H8.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 13A8 8 0 0 0 17.7 17.7L20 15.4M20 15.4V20M20 15.4H15.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Refresh
+      </button>
+      <button type="button" class="dash-tool-btn" id="dashBackBtn">
+        <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M19 12H5M5 12L11 6M5 12L11 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </button>
     </div>
     <section>
       <h2 class="section-title">
@@ -1233,16 +1340,26 @@
       <div class="card" id="dashUpNext"></div>
     </section>
     <section>
-      <h2 class="section-title">
-        <span class="icon-chip" style="background:var(--lavender);color:var(--lavender-ink)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5H20.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V6M16 3V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </span>
-        This Week
-      </h2>
-      <div class="dash-week" id="dashWeek"></div>
-    </section>
-    <section>
-      <button type="button" class="dash-map-overview" id="dashMapOverview"></button>
+      <div class="dash-pair">
+        <div class="dash-pair-col">
+          <h2 class="section-title">
+            <span class="icon-chip" style="background:var(--lavender);color:var(--lavender-ink)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5H20.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V6M16 3V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </span>
+            This Week
+          </h2>
+          <div class="dash-mini-cal" id="dashMiniCal"></div>
+        </div>
+        <div class="dash-pair-col">
+          <h2 class="section-title">
+            <span class="icon-chip" style="background:var(--lavender);color:var(--lavender-ink)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5H20.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V6M16 3V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </span>
+            Class Schedule
+          </h2>
+          <button type="button" class="dash-map-overview" id="dashMapOverview"></button>
+        </div>
+      </div>
     </section>
   </div>
   </div>
@@ -1594,7 +1711,7 @@
   function fmt12(t24){
     const [hh, mm] = t24.split(':').map(Number);
     let h12 = hh % 12; if (h12 === 0) h12 = 12;
-    return h12 + ':' + String(mm).padStart(2, '0');
+    return String(h12).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
   }
 
   function todayISO(d){
@@ -2551,38 +2668,42 @@
     if (dateStr === TODAY_ISO) return { total: DEFAULT_SCHEDULE.length + syncedCount, done: 0 };
     return syncedCount ? { total: syncedCount, done: 0 } : null;
   }
-  function startOfWeek(d){
-    const day = d.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    const monday = new Date(d);
-    monday.setDate(d.getDate() + diff);
-    return monday;
-  }
   function renderDashboardWeek(){
-    const weekStart = startOfWeek(dateFromISO(TODAY_ISO));
-    const letters = ['M','T','W','T','F','S','S'];
-    const dashWeek = document.getElementById('dashWeek');
-    dashWeek.innerHTML = '';
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
-      const dStr = todayISO(d);
-      const stats = computeDayStats(dStr);
-      const pct = stats && stats.total ? Math.round((stats.done / stats.total) * 100) : 0;
-      const isToday = dStr === TODAY_ISO;
-      const cell = document.createElement('button');
-      cell.type = 'button';
-      cell.className = 'dash-day' + (dStr === selectedDate ? ' selected' : '');
-      cell.innerHTML = `
-        <span class="dash-day-letter">${letters[i]}</span>
-        <span class="dash-day-ring" style="background:conic-gradient(var(--mint-ink) ${pct}%, var(--line) 0)">
-          <span class="dash-day-num${isToday ? ' today' : ''}">${d.getDate()}</span>
-        </span>`;
-      cell.addEventListener('click', () => {
-        switchDate(dStr);
+    const box = document.getElementById('dashMiniCal');
+    if (!box) return;
+    const d = dateFromISO(TODAY_ISO);
+    const year = d.getFullYear(), month = d.getMonth();
+    const firstOfMonth = new Date(year, month, 1);
+    const startOffset = firstOfMonth.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells = [];
+    for (let i = 0; i < startOffset; i++) cells.push(null);
+    for (let dd = 1; dd <= daysInMonth; dd++) cells.push(dd);
+    while (cells.length % 7 !== 0) cells.push(null);
+    const weekdayLetters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+    box.innerHTML = `
+      <span class="dash-mini-cal-head">${MONTH_NAMES[month].slice(0, 3)} ${year}</span>
+      <div class="dash-mini-cal-grid">
+        ${weekdayLetters.map(l => `<span class="dash-mini-cal-wd">${l}</span>`).join('')}
+        ${cells.map(dd => {
+          if (dd === null) return `<span class="dash-mini-cal-cell empty"></span>`;
+          const iso = todayISO(new Date(year, month, dd));
+          const isToday = iso === TODAY_ISO;
+          const isSelected = iso === selectedDate;
+          const cls = ['dash-mini-cal-cell'];
+          if (isToday) cls.push('today');
+          if (isSelected) cls.push('selected');
+          return `<button type="button" class="${cls.join(' ')}" data-iso="${iso}">${dd}</button>`;
+        }).join('')}
+      </div>`;
+
+    box.querySelectorAll('.dash-mini-cal-cell[data-iso]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        switchDate(btn.dataset.iso);
         switchView('planner');
       });
-      dashWeek.appendChild(cell);
-    }
+    });
   }
   function renderScheduleMappingOverview(){
     const box = document.getElementById('dashMapOverview');
@@ -2639,6 +2760,7 @@
     mainEl.style.display = view === 'planner' ? 'flex' : 'none';
     dashboardView.style.display = view === 'dashboard' ? 'flex' : 'none';
     document.querySelectorAll('.view-tab').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    document.body.classList.toggle('dash-glass', view === 'dashboard');
     if (view === 'dashboard') { renderUpNext(); renderDashboardWeek(); renderScheduleMappingOverview(); }
   }
   document.querySelectorAll('.view-tab').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
@@ -2660,6 +2782,7 @@
     personalPage.style.display = page === 'personal' ? 'block' : 'none';
     workPage.style.display = page === 'work' ? 'block' : 'none';
     document.querySelectorAll('.main-page-tab').forEach(b => b.classList.toggle('active', b.dataset.mainpage === page));
+    document.body.classList.toggle('dash-glass', page === 'personal' && dashboardView.style.display !== 'none');
     if (page === 'personal') {
       // Work Notes data (classes/sections/logs) may have changed while we were away — refresh every synced view.
       render();
@@ -2915,7 +3038,7 @@
     const mm = mins % 60;
     let h12 = hh % 12;
     if (h12 === 0) h12 = 12;
-    return `${h12}:${String(mm).padStart(2, '0')}`;
+    return `${String(h12).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   }
   function buildClassMapHTML(list, compact){
     if (!list.length) {
@@ -2928,26 +3051,40 @@
     let startHour = 8, endHour = 17;
     if (timed.length) {
       startHour = Math.floor(Math.min(...timed.map(c => timeToMinutes(c.timeIn))) / 60);
-      endHour = Math.max(startHour + 1, Math.ceil(Math.max(...timed.map(c => timeToMinutes(c.timeOut))) / 60));
+      endHour = Math.max(startHour + 1, Math.ceil(Math.max(...timed.map(c => timeToMinutes(c.timeOut))) / 60), 17);
     }
-    const SLOT = 30;
-    const slotCount = Math.ceil(((endHour - startHour) * 60) / SLOT);
-    const slots = Array.from({ length: slotCount }, (_, i) => startHour * 60 + i * SLOT);
+    const rangeStart = startHour * 60, rangeEnd = endHour * 60;
+
+    const boundarySet = new Set([rangeStart, rangeEnd]);
+    timed.forEach(c => {
+      const s = Math.max(rangeStart, timeToMinutes(c.timeIn));
+      const e = Math.min(rangeEnd, timeToMinutes(c.timeOut));
+      if (e > s) { boundarySet.add(s); boundarySet.add(e); }
+    });
+    const boundaries = [...boundarySet].sort((a, b) => a - b);
+    let segments = boundaries.slice(0, -1).map((b, i) => ({ start: b, end: boundaries[i + 1] }));
+    const isOccupied = seg => timed.some(c => timeToMinutes(c.timeIn) <= seg.start && timeToMinutes(c.timeOut) > seg.start);
+    const firstOccupied = segments.findIndex(isOccupied);
+    if (firstOccupied !== -1) {
+      const lastOccupied = segments.length - 1 - [...segments].reverse().findIndex(isOccupied);
+      segments = segments.slice(firstOccupied, lastOccupied + 1);
+    }
 
     const occupied = {};
     days.forEach(d => { occupied[d] = new Set(); });
 
-    const rowsHTML = slots.map((slotStart, sIdx) => {
+    const rowsHTML = segments.map((seg, sIdx) => {
       const cellsHTML = days.map(day => {
         if (occupied[day].has(sIdx)) return '';
         const cls = list.find(c =>
-          c.days.includes(day) && c.timeIn &&
-          timeToMinutes(c.timeIn) >= slotStart && timeToMinutes(c.timeIn) < slotStart + SLOT
+          c.days.includes(day) && c.timeIn && timeToMinutes(c.timeIn) === seg.start
         );
         if (!cls) return '<td></td>';
-        const startM = timeToMinutes(cls.timeIn);
-        const endM = cls.timeOut ? timeToMinutes(cls.timeOut) : startM + SLOT;
-        const span = Math.max(1, Math.min(slots.length - sIdx, Math.ceil((endM - startM) / SLOT)));
+        const endM = cls.timeOut ? Math.min(rangeEnd, timeToMinutes(cls.timeOut)) : seg.end;
+        let span = 0;
+        let cursor = sIdx;
+        while (cursor < segments.length && segments[cursor].start < endM) { span++; cursor++; }
+        span = Math.max(1, span);
         for (let s = 1; s < span; s++) occupied[day].add(sIdx + s);
         const idx = list.findIndex(c => c.id === cls.id);
         const swatch = cls.color ? swatchByKey(cls.color) : COLOR_SWATCHES[idx % COLOR_SWATCHES.length];
@@ -2958,12 +3095,15 @@
           </div>
         </td>`;
       }).join('');
-      return `<tr><td class="cs-map-time">${fmtSlotLabel(slotStart)}</td>${cellsHTML}</tr>`;
+      const timeLabel = compact
+        ? `${fmtSlotLabel(seg.end)}-<br>${fmtSlotLabel(seg.start)}`
+        : `${fmtSlotLabel(seg.start)}-${fmtSlotLabel(seg.end)}`;
+      return `<tr><td class="cs-map-time">${timeLabel}</td>${cellsHTML}</tr>`;
     }).join('');
 
     return `<div class="cs-map-wrap${compact ? ' cs-map-wrap--compact' : ''}">
-      <table class="cs-map-table${compact ? ' cs-map-table--compact' : ''}" style="min-width:${days.length * (compact ? 62 : 108) + (compact ? 44 : 76)}px">
-        <thead><tr><th></th>${days.map(d => `<th>${d.slice(0, 3)}</th>`).join('')}</tr></thead>
+      <table class="cs-map-table${compact ? ' cs-map-table--compact' : ''}" style="min-width:${days.length * (compact ? 28 : 108) + (compact ? 18 : 76)}px">
+        <thead><tr><th style="width:${compact ? 26 : 82}px"></th>${days.map(d => `<th>${d.slice(0, 1)}</th>`).join('')}</tr></thead>
         <tbody>${rowsHTML}</tbody>
       </table>
     </div>`;

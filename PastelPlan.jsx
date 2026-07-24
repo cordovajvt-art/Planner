@@ -29,6 +29,8 @@ import {
   AlignLeft,
   MapPin,
   Folder,
+  RefreshCw,
+  ArrowLeft,
 } from "lucide-react";
 
 /**
@@ -138,7 +140,6 @@ const QUOTES = [
 ];
 
 const WATER_GOAL = 8;
-const WEEKDAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
 
 const WORK_ROLES = [
   { key: "select", label: "Select a Role" },
@@ -373,7 +374,7 @@ function fmt12(time24) {
   const [hh, mm] = time24.split(":").map(Number);
   let h12 = hh % 12;
   if (h12 === 0) h12 = 12;
-  return `${h12}:${String(mm).padStart(2, "0")}`;
+  return `${String(h12).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
 
 function todayISO(d) {
@@ -394,13 +395,6 @@ function loadScheduleFor(dateStr) {
     /* ignore malformed storage */
   }
   return dateStr === todayISO() ? DEFAULT_SCHEDULE.map((x) => ({ ...x })) : [];
-}
-function startOfWeekMonday(d) {
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(d);
-  monday.setDate(d.getDate() + diff);
-  return monday;
 }
 
 /** Persists to localStorage under `key`; falls back to `initial` (or a factory) when nothing's stored yet or storage is unavailable. */
@@ -632,20 +626,6 @@ export default function PastelPlan() {
     window.location.reload();
   }
 
-  // ---- Dashboard data (computed here so it can read live `schedule` for the selected day) ----
-  function computeDayStats(dateStr) {
-    const syncedCount =
-      getSyncedClassBlocksForDate(classSchedule, courseOutlines, dateStr).length +
-      getSyncedTourismBlocksForDate(tourismEntries, dateStr).length;
-    if (dateStr === selectedDate) return { total: schedule.length + syncedCount, done: schedule.filter((s) => s.done).length };
-    try {
-      const raw = localStorage.getItem(scheduleKeyFor(dateStr));
-      const arr = raw ? JSON.parse(raw) : [];
-      return { total: arr.length + syncedCount, done: arr.filter((s) => s.done).length };
-    } catch {
-      return { total: syncedCount, done: 0 };
-    }
-  }
   function getTodaySchedule() {
     if (selectedDate === todayIso) return schedule;
     try {
@@ -675,12 +655,7 @@ export default function PastelPlan() {
     const inText = diff <= 0 ? "Starting now" : diff < 60 ? `In ${diff} min` : `In ${Math.floor(diff / 60)}h ${diff % 60}m`;
     upNext = { ...upNextRaw, inText, soon: diff <= 10 };
   }
-  const weekStart = startOfWeekMonday(dateFromISO(todayIso));
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart);
-    d.setDate(weekStart.getDate() + i);
-    return d;
-  });
+  const isDashGlass = mainPage === "personal" && activeView === "dashboard";
   const wrapperStyle = {
     "--pp-font-display-override": fontStack.display,
     "--pp-font-body-override": fontStack.body,
@@ -689,6 +664,12 @@ export default function PastelPlan() {
           backgroundImage: `linear-gradient(color-mix(in srgb, var(--pp-paper) 45%, transparent), color-mix(in srgb, var(--pp-paper) 45%, transparent)), url(${customize.bgPhoto})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
+        }
+      : isDashGlass
+      ? {
+          backgroundColor: "#FBD9E3",
+          backgroundImage: "linear-gradient(150deg, #FBD9E3 0%, #E7D4F5 26%, #D6E4FB 52%, #D2F1E6 76%, #FBF0C9 100%)",
+          backgroundAttachment: "fixed",
         }
       : {}),
   };
@@ -730,10 +711,13 @@ export default function PastelPlan() {
         </div>
 
         {/* header */}
-        <header className="pp-header relative overflow-hidden px-5.5 pb-5.5 pt-1.5">
+        <header className="pp-header relative overflow-hidden px-5.5 pb-5.5 pt-1.5" style={isDashGlass ? { background: "transparent" } : undefined}>
           <div className="relative flex items-start justify-between gap-3">
             <div>
-              <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.09em] text-[var(--pp-ink-soft)]">
+              <div
+                className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.09em]"
+                style={{ color: isDashGlass ? "color-mix(in srgb, #2E1A47 60%, transparent)" : "var(--pp-ink-soft)" }}
+              >
                 {dayName}
                 {namePart && ` · ${namePart.toUpperCase()}`}
               </div>
@@ -743,14 +727,35 @@ export default function PastelPlan() {
                 aria-label="Open calendar"
                 onClick={() => setShowCalendar(true)}
                 onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setShowCalendar(true)}
-                className="pp-font-display mt-1 cursor-pointer text-[2rem] font-semibold leading-[1.05] text-[var(--pp-ink)]"
-                style={{ textWrap: "balance" }}
+                className="pp-font-display mt-1 cursor-pointer text-[2rem] leading-[1.05]"
+                style={{ textWrap: "balance", color: isDashGlass ? "#2E1A47" : "var(--pp-ink)", fontWeight: isDashGlass ? 800 : 600 }}
               >
                 {dateLabel}
               </h1>
-              <p className="pp-font-display mt-3 border-l-2 border-[var(--pp-lavender-ink)]/60 pl-3.5 text-[0.95rem] italic leading-[1.4] text-[var(--pp-ink-soft)]">
-                "{quote}"
-              </p>
+              {isDashGlass ? (
+                <div
+                  className="relative mt-3 rounded-[22px] py-4 pl-6 pr-4.5"
+                  style={{
+                    background: "rgba(255,255,255,0.4)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    border: "1px solid rgba(255,255,255,0.6)",
+                    boxShadow: "0 4px 24px -8px rgba(80,50,110,0.15)",
+                  }}
+                >
+                  <span
+                    className="absolute bottom-3.5 left-2.5 top-3.5 w-1 rounded-full"
+                    style={{ background: "linear-gradient(180deg,#C9A6E8,#F5A6C9)" }}
+                  />
+                  <p className="pp-font-display text-[0.95rem] italic leading-[1.4]" style={{ color: "color-mix(in srgb, #2E1A47 90%, transparent)" }}>
+                    "{quote}"
+                  </p>
+                </div>
+              ) : (
+                <p className="pp-font-display mt-3 border-l-2 border-[var(--pp-lavender-ink)]/60 pl-3.5 text-[0.95rem] italic leading-[1.4] text-[var(--pp-ink-soft)]">
+                  "{quote}"
+                </p>
+              )}
               {!isToday && (
                 <button
                   type="button"
@@ -766,14 +771,28 @@ export default function PastelPlan() {
                 type="button"
                 onClick={() => setShowCustomize(true)}
                 aria-label="Customize planner"
-                className="relative grid h-11 w-11 place-items-center rounded-2xl border-[1.5px] text-[var(--pp-ink-soft)]"
-                style={{ background: "color-mix(in srgb, var(--pp-surface) 70%, transparent)", borderColor: "color-mix(in srgb, var(--pp-ink) 10%, transparent)" }}
+                className="relative grid h-11 w-11 place-items-center rounded-2xl border-[1.5px]"
+                style={
+                  isDashGlass
+                    ? {
+                        background: "rgba(255,255,255,0.45)",
+                        backdropFilter: "blur(12px)",
+                        WebkitBackdropFilter: "blur(12px)",
+                        borderColor: "rgba(255,255,255,0.65)",
+                        color: "#E8A6C1",
+                        boxShadow: "0 2px 10px -4px rgba(80,50,110,0.2)",
+                      }
+                    : { background: "color-mix(in srgb, var(--pp-surface) 70%, transparent)", borderColor: "color-mix(in srgb, var(--pp-ink) 10%, transparent)", color: "var(--pp-ink-soft)" }
+                }
               >
                 <Palette size={19} strokeWidth={1.8} />
               </button>
               <div
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[var(--pp-gold-ink)] shadow-[0_6px_14px_-6px_rgba(30,20,40,.4)]"
-                style={{ background: "linear-gradient(155deg, var(--pp-gold), color-mix(in srgb, var(--pp-gold) 55%, var(--pp-blush)))" }}
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl shadow-[0_6px_14px_-6px_rgba(30,20,40,.4)]"
+                style={{
+                  background: "linear-gradient(155deg, var(--pp-gold), color-mix(in srgb, var(--pp-gold) 55%, var(--pp-blush)))",
+                  color: isDashGlass ? "#fff" : "var(--pp-gold-ink)",
+                }}
               >
                 <Sun size={22} strokeWidth={1.9} />
               </div>
@@ -786,25 +805,49 @@ export default function PastelPlan() {
           <button
             type="button"
             onClick={() => setMainPage("personal")}
-            className="flex-1 rounded-xl py-2 text-[0.76rem] font-bold"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[0.76rem] font-bold"
             style={
               mainPage === "personal"
-                ? { background: "var(--pp-ink)", color: "var(--pp-surface)" }
+                ? isDashGlass
+                  ? { background: "rgba(0,0,0,0.3)", color: "#fff" }
+                  : { background: "var(--pp-ink)", color: "var(--pp-surface)" }
+                : isDashGlass
+                ? {
+                    background: "rgba(255,255,255,0.45)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    border: "1px solid rgba(255,255,255,0.65)",
+                    color: "#2E1A47",
+                    boxShadow: "0 2px 10px -4px rgba(80,50,110,0.15)",
+                  }
                 : { background: "transparent", color: "var(--pp-ink-soft)", border: "1.5px solid var(--pp-line)" }
             }
           >
+            <User size={15} strokeWidth={2} color={isDashGlass && mainPage === "personal" ? "#fff" : undefined} />
             Personal Notes
           </button>
           <button
             type="button"
             onClick={() => setMainPage("work")}
-            className="flex-1 rounded-xl py-2 text-[0.76rem] font-bold"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[0.76rem] font-bold"
             style={
               mainPage === "work"
-                ? { background: "var(--pp-ink)", color: "var(--pp-surface)" }
+                ? isDashGlass
+                  ? { background: "rgba(0,0,0,0.3)", color: "#fff" }
+                  : { background: "var(--pp-ink)", color: "var(--pp-surface)" }
+                : isDashGlass
+                ? {
+                    background: "rgba(255,255,255,0.45)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    border: "1px solid rgba(255,255,255,0.65)",
+                    color: "#2E1A47",
+                    boxShadow: "0 2px 10px -4px rgba(80,50,110,0.15)",
+                  }
                 : { background: "transparent", color: "var(--pp-ink-soft)", border: "1.5px solid var(--pp-line)" }
             }
           >
+            <Briefcase size={15} strokeWidth={2} color={isDashGlass && mainPage !== "work" ? "#B08968" : isDashGlass && mainPage === "work" ? "#fff" : undefined} />
             Work Notes
           </button>
         </div>
@@ -816,26 +859,50 @@ export default function PastelPlan() {
           <button
             type="button"
             onClick={() => setActiveView("planner")}
-            className="flex-1 rounded-xl border-[1.5px] py-2.5 text-[0.8rem] font-bold"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border-[1.5px] py-2.5 text-[0.8rem] font-bold"
             style={
-              activeView === "planner"
+              isDashGlass
+                ? {
+                    background: "rgba(255,255,255,0.45)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    borderColor: "rgba(255,255,255,0.65)",
+                    color: "#2E1A47",
+                    boxShadow: "0 2px 10px -4px rgba(80,50,110,0.15)",
+                  }
+                : activeView === "planner"
                 ? { background: "var(--pp-lavender)", borderColor: "var(--pp-lavender)", color: "var(--pp-lavender-ink)" }
                 : { background: "var(--pp-surface)", borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }
             }
           >
-            📋 Planner
+            <ClipboardList size={15} strokeWidth={2} color={isDashGlass ? "#D4B26A" : undefined} />
+            Planner
           </button>
           <button
             type="button"
             onClick={() => setActiveView("dashboard")}
-            className="flex-1 rounded-xl border-[1.5px] py-2.5 text-[0.8rem] font-bold"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border-[1.5px] py-2.5 text-[0.8rem] font-bold"
             style={
-              activeView === "dashboard"
+              isDashGlass
+                ? {
+                    background: "rgba(255,255,255,0.45)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    borderColor: "rgba(255,255,255,0.65)",
+                    color: "#2E1A47",
+                    boxShadow: "0 2px 10px -4px rgba(80,50,110,0.15)",
+                  }
+                : activeView === "dashboard"
                 ? { background: "var(--pp-lavender)", borderColor: "var(--pp-lavender)", color: "var(--pp-lavender-ink)" }
                 : { background: "var(--pp-surface)", borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }
             }
           >
-            📊 Dashboard
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <rect x="3.5" y="12" width="4.5" height="8.5" rx="1.2" fill="#7CC9A6" />
+              <rect x="9.75" y="6" width="4.5" height="14.5" rx="1.2" fill="#7FB3E8" />
+              <rect x="16" y="9.5" width="4.5" height="11" rx="1.2" fill="#F0A6C9" />
+            </svg>
+            Dashboard
           </button>
         </div>
 
@@ -1040,10 +1107,8 @@ export default function PastelPlan() {
         ) : (
           <DashboardView
             upNext={upNext}
-            weekDays={weekDays}
             selectedDate={selectedDate}
             todayIso={todayIso}
-            computeDayStats={computeDayStats}
             onSelectDay={(dStr) => {
               switchDate(dStr);
               setActiveView("planner");
@@ -1309,12 +1374,60 @@ function CalendarSheet({ selectedDate, onSelect, onClose, classSchedule, classSe
   );
 }
 
+function DashboardMiniCal({ todayIso, selectedDate, onSelectDay }) {
+  const today = dateFromISO(todayIso);
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const firstOfMonth = new Date(year, month, 1);
+  const startOffset = firstOfMonth.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+  const monthLabel = today.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+
+  return (
+    <div className="pp-card-float flex h-[100px] w-full flex-col gap-[3px]">
+      <span className="text-center text-[0.6rem] font-extrabold uppercase tracking-[.03em] text-[var(--pp-lavender-ink)]">{monthLabel}</span>
+      <div className="grid flex-1 grid-cols-7 gap-px">
+        {["S", "M", "T", "W", "T", "F", "S"].map((l, i) => (
+          <span key={i} className="text-center text-[0.42rem] font-extrabold text-[var(--pp-ink-soft)] opacity-70">
+            {l}
+          </span>
+        ))}
+        {cells.map((d, i) => {
+          if (d === null) return <span key={i} />;
+          const iso = todayISO(new Date(year, month, d));
+          const isToday = iso === todayIso;
+          const isSelected = iso === selectedDate;
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onSelectDay(iso)}
+              className="flex items-center justify-center rounded text-[0.48rem] font-semibold text-[var(--pp-ink)]"
+              style={
+                isToday
+                  ? { background: "rgba(240,120,110,0.65)", color: "#fff", fontWeight: 800 }
+                  : isSelected
+                  ? { boxShadow: "inset 0 0 0 1.5px var(--pp-lavender-ink)" }
+                  : undefined
+              }
+            >
+              {d}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function DashboardView({
   upNext,
-  weekDays,
   selectedDate,
   todayIso,
-  computeDayStats,
   onSelectDay,
   onOpenSyncedClass,
   onRefresh,
@@ -1338,21 +1451,39 @@ function DashboardView({
         <button
           type="button"
           onClick={onRefresh}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] py-2 text-[0.74rem] font-bold text-[var(--pp-ink-soft)]"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl py-2 text-[0.74rem] font-bold"
+          style={{
+            background: "rgba(255,255,255,0.45)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid rgba(255,255,255,0.65)",
+            color: "#2E1A47",
+            boxShadow: "0 2px 10px -4px rgba(80,50,110,0.15)",
+          }}
         >
-          🔄 Refresh
+          <RefreshCw size={14} strokeWidth={2} color="#5FB4E8" />
+          Refresh
         </button>
         <button
           type="button"
           onClick={onBack}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] py-2 text-[0.74rem] font-bold text-[var(--pp-ink-soft)]"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl py-2 text-[0.74rem] font-bold"
+          style={{
+            background: "rgba(255,255,255,0.45)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid rgba(255,255,255,0.65)",
+            color: "#2E1A47",
+            boxShadow: "0 2px 10px -4px rgba(80,50,110,0.15)",
+          }}
         >
-          ← Back
+          <ArrowLeft size={14} strokeWidth={2} color="#7C93A8" />
+          Back
         </button>
       </div>
       <section>
         <SectionTitle icon={Bell} fill="var(--pp-gold)" ink="var(--pp-gold-ink)" title="Up Next" />
-        <div className="pp-card">
+        <div className="pp-card-float">
           {upNext && upNextVisual ? (
             <div
               className={"flex items-center gap-3" + (upNext.synced ? " cursor-pointer" : "")}
@@ -1379,42 +1510,16 @@ function DashboardView({
       </section>
 
       <section>
-        <SectionTitle icon={Calendar} fill="var(--pp-lavender)" ink="var(--pp-lavender-ink)" title="This Week" />
-        <div className="flex justify-between gap-1">
-          {weekDays.map((d, i) => {
-            const dStr = todayISO(d);
-            const stats = computeDayStats(dStr);
-            const pct = stats.total ? Math.round((stats.done / stats.total) * 100) : 0;
-            const isToday = dStr === todayIso;
-            const isSelected = dStr === selectedDate;
-            return (
-              <button
-                key={dStr}
-                type="button"
-                onClick={() => onSelectDay(dStr)}
-                className="flex flex-1 flex-col items-center gap-1.5 rounded-xl py-1"
-                style={{ background: isSelected ? "var(--pp-surface-alt)" : "transparent" }}
-              >
-                <span className="text-[0.64rem] font-bold uppercase text-[var(--pp-ink-soft)]">{WEEKDAY_LETTERS[i]}</span>
-                <span
-                  className="grid h-[34px] w-[34px] place-items-center rounded-full"
-                  style={{ background: `conic-gradient(var(--pp-mint-ink) ${pct}%, var(--pp-line) 0)` }}
-                >
-                  <span
-                    className="grid h-[26px] w-[26px] place-items-center rounded-full bg-[var(--pp-surface)] text-[0.7rem] font-bold text-[var(--pp-ink)]"
-                    style={isToday ? { boxShadow: "0 0 0 1.5px var(--pp-lavender-ink)" } : undefined}
-                  >
-                    {d.getDate()}
-                  </span>
-                </span>
-              </button>
-            );
-          })}
+        <div className="flex items-stretch gap-3">
+          <div className="min-w-0 flex-1">
+            <SectionTitle icon={Calendar} fill="var(--pp-lavender)" ink="var(--pp-lavender-ink)" title="This Week" />
+            <DashboardMiniCal todayIso={todayIso} selectedDate={selectedDate} onSelectDay={onSelectDay} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <SectionTitle icon={Calendar} fill="var(--pp-lavender)" ink="var(--pp-lavender-ink)" title="Class Schedule" />
+            <ClassScheduleOverviewCard classSchedule={classSchedule} onOpen={onOpenClassMap} />
+          </div>
         </div>
-      </section>
-
-      <section>
-        <ClassScheduleOverviewCard classSchedule={classSchedule} onOpen={onOpenClassMap} />
       </section>
     </div>
   );
@@ -1422,7 +1527,7 @@ function DashboardView({
 
 function ClassScheduleOverviewCard({ classSchedule, onOpen }) {
   return (
-    <button type="button" onClick={onOpen} className="block w-full max-w-[320px] text-left">
+    <button type="button" onClick={onOpen} className="block h-[100px] w-full text-left">
       <ClassScheduleMap classSchedule={classSchedule} compact />
     </button>
   );
@@ -1751,7 +1856,7 @@ function fmtSlotLabel(mins) {
   const mm = mins % 60;
   let h12 = hh % 12;
   if (h12 === 0) h12 = 12;
-  return `${h12}:${String(mm).padStart(2, "0")}`;
+  return `${String(h12).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
 
 function ClassScheduleMap({ classSchedule, compact }) {
@@ -1766,11 +1871,28 @@ function ClassScheduleMap({ classSchedule, compact }) {
   let endHour = 17;
   if (timed.length) {
     startHour = Math.floor(Math.min(...timed.map((c) => timeToMinutes(c.timeIn))) / 60);
-    endHour = Math.max(startHour + 1, Math.ceil(Math.max(...timed.map((c) => timeToMinutes(c.timeOut))) / 60));
+    endHour = Math.max(startHour + 1, Math.ceil(Math.max(...timed.map((c) => timeToMinutes(c.timeOut))) / 60), 17);
   }
-  const SLOT = 30;
-  const slotCount = Math.ceil(((endHour - startHour) * 60) / SLOT);
-  const slots = Array.from({ length: slotCount }, (_, i) => startHour * 60 + i * SLOT);
+  const rangeStart = startHour * 60;
+  const rangeEnd = endHour * 60;
+
+  const boundarySet = new Set([rangeStart, rangeEnd]);
+  timed.forEach((c) => {
+    const s = Math.max(rangeStart, timeToMinutes(c.timeIn));
+    const e = Math.min(rangeEnd, timeToMinutes(c.timeOut));
+    if (e > s) {
+      boundarySet.add(s);
+      boundarySet.add(e);
+    }
+  });
+  const boundaries = [...boundarySet].sort((a, b) => a - b);
+  let segments = boundaries.slice(0, -1).map((b, i) => ({ start: b, end: boundaries[i + 1] }));
+  const isOccupied = (seg) => timed.some((c) => timeToMinutes(c.timeIn) <= seg.start && timeToMinutes(c.timeOut) > seg.start);
+  const firstOccupied = segments.findIndex(isOccupied);
+  if (firstOccupied !== -1) {
+    const lastOccupied = segments.length - 1 - [...segments].reverse().findIndex(isOccupied);
+    segments = segments.slice(firstOccupied, lastOccupied + 1);
+  }
 
   const occupied = {};
   days.forEach((d) => {
@@ -1787,57 +1909,85 @@ function ClassScheduleMap({ classSchedule, compact }) {
     );
   }
 
-  const thPad = compact ? "px-1 py-1" : "px-2 py-2";
-  const thFont = compact ? "text-[0.5rem]" : "text-[0.68rem]";
-  const timeFont = compact ? "text-[0.48rem]" : "text-[0.66rem]";
-  const blockPad = compact ? "px-1 py-0.5" : "px-2 py-1.5";
-  const codeFont = compact ? "text-[0.5rem]" : "text-[0.68rem]";
+  const thPad = compact ? "px-px py-0" : "px-2 py-2";
+  const thFont = compact ? "text-[0.36rem]" : "text-[0.68rem]";
+  const timeFont = compact ? "text-[0.34rem]" : "text-[0.66rem]";
+  const blockPad = compact ? "px-0.5 py-0" : "px-2 py-1.5";
+  const codeFont = compact ? "text-[0.36rem]" : "text-[0.68rem]";
   const nameFont = compact ? "text-[0.48rem]" : "text-[0.66rem]";
+  const blockRadius = compact ? "rounded-[3px]" : "rounded-lg";
 
   return (
-    <div className={`${compact ? "" : "mb-3"} overflow-x-auto rounded-xl border-[1.5px] border-[var(--pp-line)]`}>
-      <table className="w-full border-collapse" style={{ minWidth: `${days.length * (compact ? 62 : 108) + (compact ? 44 : 76)}px` }}>
+    <div
+      className={
+        compact
+          ? "pp-card-float h-full overflow-auto"
+          : "mb-3 overflow-x-auto rounded-xl border-[1.5px] border-[var(--pp-line)] p-1"
+      }
+      style={compact ? { padding: 3 } : { background: "var(--pp-surface)" }}
+    >
+      <table
+        className="w-full"
+        style={{
+          minWidth: `${days.length * (compact ? 28 : 108) + (compact ? 18 : 76)}px`,
+          borderCollapse: "separate",
+          borderSpacing: compact ? 1 : 4,
+          tableLayout: "fixed",
+        }}
+      >
         <thead>
           <tr>
-            <th className={`whitespace-nowrap border-b border-r border-[var(--pp-line)] bg-[var(--pp-paper)] ${thPad} text-[0.62rem] font-extrabold uppercase tracking-[0.03em] text-[var(--pp-ink-soft)]`} />
+            <th
+              className={`whitespace-nowrap rounded bg-[var(--pp-paper)] ${thPad} text-[0.62rem] font-extrabold uppercase tracking-[0.03em] text-[var(--pp-ink-soft)]`}
+              style={{ width: compact ? 26 : 82 }}
+            />
             {days.map((d) => (
               <th
                 key={d}
-                className={`whitespace-nowrap border-b border-[var(--pp-line)] bg-[var(--pp-paper)] ${thPad} ${thFont} font-extrabold uppercase tracking-[0.03em] text-[var(--pp-ink-soft)]`}
+                className={`whitespace-nowrap rounded bg-[var(--pp-paper)] ${thPad} ${thFont} font-extrabold uppercase tracking-[0.03em] text-[var(--pp-ink-soft)]`}
               >
-                {d.slice(0, 3)}
+                {d.slice(0, 1)}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {slots.map((slotStart, sIdx) => (
-            <tr key={slotStart}>
-              <td className={`whitespace-nowrap border-b border-r border-[var(--pp-line)] ${thPad} ${timeFont} font-bold text-[var(--pp-ink-soft)]`}>
-                {fmtSlotLabel(slotStart)}
+          {segments.map((seg, sIdx) => (
+            <tr key={seg.start}>
+              <td className={`whitespace-nowrap rounded bg-[var(--pp-paper)] ${thPad} ${timeFont} font-bold leading-[1.15] text-[var(--pp-ink-soft)]`}>
+                {compact ? (
+                  <>
+                    {fmtSlotLabel(seg.end)}-
+                    <br />
+                    {fmtSlotLabel(seg.start)}
+                  </>
+                ) : (
+                  <>
+                    {fmtSlotLabel(seg.start)}-{fmtSlotLabel(seg.end)}
+                  </>
+                )}
               </td>
               {days.map((day) => {
                 if (occupied[day].has(sIdx)) return null;
-                const cls = classSchedule.find(
-                  (c) =>
-                    c.days.includes(day) &&
-                    c.timeIn &&
-                    timeToMinutes(c.timeIn) >= slotStart &&
-                    timeToMinutes(c.timeIn) < slotStart + SLOT
-                );
+                const cls = classSchedule.find((c) => c.days.includes(day) && c.timeIn && timeToMinutes(c.timeIn) === seg.start);
                 if (!cls) {
-                  return <td key={day} className="border-b border-[var(--pp-line)] p-1 align-top" />;
+                  return <td key={day} className="align-top" />;
                 }
-                const startM = timeToMinutes(cls.timeIn);
-                const endM = cls.timeOut ? timeToMinutes(cls.timeOut) : startM + SLOT;
-                const span = Math.max(1, Math.min(slots.length - sIdx, Math.ceil((endM - startM) / SLOT)));
+                const endM = cls.timeOut ? Math.min(rangeEnd, timeToMinutes(cls.timeOut)) : seg.end;
+                let span = 0;
+                let cursor = sIdx;
+                while (cursor < segments.length && segments[cursor].start < endM) {
+                  span++;
+                  cursor++;
+                }
+                span = Math.max(1, span);
                 for (let s = 1; s < span; s++) occupied[day].add(sIdx + s);
                 const idx = classSchedule.findIndex((c) => c.id === cls.id);
                 const swatch = cls.color ? swatchByKey(cls.color) : COLOR_SWATCHES[idx % COLOR_SWATCHES.length];
                 return (
-                  <td key={day} rowSpan={span} className="border-b border-[var(--pp-line)] p-1 align-top">
+                  <td key={day} rowSpan={span} className="align-top">
                     <div
-                      className={`flex h-full flex-col gap-0.5 rounded-lg ${blockPad}`}
+                      className={`flex h-full flex-col gap-0.5 ${blockRadius} shadow-sm ${blockPad}`}
                       style={{ background: swatch.fill, color: swatch.ink }}
                     >
                       {cls.code && <p className={`truncate ${codeFont} font-extrabold`}>{cls.code}</p>}
@@ -3839,6 +3989,16 @@ function PastelPlanStyles() {
       }
 
       .pp-card { background: var(--pp-surface); border: 1px solid var(--pp-line); border-radius: 20px; padding: 14px; }
+
+      .pp-card-float {
+        background: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 22px;
+        padding: 14px;
+        box-shadow: 0 4px 24px -8px rgba(80, 50, 110, 0.15);
+      }
 
       .pp-row-grid { grid-template-columns: 44px 20px minmax(0, 1fr); }
       .pp-rail-line { position: absolute; top: 0; bottom: -10px; left: 50%; width: 2px; transform: translateX(-50%); background: var(--pp-line); }

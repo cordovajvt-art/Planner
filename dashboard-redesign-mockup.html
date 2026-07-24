@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GIYA Dashboard — Glassmorphic Mockup</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,500&display=swap" rel="stylesheet">
+<style>
+  :root { --plum: #2E1A47; }
+  * { font-family: 'DM Sans', sans-serif; }
+  body {
+    background: linear-gradient(150deg, #FBD9E3 0%, #E7D4F5 26%, #D6E4FB 52%, #D2F1E6 76%, #FBF0C9 100%);
+    background-attachment: fixed;
+    color: var(--plum);
+  }
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255,255,255,0.4);
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow: 0 4px 24px -8px rgba(80,50,110,0.15);
+  }
+  .glass-btn {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255,255,255,0.45);
+    border: 1px solid rgba(255,255,255,0.65);
+  }
+</style>
+</head>
+<body class="min-h-screen flex justify-center py-8 px-3">
+<div class="w-full max-w-[400px] flex flex-col gap-5">
+
+  <!-- A. Header -->
+  <header class="flex items-start justify-between">
+    <div>
+      <p class="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[var(--plum)]/60">Friday &bull; Hi Jessan</p>
+      <h1 class="text-4xl font-extrabold text-[var(--plum)] leading-tight mt-0.5">July 24</h1>
+    </div>
+    <div class="flex gap-2 pt-1">
+      <button class="glass-btn h-10 w-10 rounded-full flex items-center justify-center shadow-sm active:scale-95 transition">
+        <i data-lucide="settings" class="w-[18px] h-[18px] text-[#E8A6C1]"></i>
+      </button>
+      <button class="h-10 w-10 rounded-full flex items-center justify-center shadow-sm active:scale-95 transition" style="background:linear-gradient(135deg,#FFD98E,#FF9F6B);">
+        <i data-lucide="sun" class="w-[18px] h-[18px] text-white"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Quote container -->
+  <div class="glass rounded-3xl p-4 flex gap-3 items-stretch">
+    <span class="w-1 rounded-full shrink-0" style="background:linear-gradient(180deg,#C9A6E8,#F5A6C9);"></span>
+    <p class="italic text-[0.86rem] leading-snug text-[var(--plum)]/90 py-1">
+      "Naa kay workmate nga mura'g 'calculator'? Mo-function lang kung naay i-divide o i-multiply nga OT pay."
+    </p>
+  </div>
+
+  <!-- B. Quick Action Grid -->
+  <div class="grid grid-cols-2 gap-2.5">
+    <!-- 1. Personal Notes (active) -->
+    <button class="rounded-2xl bg-black/30 text-white flex items-center justify-center gap-2 py-3.5 font-bold text-[0.86rem] shadow-sm active:scale-[0.98] transition">
+      <i data-lucide="user" class="w-[17px] h-[17px] text-white"></i>
+      Personal Notes
+    </button>
+    <!-- 2. Work Notes -->
+    <button class="glass-btn rounded-2xl flex items-center justify-center gap-2 py-3.5 font-bold text-[0.86rem] text-[var(--plum)] shadow-sm active:scale-[0.98] transition">
+      <i data-lucide="briefcase" class="w-[17px] h-[17px] text-[#B08968]"></i>
+      Work Notes
+    </button>
+    <!-- 3. Planner -->
+    <button class="glass-btn rounded-2xl flex items-center justify-center gap-2 py-3.5 font-bold text-[0.86rem] text-[var(--plum)] shadow-sm active:scale-[0.98] transition">
+      <i data-lucide="clipboard-list" class="w-[17px] h-[17px] text-[#D4B26A]"></i>
+      Planner
+    </button>
+    <!-- 4. Dashboard -->
+    <button class="glass-btn rounded-2xl flex items-center justify-center gap-2 py-3.5 font-bold text-[0.86rem] text-[var(--plum)] shadow-sm active:scale-[0.98] transition">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+        <rect x="3.5" y="12" width="4.5" height="8.5" rx="1.2" fill="#7CC9A6"/>
+        <rect x="9.75" y="6" width="4.5" height="14.5" rx="1.2" fill="#7FB3E8"/>
+        <rect x="16" y="9.5" width="4.5" height="11" rx="1.2" fill="#F0A6C9"/>
+      </svg>
+      Dashboard
+    </button>
+    <!-- 5. Refresh -->
+    <button class="glass-btn rounded-2xl flex items-center justify-center gap-2 py-3.5 font-bold text-[0.86rem] text-[var(--plum)] shadow-sm active:scale-[0.98] transition">
+      <i data-lucide="refresh-cw" class="w-[17px] h-[17px] text-[#5FB4E8]"></i>
+      Refresh
+    </button>
+    <!-- 6. Back -->
+    <button class="glass-btn rounded-2xl flex items-center justify-center gap-2 py-3.5 font-bold text-[0.86rem] text-[var(--plum)] shadow-sm active:scale-[0.98] transition">
+      <i data-lucide="log-out" class="w-[17px] h-[17px] text-[#7C93A8]"></i>
+      Back
+    </button>
+  </div>
+
+  <!-- C. Up Next -->
+  <section class="flex flex-col gap-2">
+    <div class="flex items-center gap-2">
+      <span class="h-7 w-7 rounded-full flex items-center justify-center" style="background:#FBEFD1;">
+        <i data-lucide="bell" class="w-[15px] h-[15px] text-[#C9A24A]"></i>
+      </span>
+      <h2 class="font-extrabold text-[1.02rem] text-[var(--plum)]">Up Next</h2>
+    </div>
+    <div class="glass rounded-2xl py-6 px-5">
+      <p class="text-center italic text-[0.86rem] text-[var(--plum)]/75">Nothing left on today's timeline. Nice work! 🎉</p>
+    </div>
+  </section>
+
+  <!-- D. Bottom split grid -->
+  <section class="grid grid-cols-2 gap-3">
+    <!-- Left: This Week -->
+    <div class="flex flex-col gap-2 min-w-0">
+      <div class="flex items-center gap-1.5">
+        <span class="h-6 w-6 rounded-full flex items-center justify-center shrink-0" style="background:#E4D6F7;">
+          <i data-lucide="calendar" class="w-[12px] h-[12px] text-[#8A5FC4]"></i>
+        </span>
+        <h3 class="font-extrabold text-[0.8rem] text-[var(--plum)] truncate">This Week</h3>
+      </div>
+      <div class="glass rounded-2xl p-2.5">
+        <p class="text-center text-[0.56rem] font-extrabold uppercase tracking-wide text-[var(--plum)]/60 mb-1">July 2026</p>
+        <div class="grid grid-cols-7 gap-y-1 text-center">
+          <span class="text-[0.5rem] font-bold text-[var(--plum)]/50">S</span>
+          <span class="text-[0.5rem] font-bold text-[var(--plum)]/50">M</span>
+          <span class="text-[0.5rem] font-bold text-[var(--plum)]/50">T</span>
+          <span class="text-[0.5rem] font-bold text-[var(--plum)]/50">W</span>
+          <span class="text-[0.5rem] font-bold text-[var(--plum)]/50">T</span>
+          <span class="text-[0.5rem] font-bold text-[var(--plum)]/50">F</span>
+          <span class="text-[0.5rem] font-bold text-[var(--plum)]/50">S</span>
+
+          <span></span><span></span><span></span>
+          <span class="text-[0.62rem] font-semibold py-0.5">1</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">2</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">3</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">4</span>
+
+          <span class="text-[0.62rem] font-semibold py-0.5">5</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">6</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">7</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">8</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">9</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">10</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">11</span>
+
+          <span class="text-[0.62rem] font-semibold py-0.5">12</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">13</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">14</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">15</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">16</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">17</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">18</span>
+
+          <span class="text-[0.62rem] font-semibold py-0.5">19</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">20</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">21</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">22</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">23</span>
+          <span class="flex items-center justify-center mx-auto w-[18px] h-[18px] rounded-full text-[0.62rem] font-extrabold text-white" style="background:rgba(240,120,110,0.65);">24</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">25</span>
+
+          <span class="text-[0.62rem] font-semibold py-0.5">26</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">27</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">28</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">29</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">30</span>
+          <span class="text-[0.62rem] font-semibold py-0.5">31</span>
+          <span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Class Schedule -->
+    <div class="flex flex-col gap-2 min-w-0">
+      <div class="flex items-center gap-1.5">
+        <span class="h-6 w-6 rounded-full flex items-center justify-center shrink-0" style="background:#E4D6F7;">
+          <i data-lucide="table-2" class="w-[12px] h-[12px] text-[#8A5FC4]"></i>
+        </span>
+        <h3 class="font-extrabold text-[0.8rem] text-[var(--plum)] truncate">Class Schedule</h3>
+      </div>
+      <div class="glass rounded-2xl p-2.5 flex flex-col gap-1">
+        <div class="flex items-center gap-1.5">
+          <span class="text-[0.5rem] font-bold text-[var(--plum)]/55 w-[26px] shrink-0">7:30</span>
+          <span class="flex-1 rounded-lg px-1.5 py-1 text-[0.56rem] font-extrabold" style="background:#C9EDDA;">Biol</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-[0.5rem] font-bold text-[var(--plum)]/55 w-[26px] shrink-0">9:00</span>
+          <span class="flex-1 rounded-lg px-1.5 py-1 text-[0.56rem] font-extrabold" style="background:#FBEBAE;">IC-RE</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-[0.5rem] font-bold text-[var(--plum)]/55 w-[26px] shrink-0">10:30</span>
+          <span class="flex-1 rounded-lg px-1.5 py-1 text-[0.56rem] font-extrabold" style="background:#FBD3B8;">BC 101</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-[0.5rem] font-bold text-[var(--plum)]/55 w-[26px] shrink-0">1:00</span>
+          <span class="flex-1 rounded-lg px-1.5 py-1 text-[0.56rem] font-extrabold" style="background:#C9EDDA;">Biol</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- E. Footer -->
+  <footer class="text-center pt-2 pb-4">
+    <p class="text-[0.7rem] text-[var(--plum)]/50">GIYA &middot; made for the space between periods</p>
+    <p class="text-[0.62rem] text-[var(--plum)]/35 mt-0.5">jvtcordova@2026</p>
+  </footer>
+
+</div>
+<script>lucide.createIcons();</script>
+</body>
+</html>
