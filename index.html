@@ -144,7 +144,24 @@
     transition: background-image .2s ease;
   }
 
+  .pull-refresh {
+    position: absolute; top: 10px; left: 50%; z-index: 40;
+    width: 38px; height: 38px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.7);
+    box-shadow: 0 6px 16px -6px rgba(30,20,40,.35);
+    opacity: 0; pointer-events: none;
+    transform: translate(-50%, -46px) rotate(0deg) scale(0.7);
+    transition: opacity .15s ease;
+  }
+  .pull-refresh.pull-dragging { transition: none; }
+  .pull-refresh.pull-visible { opacity: 1; }
+  .pull-refresh.pull-loading { opacity: 1; transform: translate(-50%, 14px) scale(1); animation: pull-refresh-spin .8s linear infinite; }
+  @keyframes pull-refresh-spin { to { transform: translate(-50%, 14px) rotate(360deg) scale(1); } }
+
   .app-frame {
+    position: relative;
     width: 100%;
     max-width: 402px;
     background: var(--frame);
@@ -538,6 +555,8 @@
     font-family: var(--font-body); font-size: 0.74rem; font-weight: 700;
     border-radius: 10px; padding: 8px 10px; cursor: pointer;
   }
+  .dash-tool-btn--icon { flex: 0 0 auto; width: 38px; padding: 8px; }
+  .dash-tool-btn--icon svg { width: 15px; height: 15px; }
   #classMapBox { margin-bottom: 14px; }
   .cs-map-wrap { overflow-x: auto; border: 1.5px solid var(--line); border-radius: 12px; padding: 6px; background: var(--surface); }
   .cs-map-table { width: 100%; border-collapse: separate; border-spacing: 4px; table-layout: fixed; font-family: var(--font-body); }
@@ -1106,6 +1125,9 @@
   :focus-visible { outline: 2px solid var(--sky-ink); outline-offset: 2px; }
 
   /* ---------- Dashboard glassmorphic redesign ---------- */
+  .icon-3d { display: none; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(80,50,30,0.25)); }
+  body.dash-glass .icon-flat { display: none; }
+  body.dash-glass .icon-3d { display: inline-block; }
   body.dash-glass {
     background-color: #E7DBF3;
     background-image: linear-gradient(150deg, #E3D6F5 0%, #EEDAEA 26%, #F5DCE0 50%, #DEE0F2 75%, #D8E6F7 100%);
@@ -1118,7 +1140,7 @@
   body.dash-glass .quote {
     position: relative;
     font-family: var(--font-body);
-    font-style: normal;
+    font-style: italic;
     font-weight: 500;
     background: rgba(255,255,255,0.42);
     backdrop-filter: blur(14px);
@@ -1128,7 +1150,7 @@
     border-radius: 26px;
     padding: 16px 18px 16px 24px;
     color: color-mix(in srgb, #2E1A47 88%, transparent);
-    box-shadow: 0 8px 28px -10px rgba(120,90,150,0.18);
+    box-shadow: 0 16px 36px -10px rgba(120,90,150,0.32), 0 4px 10px -4px rgba(120,90,150,0.2);
     letter-spacing: 0.01em;
   }
   body.dash-glass .quote::before {
@@ -1166,16 +1188,6 @@
   body.dash-glass .main-page-tab[data-mainpage="work"]:not(.active) svg { color: #9C7A24; }
   body.dash-glass .view-tab[data-view="planner"] svg { color: #9C7A24; }
 
-  body.dash-glass .dash-tool-btn#dashRefreshBtn {
-    background: rgba(255,255,255,0.42);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255,255,255,0.65);
-    color: #2E1A47;
-    border-radius: 18px;
-    box-shadow: 0 6px 20px -8px rgba(120,90,150,0.16);
-  }
-  body.dash-glass .dash-tool-btn#dashRefreshBtn svg { color: #9C7A24; }
   body.dash-glass .dash-back-icon {
     background: linear-gradient(135deg, #FFFDF8, #F0DFB8);
     backdrop-filter: blur(12px);
@@ -1191,7 +1203,7 @@
     -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(255,255,255,0.65);
     border-radius: 26px;
-    box-shadow: 0 8px 28px -10px rgba(120,90,150,0.18);
+    box-shadow: 0 16px 36px -10px rgba(120,90,150,0.32), 0 4px 10px -4px rgba(120,90,150,0.2);
     font-family: var(--font-body);
   }
   .dash-mini-cal,
@@ -1201,13 +1213,16 @@
     -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(255,255,255,0.65);
     border-radius: 18px;
-    box-shadow: 0 8px 28px -10px rgba(120,90,150,0.18);
+    box-shadow: 0 16px 36px -10px rgba(120,90,150,0.32), 0 4px 10px -4px rgba(120,90,150,0.2);
   }
   .dash-mini-cal-cell.today { background: rgba(240,120,110,0.65); }
   .dash-mini-cal-head { color: #9C7A24; }
 </style>
 
 <div class="app-frame" id="frame">
+  <div class="pull-refresh" id="pullRefresh" aria-hidden="true">
+    <img width="20" height="20" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Counterclockwise%20arrows%20button/3D/counterclockwise_arrows_button_3d.png">
+  </div>
   <div class="statusbar">
     <span id="clock">9:41</span>
     <div class="glyphs" aria-hidden="true">
@@ -1219,7 +1234,7 @@
   <header class="header">
     <div class="header-row">
       <button type="button" class="dash-back-icon" id="dashBackBtn" aria-label="Back to Planner" style="display:none">
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M19 12H5M5 12L11 6M5 12L11 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <img width="22" height="22" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Left%20arrow/3D/left_arrow_3d.png">
       </button>
       <div class="header-text">
         <div class="eyebrow" id="dayName">TUESDAY · WEEK 8</div>
@@ -1231,10 +1246,12 @@
       </div>
       <div class="header-badges">
         <button type="button" class="cz-badge" id="czOpenBtn" aria-label="Customize planner">
-          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><circle cx="9.2" cy="9.6" r="1.1" fill="currentColor"/><circle cx="14.4" cy="8.8" r="1.1" fill="currentColor"/><circle cx="15.4" cy="14" r="1.1" fill="currentColor"/><circle cx="9.6" cy="14.6" r="1.1" fill="currentColor"/><path d="M12 3.5V5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <svg class="icon-flat" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><circle cx="9.2" cy="9.6" r="1.1" fill="currentColor"/><circle cx="14.4" cy="8.8" r="1.1" fill="currentColor"/><circle cx="15.4" cy="14" r="1.1" fill="currentColor"/><circle cx="9.6" cy="14.6" r="1.1" fill="currentColor"/><path d="M12 3.5V5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <img class="icon-3d" width="26" height="26" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Gear/3D/gear_3d.png">
         </button>
         <div class="sun-badge" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.9"/><path d="M12 2.5V5M12 19V21.5M4.2 4.2L6 6M18 18L19.8 19.8M2.5 12H5M19 12H21.5M4.2 19.8L6 18M18 6L19.8 4.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+          <svg class="icon-flat" width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.9"/><path d="M12 2.5V5M12 19V21.5M4.2 4.2L6 6M18 18L19.8 19.8M2.5 12H5M19 12H21.5M4.2 19.8L6 18M18 6L19.8 4.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+          <img class="icon-3d" width="26" height="26" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Sun/3D/sun_3d.png">
         </div>
       </div>
     </div>
@@ -1243,11 +1260,13 @@
 
   <div class="main-page-tabs">
     <button type="button" class="main-page-tab active" data-mainpage="personal">
-      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8.5" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M5 20C5 16.5 8 14 12 14C16 14 19 16.5 19 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <svg class="icon-flat" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8.5" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M5 20C5 16.5 8 14 12 14C16 14 19 16.5 19 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <img class="icon-3d" width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Bust%20in%20silhouette/3D/bust_in_silhouette_3d.png">
       Personal Notes
     </button>
     <button type="button" class="main-page-tab" data-mainpage="work">
-      <svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="7.5" width="17" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 7.5V6C8.5 4.9 9.4 4 10.5 4H13.5C14.6 4 15.5 4.9 15.5 6V7.5" stroke="currentColor" stroke-width="1.8"/></svg>
+      <svg class="icon-flat" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="7.5" width="17" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 7.5V6C8.5 4.9 9.4 4 10.5 4H13.5C14.6 4 15.5 4.9 15.5 6V7.5" stroke="currentColor" stroke-width="1.8"/></svg>
+      <img class="icon-3d" width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Briefcase/3D/briefcase_3d.png">
       Work Notes
     </button>
   </div>
@@ -1255,11 +1274,13 @@
   <div id="personalPage">
   <div class="view-tabs">
     <button type="button" class="view-tab" data-view="planner">
-      <svg viewBox="0 0 24 24" fill="none"><rect x="5" y="4.5" width="14" height="17" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M9 4.5V3.8C9 3.1 9.6 2.5 10.3 2.5H13.7C14.4 2.5 15 3.1 15 3.8V4.5" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 11H15.5M8.5 15H13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <svg class="icon-flat" viewBox="0 0 24 24" fill="none"><rect x="5" y="4.5" width="14" height="17" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M9 4.5V3.8C9 3.1 9.6 2.5 10.3 2.5H13.7C14.4 2.5 15 3.1 15 3.8V4.5" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 11H15.5M8.5 15H13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <img class="icon-3d" width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Clipboard/3D/clipboard_3d.png">
       Planner
     </button>
     <button type="button" class="view-tab active" data-view="dashboard">
-      <svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="12" width="4.5" height="8.5" rx="1.2" fill="#E9CA7A"/><rect x="9.75" y="6" width="4.5" height="14.5" rx="1.2" fill="#C9A24A"/><rect x="16" y="9.5" width="4.5" height="11" rx="1.2" fill="#9C7A24"/></svg>
+      <svg class="icon-flat" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="12" width="4.5" height="8.5" rx="1.2" fill="#E9CA7A"/><rect x="9.75" y="6" width="4.5" height="14.5" rx="1.2" fill="#C9A24A"/><rect x="16" y="9.5" width="4.5" height="11" rx="1.2" fill="#9C7A24"/></svg>
+      <img class="icon-3d" width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Bar%20chart/3D/bar_chart_3d.png">
       Dashboard
     </button>
   </div>
@@ -1344,16 +1365,10 @@
   </main>
 
   <div class="dash-view" id="dashboardView" style="display:none">
-    <div class="dash-toolbar">
-      <button type="button" class="dash-tool-btn" id="dashRefreshBtn">
-        <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M20 11A8 8 0 0 0 6.3 6.3L4 8.6M4 8.6V4M4 8.6H8.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 13A8 8 0 0 0 17.7 17.7L20 15.4M20 15.4V20M20 15.4H15.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Refresh
-      </button>
-    </div>
     <section>
       <h2 class="section-title">
         <span class="icon-chip" style="background:var(--gold);color:var(--gold-ink)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 10.5C6 7 8.7 4.5 12 4.5C15.3 4.5 18 7 18 10.5C18 15 19.5 16 19.5 16.5H4.5C4.5 16 6 15 6 10.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 19.5C10.4 20.2 11.1 20.7 12 20.7C12.9 20.7 13.6 20.2 14 19.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <img width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Bell/3D/bell_3d.png">
         </span>
         Up Next
       </h2>
@@ -1364,7 +1379,7 @@
         <div class="dash-pair-col">
           <h2 class="section-title">
             <span class="icon-chip" style="background:linear-gradient(135deg, #FFFDF8, #F0DFB8);color:#9C7A24">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5H20.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V6M16 3V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <img width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Calendar/3D/calendar_3d.png">
             </span>
             This Week
           </h2>
@@ -1373,7 +1388,7 @@
         <div class="dash-pair-col">
           <h2 class="section-title">
             <span class="icon-chip" style="background:linear-gradient(135deg, #FFFDF8, #F0DFB8);color:#9C7A24">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5H20.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 3V6M16 3V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <img width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Calendar/3D/calendar_3d.png">
             </span>
             Class Schedule
           </h2>
@@ -1406,8 +1421,9 @@
 
     <section id="roleGenericSection">
       <div class="dash-toolbar">
-        <button type="button" class="dash-tool-btn" id="genericRefreshBtn">🔄 Refresh</button>
-        <button type="button" class="dash-tool-btn" id="genericBackBtn">← Back</button>
+        <button type="button" class="dash-tool-btn dash-tool-btn--icon" id="genericBackBtn" aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
       <div class="card work-generic">
         <span class="work-generic-icon">
@@ -1420,8 +1436,9 @@
 
     <section id="teacherWorkspaceSection" style="display:none">
       <div class="dash-toolbar">
-        <button type="button" class="dash-tool-btn" id="teacherRefreshBtn">🔄 Refresh</button>
-        <button type="button" class="dash-tool-btn" id="teacherBackBtn">← Back</button>
+        <button type="button" class="dash-tool-btn dash-tool-btn--icon" id="teacherBackBtn" aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
       <div id="classScheduleBox">
         <h2 class="section-title">
@@ -1439,9 +1456,8 @@
       </div>
 
       <div id="classOutlineBox" style="display:none">
-        <button type="button" class="back-to-classes-btn" id="backToClassesBtn">
+        <button type="button" class="back-to-classes-btn" id="backToClassesBtn" aria-label="Back to Class Schedule">
           <svg viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Back to Class Schedule
         </button>
         <p class="active-class-label" id="activeClassLabel"></p>
 
@@ -1465,9 +1481,8 @@
       </div>
 
       <div id="classSectionsBox" style="display:none">
-        <button type="button" class="back-to-classes-btn" id="backToClassesFromSectionsBtn">
+        <button type="button" class="back-to-classes-btn" id="backToClassesFromSectionsBtn" aria-label="Back to Class Schedule">
           <svg viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Back to Class Schedule
         </button>
         <p class="active-class-label" id="activeSectionsClassLabel"></p>
 
@@ -1485,9 +1500,8 @@
       </div>
 
       <div id="sectionLogBox" style="display:none">
-        <button type="button" class="back-to-classes-btn" id="backToSectionsBtn">
+        <button type="button" class="back-to-classes-btn" id="backToSectionsBtn" aria-label="Back to Sections">
           <svg viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Back to Sections
         </button>
         <p class="active-class-label" id="activeSectionLabel"></p>
 
@@ -1515,8 +1529,9 @@
 
     <section id="officeHeadSection" style="display:none">
       <div class="dash-toolbar">
-        <button type="button" class="dash-tool-btn" id="officeRefreshBtn">🔄 Refresh</button>
-        <button type="button" class="dash-tool-btn" id="officeBackBtn">← Back</button>
+        <button type="button" class="dash-tool-btn dash-tool-btn--icon" id="officeBackBtn" aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
       <h2 class="section-title">
         <span class="icon-chip" style="background:var(--seafoam);color:var(--seafoam-ink)">
@@ -1534,8 +1549,9 @@
 
     <section id="tourismPlannerSection" style="display:none">
       <div class="dash-toolbar">
-        <button type="button" class="dash-tool-btn" id="tourismRefreshBtn">🔄 Refresh</button>
-        <button type="button" class="dash-tool-btn" id="tourismBackBtn">← Back</button>
+        <button type="button" class="dash-tool-btn dash-tool-btn--icon" id="tourismBackBtn" aria-label="Back">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
       <h2 class="section-title">
         <span class="icon-chip" style="background:var(--gold);color:var(--gold-ink)">📋</span>
@@ -2787,7 +2803,6 @@
   document.querySelectorAll('.view-tab').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
   switchView('dashboard'); // default landing page
   setInterval(() => { if (dashboardView.style.display !== 'none') renderUpNext(); }, 30000);
-  document.getElementById('dashRefreshBtn').addEventListener('click', () => switchView('dashboard'));
   document.getElementById('dashBackBtn').addEventListener('click', () => switchView('planner'));
   document.getElementById('dashMapOverview').addEventListener('click', () => {
     switchMainPage('work');
@@ -2867,7 +2882,6 @@
     applyRole();
   }
   document.getElementById('genericBackBtn').addEventListener('click', goBackToRoleSelect);
-  document.getElementById('genericRefreshBtn').addEventListener('click', applyRole);
   document.getElementById('teacherBackBtn').addEventListener('click', goBackToRoleSelect);
   document.getElementById('officeBackBtn').addEventListener('click', goBackToRoleSelect);
   document.getElementById('tourismBackBtn').addEventListener('click', goBackToRoleSelect);
@@ -3328,7 +3342,7 @@
   renderClassList();
   renderClassAddForm();
   renderClassMap();
-  document.getElementById('teacherRefreshBtn').addEventListener('click', () => {
+  function refreshTeacherWorkspace() {
     classSchedule = loadJSON('pastelplan.classSchedule.v1', []);
     courseOutlines = loadJSON('pastelplan.courseOutlines.v1', {});
     classSections = loadJSON('pastelplan.classSections.v1', {});
@@ -3343,7 +3357,7 @@
     }
     if (activeSectionsClassId) renderSectionList();
     if (activeSectionId) renderLogList();
-  });
+  }
 
   // WORK: COURSE OUTLINE (Teacher)
   const FIVE_ES = [
@@ -3541,9 +3555,8 @@
       </tr>`;
     }).join('');
     outlineSummaryPanel.innerHTML = `
-      <button type="button" class="outline-summary-back-btn" id="summaryBackBtn">
+      <button type="button" class="outline-summary-back-btn" id="summaryBackBtn" aria-label="Back">
         <svg viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Back
       </button>
       <div class="outline-summary-table-wrap">
         <table class="outline-summary-table">
@@ -3739,12 +3752,12 @@
   renderOfficeTabs();
   renderOfficeList();
   renderOfficeAddForm();
-  document.getElementById('officeRefreshBtn').addEventListener('click', () => {
+  function refreshOfficeHead() {
     officeHead = loadJSON('pastelplan.officeHead.v1', null) || { meetings: [], field: [], dailyTasks: [] };
     renderOfficeTabs();
     renderOfficeList();
     renderOfficeAddForm();
-  });
+  }
 
   // WORK: TOURISM OFFICER PLANNER
   const TOURISM_MAJOR_EVENTS = [
@@ -3871,10 +3884,10 @@
     saveTourismEntries();
     renderTourismTable();
   });
-  document.getElementById('tourismRefreshBtn').addEventListener('click', () => {
+  function refreshTourismPlanner() {
     tourismEntries = loadJSON('pastelplan.tourismPlanner.v1', []);
     renderTourismTable();
-  });
+  }
 
   // CUSTOMIZE SHEET
   const MAX_BG_BYTES = 4 * 1024 * 1024; // 4MB cap
@@ -3948,6 +3961,65 @@
   document.querySelectorAll('#czFontSize .cz-pill').forEach(btn => {
     btn.addEventListener('click', () => { customize.fontSize = btn.dataset.val; saveCustomize(); applyCustomize(); });
   });
+
+  // PULL TO REFRESH — replaces the old per-screen Refresh buttons.
+  function runCurrentRefresh() {
+    if (dashboardView.style.display !== 'none') { switchView('dashboard'); return; }
+    if (workPage.style.display !== 'none') {
+      if (workRole === 'teacher') refreshTeacherWorkspace();
+      else if (workRole === 'office-head') refreshOfficeHead();
+      else if (workRole === 'tourism-officer') refreshTourismPlanner();
+      else applyRole();
+    }
+  }
+  (function setupPullToRefresh() {
+    const frameEl = document.getElementById('frame');
+    const indicator = document.getElementById('pullRefresh');
+    const PULL_THRESHOLD = 68;
+    const PULL_MAX = 110;
+    let startY = 0;
+    let pulling = false;
+    let dragging = false;
+    let refreshing = false;
+
+    frameEl.addEventListener('touchstart', (e) => {
+      if (refreshing || window.scrollY > 0 || e.touches.length !== 1) return;
+      startY = e.touches[0].clientY;
+      pulling = true;
+      dragging = false;
+    }, { passive: true });
+
+    frameEl.addEventListener('touchmove', (e) => {
+      if (!pulling || refreshing) return;
+      const dy = e.touches[0].clientY - startY;
+      if (dy <= 0) return;
+      dragging = true;
+      const dist = Math.min(dy * 0.5, PULL_MAX);
+      indicator.classList.add('pull-dragging', 'pull-visible');
+      indicator.style.transform = `translate(-50%, ${-46 + dist}px) rotate(${dist * 3}deg) scale(${0.7 + Math.min(dist / PULL_THRESHOLD, 1) * 0.3})`;
+    }, { passive: true });
+
+    frameEl.addEventListener('touchend', () => {
+      if (!pulling) return;
+      pulling = false;
+      if (!dragging) return;
+      const distStyle = indicator.style.transform;
+      const pulledEnough = distStyle && parseFloat(distStyle.split(',')[1]) >= (-46 + PULL_THRESHOLD);
+      indicator.classList.remove('pull-dragging');
+      indicator.style.transform = '';
+      if (pulledEnough) {
+        refreshing = true;
+        indicator.classList.add('pull-loading');
+        setTimeout(() => {
+          runCurrentRefresh();
+          indicator.classList.remove('pull-loading', 'pull-visible');
+          refreshing = false;
+        }, 550);
+      } else {
+        indicator.classList.remove('pull-visible');
+      }
+    });
+  })();
 })();
 </script>
 <script>

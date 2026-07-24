@@ -29,7 +29,6 @@ import {
   AlignLeft,
   MapPin,
   Folder,
-  RefreshCw,
   ArrowLeft,
 } from "lucide-react";
 
@@ -478,6 +477,9 @@ export default function PastelPlan() {
   const [breathing, setBreathing] = useState(false);
   const [breathPhase, setBreathPhase] = useState("in");
   const breathTimer = useRef(null);
+  const frameRef = useRef(null);
+  const pullIndicatorRef = useRef(null);
+  const latestPullRefreshRef = useRef(() => {});
   const [customize, setCustomize] = useLocalStorageState("pastelplan.customize.v1", { bgPhoto: null, fontStyle: "warm", fontSize: "md" });
   const [showCustomize, setShowCustomize] = useState(false);
   const fontStack = FONT_STACKS[customize.fontStyle] || FONT_STACKS.warm;
@@ -522,6 +524,69 @@ export default function PastelPlan() {
     }
     return () => clearInterval(breathTimer.current);
   }, [breathing]);
+
+  useEffect(() => {
+    const frameEl = frameRef.current;
+    const indicator = pullIndicatorRef.current;
+    if (!frameEl || !indicator) return;
+    const PULL_THRESHOLD = 68;
+    const PULL_MAX = 110;
+    let startY = 0;
+    let pulling = false;
+    let dragging = false;
+    let refreshing = false;
+
+    function onTouchStart(e) {
+      if (refreshing || window.scrollY > 0 || e.touches.length !== 1) return;
+      startY = e.touches[0].clientY;
+      pulling = true;
+      dragging = false;
+    }
+    function onTouchMove(e) {
+      if (!pulling || refreshing) return;
+      const dy = e.touches[0].clientY - startY;
+      if (dy <= 0) return;
+      dragging = true;
+      const dist = Math.min(dy * 0.5, PULL_MAX);
+      indicator.style.transition = "none";
+      indicator.style.opacity = "1";
+      indicator.style.transform = `translate(-50%, ${-46 + dist}px) rotate(${dist * 3}deg) scale(${0.7 + Math.min(dist / PULL_THRESHOLD, 1) * 0.3})`;
+    }
+    function onTouchEnd() {
+      if (!pulling) return;
+      pulling = false;
+      if (!dragging) return;
+      const transform = indicator.style.transform;
+      const currentY = transform ? parseFloat(transform.split(",")[1]) : -46;
+      const pulledEnough = currentY >= -46 + PULL_THRESHOLD;
+      indicator.style.transition = "opacity .15s ease";
+      indicator.style.transform = "";
+      if (pulledEnough) {
+        refreshing = true;
+        indicator.style.opacity = "1";
+        indicator.style.animation = "pp-pull-spin .8s linear infinite";
+        indicator.style.transform = "translate(-50%, 14px) scale(1)";
+        setTimeout(() => {
+          latestPullRefreshRef.current();
+          indicator.style.animation = "";
+          indicator.style.opacity = "0";
+          indicator.style.transform = "translate(-50%, -46px) scale(0.7)";
+          refreshing = false;
+        }, 550);
+      } else {
+        indicator.style.opacity = "0";
+      }
+    }
+
+    frameEl.addEventListener("touchstart", onTouchStart, { passive: true });
+    frameEl.addEventListener("touchmove", onTouchMove, { passive: true });
+    frameEl.addEventListener("touchend", onTouchEnd);
+    return () => {
+      frameEl.removeEventListener("touchstart", onTouchStart);
+      frameEl.removeEventListener("touchmove", onTouchMove);
+      frameEl.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [showLanding]);
 
   const todayIso = todayISO();
   const isToday = selectedDate === todayIso;
@@ -656,6 +721,22 @@ export default function PastelPlan() {
     upNext = { ...upNextRaw, inText, soon: diff <= 10 };
   }
   const isDashGlass = mainPage === "personal" && activeView === "dashboard";
+
+  latestPullRefreshRef.current = () => {
+    if (isDashGlass) {
+      refreshFromStorage("pastelplan.water.v1", setWaterFilled, 0);
+      setSchedule(loadScheduleFor(selectedDate));
+      return;
+    }
+    if (mainPage === "work") {
+      refreshFromStorage("pastelplan.classSchedule.v1", setClassSchedule, []);
+      refreshFromStorage("pastelplan.courseOutlines.v1", setCourseOutlines, {});
+      refreshFromStorage("pastelplan.classSections.v1", setClassSections, {});
+      refreshFromStorage("pastelplan.sectionLogs.v1", setSectionLogs, {});
+      refreshFromStorage("pastelplan.officeHead.v1", setOfficeHead, () => ({ ...DEFAULT_OFFICE_HEAD }));
+      refreshFromStorage("pastelplan.tourismPlanner.v1", setTourismEntries, []);
+    }
+  };
   const wrapperStyle = {
     "--pp-font-display-override": fontStack.display,
     "--pp-font-body-override": fontStack.body,
@@ -700,7 +781,15 @@ export default function PastelPlan() {
     <div className="flex min-h-screen justify-center bg-[var(--pp-paper)] px-3.5 py-7" style={wrapperStyle}>
       <PastelPlanStyles />
 
-      <div className="flex w-full max-w-[402px] flex-col overflow-hidden rounded-[34px] bg-[var(--pp-frame)] shadow-[0_1px_2px_rgba(30,20,40,.15),0_18px_40px_-12px_rgba(30,20,40,.35)]" style={{ zoom }}>
+      <div ref={frameRef} className="relative flex w-full max-w-[402px] flex-col overflow-hidden rounded-[34px] bg-[var(--pp-frame)] shadow-[0_1px_2px_rgba(30,20,40,.15),0_18px_40px_-12px_rgba(30,20,40,.35)]" style={{ zoom }}>
+        <div
+          ref={pullIndicatorRef}
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-[10px] z-40 grid h-[38px] w-[38px] place-items-center rounded-full border border-white/70 bg-white/75 opacity-0 shadow-[0_6px_16px_-6px_rgba(30,20,40,.35)] backdrop-blur-[10px]"
+          style={{ transform: "translate(-50%, -46px) scale(0.7)" }}
+        >
+          <img width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Counterclockwise%20arrows%20button/3D/counterclockwise_arrows_button_3d.png" />
+        </div>
         {/* status bar */}
         <div className="flex items-center justify-between px-6 pb-1 pt-3 font-semibold text-[13px] tabular-nums text-[var(--pp-ink)]">
           <span>{clock}</span>
@@ -728,7 +817,7 @@ export default function PastelPlan() {
                   boxShadow: "0 2px 12px -4px rgba(156,122,36,0.35)",
                 }}
               >
-                <ArrowLeft size={16} strokeWidth={2} />
+                <img width="22" height="22" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Left%20arrow/3D/left_arrow_3d.png" />
               </button>
             )}
             <div className="flex-1 min-w-0">
@@ -779,7 +868,11 @@ export default function PastelPlan() {
                     : { background: "color-mix(in srgb, var(--pp-surface) 70%, transparent)", borderColor: "color-mix(in srgb, var(--pp-ink) 10%, transparent)", color: "var(--pp-ink-soft)" }
                 }
               >
-                <Palette size={19} strokeWidth={1.8} />
+                {isDashGlass ? (
+                  <img width="26" height="26" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Gear/3D/gear_3d.png" style={{ objectFit: "contain", filter: "drop-shadow(0 2px 3px rgba(80,50,30,0.25))" }} />
+                ) : (
+                  <Palette size={19} strokeWidth={1.8} />
+                )}
               </button>
               <div
                 className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl shadow-[0_6px_14px_-6px_rgba(30,20,40,.4)]"
@@ -788,7 +881,11 @@ export default function PastelPlan() {
                   color: isDashGlass ? "#fff" : "var(--pp-gold-ink)",
                 }}
               >
-                <Sun size={22} strokeWidth={1.9} />
+                {isDashGlass ? (
+                  <img width="26" height="26" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Sun/3D/sun_3d.png" style={{ objectFit: "contain", filter: "drop-shadow(0 2px 3px rgba(80,50,30,0.25))" }} />
+                ) : (
+                  <Sun size={22} strokeWidth={1.9} />
+                )}
               </div>
             </div>
           </div>
@@ -800,7 +897,7 @@ export default function PastelPlan() {
                 backdropFilter: "blur(14px)",
                 WebkitBackdropFilter: "blur(14px)",
                 border: "1px solid rgba(255,255,255,0.65)",
-                boxShadow: "0 8px 28px -10px rgba(120,90,150,0.18)",
+                boxShadow: "0 16px 36px -10px rgba(120,90,150,0.32), 0 4px 10px -4px rgba(120,90,150,0.2)",
               }}
             >
               <span
@@ -808,7 +905,7 @@ export default function PastelPlan() {
                 style={{ background: "linear-gradient(180deg,#E9CA7A,#F5DCE0,#C9DCF0)" }}
               />
               <p
-                className="text-[0.95rem] font-medium leading-[1.4] tracking-[0.01em]"
+                className="text-[0.95rem] font-medium italic leading-[1.4] tracking-[0.01em]"
                 style={{ color: "color-mix(in srgb, #2E1A47 88%, transparent)" }}
               >
                 "{quote}"
@@ -844,7 +941,11 @@ export default function PastelPlan() {
                 : { background: "transparent", color: "var(--pp-ink-soft)", border: "1.5px solid var(--pp-line)" }
             }
           >
-            <User size={15} strokeWidth={2} color={isDashGlass && mainPage === "personal" ? "#fff" : undefined} />
+            {isDashGlass ? (
+              <img width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Bust%20in%20silhouette/3D/bust_in_silhouette_3d.png" style={{ objectFit: "contain", filter: "drop-shadow(0 2px 3px rgba(80,50,30,0.25))" }} />
+            ) : (
+              <User size={15} strokeWidth={2} />
+            )}
             Personal Notes
           </button>
           <button
@@ -868,7 +969,11 @@ export default function PastelPlan() {
                 : { background: "transparent", color: "var(--pp-ink-soft)", border: "1.5px solid var(--pp-line)" }
             }
           >
-            <Briefcase size={15} strokeWidth={2} color={isDashGlass && mainPage !== "work" ? "#9C7A24" : isDashGlass && mainPage === "work" ? "#fff" : undefined} />
+            {isDashGlass ? (
+              <img width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Briefcase/3D/briefcase_3d.png" style={{ objectFit: "contain", filter: "drop-shadow(0 2px 3px rgba(80,50,30,0.25))" }} />
+            ) : (
+              <Briefcase size={15} strokeWidth={2} />
+            )}
             Work Notes
           </button>
         </div>
@@ -896,7 +1001,11 @@ export default function PastelPlan() {
                 : { background: "var(--pp-surface)", borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }
             }
           >
-            <ClipboardList size={15} strokeWidth={2} color={isDashGlass ? "#9C7A24" : undefined} />
+            {isDashGlass ? (
+              <img width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Clipboard/3D/clipboard_3d.png" style={{ objectFit: "contain", filter: "drop-shadow(0 2px 3px rgba(80,50,30,0.25))" }} />
+            ) : (
+              <ClipboardList size={15} strokeWidth={2} />
+            )}
             Planner
           </button>
           <button
@@ -918,11 +1027,15 @@ export default function PastelPlan() {
                 : { background: "var(--pp-surface)", borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }
             }
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-              <rect x="3.5" y="12" width="4.5" height="8.5" rx="1.2" fill="#E9CA7A" />
-              <rect x="9.75" y="6" width="4.5" height="14.5" rx="1.2" fill="#C9A24A" />
-              <rect x="16" y="9.5" width="4.5" height="11" rx="1.2" fill="#9C7A24" />
-            </svg>
+            {isDashGlass ? (
+              <img width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Bar%20chart/3D/bar_chart_3d.png" style={{ objectFit: "contain", filter: "drop-shadow(0 2px 3px rgba(80,50,30,0.25))" }} />
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <rect x="3.5" y="12" width="4.5" height="8.5" rx="1.2" fill="#E9CA7A" />
+                <rect x="9.75" y="6" width="4.5" height="14.5" rx="1.2" fill="#C9A24A" />
+                <rect x="16" y="9.5" width="4.5" height="11" rx="1.2" fill="#9C7A24" />
+              </svg>
+            )}
             Dashboard
           </button>
         </div>
@@ -1141,10 +1254,6 @@ export default function PastelPlan() {
                 ? goToWorkOutlineWeek(item.sourceClassId, item.outlineWeek)
                 : goToWorkClass(item.sourceClassId)
             }
-            onRefresh={() => {
-              refreshFromStorage("pastelplan.water.v1", setWaterFilled, 0);
-              setSchedule(loadScheduleFor(selectedDate));
-            }}
             classSchedule={classSchedule}
             onOpenClassMap={goToWorkClassMap}
           />
@@ -1450,7 +1559,6 @@ function DashboardView({
   todayIso,
   onSelectDay,
   onOpenSyncedClass,
-  onRefresh,
   classSchedule,
   onOpenClassMap,
 }) {
@@ -1466,26 +1574,8 @@ function DashboardView({
 
   return (
     <div className="flex flex-col gap-5 px-4.5 pb-1.5 pt-4.5">
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={onRefresh}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl py-2 text-[0.74rem] font-bold"
-          style={{
-            background: "rgba(255,255,255,0.42)",
-            backdropFilter: "blur(14px)",
-            WebkitBackdropFilter: "blur(14px)",
-            border: "1px solid rgba(255,255,255,0.65)",
-            color: "#2E1A47",
-            boxShadow: "0 6px 20px -8px rgba(120,90,150,0.16)",
-          }}
-        >
-          <RefreshCw size={14} strokeWidth={2} color="#9C7A24" />
-          Refresh
-        </button>
-      </div>
       <section>
-        <SectionTitle icon={Bell} fill="var(--pp-gold)" ink="var(--pp-gold-ink)" title="Up Next" />
+        <SectionTitle icon={Bell} iconImg="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Bell/3D/bell_3d.png" fill="var(--pp-gold)" ink="var(--pp-gold-ink)" title="Up Next" />
         <div className="pp-card-float">
           {upNext && upNextVisual ? (
             <div
@@ -1515,11 +1605,11 @@ function DashboardView({
       <section>
         <div className="flex items-stretch gap-3">
           <div className="min-w-0 flex-1">
-            <SectionTitle icon={Calendar} fill="linear-gradient(135deg, #FFFDF8, #F0DFB8)" ink="#9C7A24" title="This Week" />
+            <SectionTitle icon={Calendar} iconImg="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Calendar/3D/calendar_3d.png" fill="linear-gradient(135deg, #FFFDF8, #F0DFB8)" ink="#9C7A24" title="This Week" />
             <DashboardMiniCal todayIso={todayIso} selectedDate={selectedDate} onSelectDay={onSelectDay} />
           </div>
           <div className="min-w-0 flex-1">
-            <SectionTitle icon={Calendar} fill="linear-gradient(135deg, #FFFDF8, #F0DFB8)" ink="#9C7A24" title="Class Schedule" />
+            <SectionTitle icon={Calendar} iconImg="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Calendar/3D/calendar_3d.png" fill="linear-gradient(135deg, #FFFDF8, #F0DFB8)" ink="#9C7A24" title="Class Schedule" />
             <ClassScheduleOverviewCard classSchedule={classSchedule} onOpen={onOpenClassMap} />
           </div>
         </div>
@@ -1587,24 +1677,11 @@ function WorkView({
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={() => {
-            refreshFromStorage("pastelplan.classSchedule.v1", setClassSchedule, []);
-            refreshFromStorage("pastelplan.courseOutlines.v1", setCourseOutlines, {});
-            refreshFromStorage("pastelplan.classSections.v1", setClassSections, {});
-            refreshFromStorage("pastelplan.sectionLogs.v1", setSectionLogs, {});
-            refreshFromStorage("pastelplan.officeHead.v1", setOfficeHead, () => ({ ...DEFAULT_OFFICE_HEAD }));
-            refreshFromStorage("pastelplan.tourismPlanner.v1", setTourismEntries, []);
-          }}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] py-2 text-[0.74rem] font-bold text-[var(--pp-ink-soft)]"
-        >
-          🔄 Refresh
-        </button>
-        <button
-          type="button"
           onClick={() => setWorkRole("select")}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] py-2 text-[0.74rem] font-bold text-[var(--pp-ink-soft)]"
+          aria-label="Back"
+          className="flex w-9 flex-none items-center justify-center rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] py-2 text-[var(--pp-ink-soft)]"
         >
-          ← Back
+          <ArrowLeft size={15} strokeWidth={2.2} />
         </button>
       </div>
 
@@ -2175,8 +2252,8 @@ function SectionsList({ classItem, sections, sectionLogs, setClassSections, setS
 
   return (
     <section>
-      <button type="button" onClick={onBack} className="mb-3 flex items-center gap-1 text-[0.76rem] font-bold text-[var(--pp-ink-soft)]">
-        <ChevronLeft size={14} strokeWidth={2.2} /> Back to Class Schedule
+      <button type="button" onClick={onBack} aria-label="Back to Class Schedule" className="mb-3 flex items-center text-[var(--pp-ink-soft)]">
+        <ChevronLeft size={16} strokeWidth={2.2} />
       </button>
       <p className="mb-3 -mt-1 text-[0.9rem] font-semibold text-[var(--pp-ink)]">{classItem.className}</p>
       <SectionTitle icon={Users} fill="var(--pp-seafoam)" ink="var(--pp-seafoam-ink)" title="Sections" />
@@ -2250,8 +2327,8 @@ function SectionLogView({ section, entries, setSectionLogs, onBack }) {
 
   return (
     <section>
-      <button type="button" onClick={onBack} className="mb-3 flex items-center gap-1 text-[0.76rem] font-bold text-[var(--pp-ink-soft)]">
-        <ChevronLeft size={14} strokeWidth={2.2} /> Back to Sections
+      <button type="button" onClick={onBack} aria-label="Back to Sections" className="mb-3 flex items-center text-[var(--pp-ink-soft)]">
+        <ChevronLeft size={16} strokeWidth={2.2} />
       </button>
       <p className="mb-3 -mt-1 text-[0.9rem] font-semibold text-[var(--pp-ink)]">{section.name}</p>
       <SectionTitle icon={ClipboardList} fill="var(--pp-blush)" ink="var(--pp-blush-ink)" title="Activity Log" />
@@ -2341,9 +2418,10 @@ function TeacherWorkspace({
         <button
           type="button"
           onClick={() => setActiveClassId(null)}
-          className="mb-3 flex items-center gap-1 text-[0.76rem] font-bold text-[var(--pp-ink-soft)]"
+          aria-label="Back to Class Schedule"
+          className="mb-3 flex items-center text-[var(--pp-ink-soft)]"
         >
-          <ChevronLeft size={14} strokeWidth={2.2} /> Back to Class Schedule
+          <ChevronLeft size={16} strokeWidth={2.2} />
         </button>
         <p className="mb-3 -mt-1 text-[0.9rem] font-semibold text-[var(--pp-ink)]">
           {activeClass.code && <span className="mr-1.5 text-[var(--pp-sky-ink)]">{activeClass.code}</span>}
@@ -2668,9 +2746,10 @@ function OutlineSummaryList({ weeks, onBack, onSelectWeek }) {
       <button
         type="button"
         onClick={onBack}
-        className="mb-3 flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-1.5 text-[0.74rem] font-bold text-[var(--pp-ink-soft)]"
+        aria-label="Back"
+        className="mb-3 flex w-9 items-center justify-center rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] py-1.5 text-[var(--pp-ink-soft)]"
       >
-        <ChevronLeft size={13} strokeWidth={2.2} /> Back
+        <ChevronLeft size={15} strokeWidth={2.2} />
       </button>
       <div className="overflow-x-auto rounded-xl border-[1.5px] border-[var(--pp-line)]">
         <table className="w-full min-w-[860px] border-collapse">
@@ -3876,11 +3955,11 @@ function AttachmentChip({ attachment, onRemove, onOpen }) {
   );
 }
 
-function SectionTitle({ icon: Icon, fill, ink, title, trailing }) {
+function SectionTitle({ icon: Icon, iconImg, fill, ink, title, trailing }) {
   return (
     <h2 className="pp-font-display mb-2.5 flex items-center gap-2 text-[1.02rem] font-semibold text-[var(--pp-ink)]">
       <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[9px]" style={{ background: fill, color: ink }}>
-        <Icon size={15} strokeWidth={2} />
+        {iconImg ? <img src={iconImg} alt="" width={18} height={18} style={{ objectFit: "contain", filter: "drop-shadow(0 2px 3px rgba(80,50,30,0.25))" }} /> : <Icon size={15} strokeWidth={2} />}
       </span>
       {title}
       {trailing && <small className="ml-auto text-[0.72rem] font-semibold tracking-[.02em] text-[var(--pp-ink-soft)]">{trailing}</small>}
@@ -4000,7 +4079,7 @@ function PastelPlanStyles() {
         border: 1px solid rgba(255, 255, 255, 0.65);
         border-radius: 26px;
         padding: 14px;
-        box-shadow: 0 8px 28px -10px rgba(120, 90, 150, 0.18);
+        box-shadow: 0 16px 36px -10px rgba(120, 90, 150, 0.32), 0 4px 10px -4px rgba(120, 90, 150, 0.2);
       }
 
       .pp-row-grid { grid-template-columns: 44px 20px minmax(0, 1fr); }
@@ -4015,6 +4094,10 @@ function PastelPlanStyles() {
       .pp-breathe-pulse { animation: pp-breathe 8s ease-in-out infinite; }
       @media (prefers-reduced-motion: reduce) {
         .pp-breathe-pulse { animation: none; opacity: .8; }
+      }
+
+      @keyframes pp-pull-spin {
+        to { transform: translate(-50%, 14px) rotate(360deg) scale(1); }
       }
 
       @keyframes pp-bell-pulse {
