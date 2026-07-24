@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  Sun,
+  CloudSun,
   Clock,
   BookOpen,
   Users,
@@ -11,8 +11,6 @@ import {
   ClipboardList,
   Droplet,
   Wind,
-  SignalHigh,
-  BatteryFull,
   Paperclip,
   Link2,
   Image as ImageIcon,
@@ -30,6 +28,13 @@ import {
   MapPin,
   Folder,
   ArrowLeft,
+  Wallet,
+  Home,
+  Target,
+  BarChart3,
+  Receipt,
+  CalendarClock,
+  NotebookPen,
 } from "lucide-react";
 
 /**
@@ -595,7 +600,6 @@ export default function PastelPlan() {
   const dateLabel = viewDate.toLocaleDateString("en-US", { month: "long", day: "numeric" });
   const dayOfYear = Math.floor((viewDate - new Date(viewDate.getFullYear(), 0, 0)) / 86400000);
   const quote = QUOTES[dayOfYear % QUOTES.length];
-  const clock = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   const firstName = userProfile?.name ? userProfile.name.trim().split(/\s+/)[0] : "";
   const namePart = firstName ? `Hi ${firstName}` : isToday ? "Sample day" : "";
   const syncedClassBlocksSelected = getSyncedClassBlocksForDate(classSchedule, courseOutlines, selectedDate);
@@ -720,10 +724,11 @@ export default function PastelPlan() {
     const inText = diff <= 0 ? "Starting now" : diff < 60 ? `In ${diff} min` : `In ${Math.floor(diff / 60)}h ${diff % 60}m`;
     upNext = { ...upNextRaw, inText, soon: diff <= 10 };
   }
-  const isDashGlass = mainPage === "personal" && activeView === "dashboard";
+  const isDashboardView = mainPage === "personal" && activeView === "dashboard";
+  const isDashGlass = true; // glassmorphic theme + 3D icons apply app-wide
 
   latestPullRefreshRef.current = () => {
-    if (isDashGlass) {
+    if (isDashboardView) {
       refreshFromStorage("pastelplan.water.v1", setWaterFilled, 0);
       setSchedule(loadScheduleFor(selectedDate));
       return;
@@ -790,19 +795,11 @@ export default function PastelPlan() {
         >
           <img width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Counterclockwise%20arrows%20button/3D/counterclockwise_arrows_button_3d.png" />
         </div>
-        {/* status bar */}
-        <div className="flex items-center justify-between px-6 pb-1 pt-3 font-semibold text-[13px] tabular-nums text-[var(--pp-ink)]">
-          <span>{clock}</span>
-          <div className="flex items-center gap-1.5">
-            <SignalHigh size={16} strokeWidth={2} />
-            <BatteryFull size={18} strokeWidth={1.6} />
-          </div>
-        </div>
 
         {/* header */}
-        <header className="pp-header relative overflow-hidden px-5.5 pb-5.5 pt-1.5" style={isDashGlass ? { background: "transparent" } : undefined}>
+        <header className="pp-header relative overflow-hidden px-5.5 pb-5.5 pt-5.5" style={isDashGlass ? { background: "transparent" } : undefined}>
           <div className="relative flex items-start justify-between gap-3">
-            {isDashGlass && (
+            {isDashboardView && (
               <button
                 type="button"
                 onClick={() => setActiveView("planner")}
@@ -882,9 +879,9 @@ export default function PastelPlan() {
                 }}
               >
                 {isDashGlass ? (
-                  <img width="26" height="26" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Sun/3D/sun_3d.png" style={{ objectFit: "contain", filter: "drop-shadow(0 2px 3px rgba(80,50,30,0.25))" }} />
+                  <img width="26" height="26" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Sun%20behind%20cloud/3D/sun_behind_cloud_3d.png" style={{ objectFit: "contain", filter: "drop-shadow(0 2px 3px rgba(80,50,30,0.25))" }} />
                 ) : (
-                  <Sun size={22} strokeWidth={1.9} />
+                  <CloudSun size={22} strokeWidth={1.9} />
                 )}
               </div>
             </div>
@@ -975,6 +972,66 @@ export default function PastelPlan() {
               <Briefcase size={15} strokeWidth={2} />
             )}
             Work Notes
+          </button>
+        </div>
+
+        {/* financial / family switcher */}
+        <div className="flex gap-2 px-4.5 pt-2">
+          <button
+            type="button"
+            onClick={() => setMainPage("financial")}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[0.76rem] font-bold"
+            style={
+              mainPage === "financial"
+                ? isDashGlass
+                  ? { background: "rgba(0,0,0,0.3)", color: "#fff" }
+                  : { background: "var(--pp-ink)", color: "var(--pp-surface)" }
+                : isDashGlass
+                ? {
+                    background: "rgba(255,255,255,0.42)",
+                    backdropFilter: "blur(14px)",
+                    WebkitBackdropFilter: "blur(14px)",
+                    border: "1px solid rgba(255,255,255,0.65)",
+                    color: "#2E1A47",
+                    boxShadow: "0 6px 20px -8px rgba(120,90,150,0.16)",
+                  }
+                : { background: "transparent", color: "var(--pp-ink-soft)", border: "1.5px solid var(--pp-line)" }
+            }
+          >
+            {isDashGlass ? (
+              <img width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Money%20bag/3D/money_bag_3d.png" style={{ objectFit: "contain", filter: "drop-shadow(0 2px 3px rgba(80,50,30,0.25))" }} />
+            ) : (
+              <Wallet size={15} strokeWidth={2} />
+            )}
+            Financial Notes
+          </button>
+          <button
+            type="button"
+            onClick={() => setMainPage("family")}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[0.76rem] font-bold"
+            style={
+              mainPage === "family"
+                ? isDashGlass
+                  ? { background: "rgba(0,0,0,0.3)", color: "#fff" }
+                  : { background: "var(--pp-ink)", color: "var(--pp-surface)" }
+                : isDashGlass
+                ? {
+                    background: "rgba(255,255,255,0.42)",
+                    backdropFilter: "blur(14px)",
+                    WebkitBackdropFilter: "blur(14px)",
+                    border: "1px solid rgba(255,255,255,0.65)",
+                    color: "#2E1A47",
+                    boxShadow: "0 6px 20px -8px rgba(120,90,150,0.16)",
+                  }
+                : { background: "transparent", color: "var(--pp-ink-soft)", border: "1.5px solid var(--pp-line)" }
+            }
+          >
+            {isDashGlass ? (
+              <img width="18" height="18" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/House/3D/house_3d.png" style={{ objectFit: "contain", filter: "drop-shadow(0 2px 3px rgba(80,50,30,0.25))" }} />
+            ) : (
+              <Home size={15} strokeWidth={2} />
+            )}
+            Family Notes
           </button>
         </div>
 
@@ -1290,10 +1347,13 @@ export default function PastelPlan() {
           />
         )}
 
-        <footer className="px-5 pb-1 pt-3.5 text-center text-[0.68rem] font-semibold tracking-[.02em] text-[var(--pp-ink-soft)]">
-          GIYA · made for the space between periods
+        {mainPage === "financial" && <FinancialNotesPage />}
+        {mainPage === "family" && <FamilyNotesPage />}
+
+        <footer className="mt-auto px-5 pb-0 pt-3.5 text-center leading-none text-[0.68rem] font-semibold tracking-[.02em] text-[var(--pp-ink-soft)]">
+          GIYA · pag may gusto maraming paraan, pag ayaw maraming dahilan
         </footer>
-        <p className="px-5 pb-5.5 text-center text-[0.62rem] font-bold tracking-[.04em] text-[var(--pp-ink-soft)] opacity-60">jvtcordova@2026</p>
+        <p className="px-5 pb-5.5 pt-px text-center leading-none text-[0.62rem] font-bold tracking-[.04em] text-[var(--pp-ink-soft)] opacity-60">jvtcordova@2026</p>
       </div>
 
       {showCustomize && (
@@ -1517,7 +1577,7 @@ function DashboardMiniCal({ todayIso, selectedDate, onSelectDay }) {
   const monthLabel = today.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 
   return (
-    <div className="pp-card-float flex h-[100px] w-full flex-col gap-[3px]">
+    <div className="pp-card-float flex min-h-[100px] w-full flex-col gap-[3px]">
       <span className="text-center text-[0.6rem] font-extrabold uppercase tracking-[.03em]" style={{ color: "#9C7A24" }}>{monthLabel}</span>
       <div className="grid flex-1 grid-cols-7 gap-px">
         {["S", "M", "T", "W", "T", "F", "S"].map((l, i) => (
@@ -1535,10 +1595,19 @@ function DashboardMiniCal({ todayIso, selectedDate, onSelectDay }) {
               key={i}
               type="button"
               onClick={() => onSelectDay(iso)}
-              className="flex items-center justify-center rounded text-[0.48rem] font-semibold text-[var(--pp-ink)]"
+              className={`flex aspect-square items-center justify-center text-[0.48rem] font-semibold text-[var(--pp-ink)] ${
+                isToday || isSelected ? "rounded-full" : "rounded"
+              }`}
               style={
                 isToday
-                  ? { background: "rgba(240,120,110,0.65)", color: "#fff", fontWeight: 800 }
+                  ? {
+                      background:
+                        "radial-gradient(circle at 32% 28%, rgba(255,195,185,0.95), rgba(240,120,110,0.88) 62%, rgba(195,75,65,0.92))",
+                      boxShadow:
+                        "0 2px 4px -1px rgba(140,40,30,0.45), inset 0 1px 1px rgba(255,255,255,0.55), inset 0 -1.5px 2px rgba(0,0,0,0.18)",
+                      color: "#fff",
+                      fontWeight: 800,
+                    }
                   : isSelected
                   ? { boxShadow: "inset 0 0 0 1.5px var(--pp-lavender-ink)" }
                   : undefined
@@ -1586,7 +1655,13 @@ function DashboardView({
                 className={`grid h-[42px] w-[42px] shrink-0 place-items-center rounded-[13px] text-[20px] leading-none ${upNext.soon ? "pp-bell-pulse" : ""}`}
                 style={{ background: upNextVisual.fill, color: upNextVisual.ink }}
               >
-                {upNext.emoji || <UpNextIcon size={20} strokeWidth={1.8} />}
+                {upNext.emoji ? (
+                  upNext.emoji
+                ) : upNext.synced ? (
+                  <UpNextIcon size={20} strokeWidth={1.8} />
+                ) : (
+                  <img width="24" height="24" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Bell/3D/bell_3d.png" />
+                )}
               </span>
               <div className="min-w-0">
                 <p className="mb-0.5 text-[0.72rem] font-extrabold uppercase tracking-[.02em] text-[var(--pp-gold-ink)]">
@@ -1604,12 +1679,12 @@ function DashboardView({
 
       <section>
         <div className="flex items-stretch gap-3">
-          <div className="min-w-0 flex-1">
-            <SectionTitle icon={Calendar} iconImg="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Calendar/3D/calendar_3d.png" fill="linear-gradient(135deg, #FFFDF8, #F0DFB8)" ink="#9C7A24" title="This Week" />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <SectionTitle icon={Calendar} iconImg="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Calendar/3D/calendar_3d.png" fill="linear-gradient(135deg, #FFFDF8, #F0DFB8)" ink="#9C7A24" title="This Month" />
             <DashboardMiniCal todayIso={todayIso} selectedDate={selectedDate} onSelectDay={onSelectDay} />
           </div>
-          <div className="min-w-0 flex-1">
-            <SectionTitle icon={Calendar} iconImg="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Calendar/3D/calendar_3d.png" fill="linear-gradient(135deg, #FFFDF8, #F0DFB8)" ink="#9C7A24" title="Class Schedule" />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <SectionTitle icon={Calendar} iconImg="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Spiral%20calendar/3D/spiral_calendar_3d.png" fill="linear-gradient(135deg, #FFFDF8, #F0DFB8)" ink="#9C7A24" title="Class Schedule" />
             <ClassScheduleOverviewCard classSchedule={classSchedule} onOpen={onOpenClassMap} />
           </div>
         </div>
@@ -1657,13 +1732,13 @@ function WorkView({
   return (
     <main className="flex flex-col gap-5 px-4.5 pb-1.5 pt-4.5">
       <section>
-        <SectionTitle icon={Briefcase} fill="var(--pp-lavender)" ink="var(--pp-lavender-ink)" title="Work Role" />
-        <div className="pp-card">
-          <label className="mb-1.5 block text-[0.72rem] font-bold text-[var(--pp-ink-soft)]">Choose your role</label>
+        <SectionTitle icon={Briefcase} fill="var(--pp-lavender)" ink="var(--pp-lavender-ink)" title="Workspace" />
+        <div className="pp-card" style={{ padding: 10 }}>
+          <label className="mb-1 block text-[0.64rem] font-bold text-[var(--pp-ink-soft)]">Choose your role</label>
           <select
             value={workRole}
             onChange={(e) => setWorkRole(e.target.value)}
-            className="w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2.5 text-[0.85rem] font-semibold text-[var(--pp-ink)]"
+            className="w-full rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-2.5 py-2 text-[0.78rem] font-semibold text-[var(--pp-ink)]"
           >
             {WORK_ROLES.map((r) => (
               <option key={r.key} value={r.key}>
@@ -2001,7 +2076,7 @@ function ClassScheduleMap({ classSchedule, compact }) {
     <div
       className={
         compact
-          ? "pp-card-float h-full overflow-auto"
+          ? "pp-card-float flex-1 overflow-auto"
           : "mb-3 overflow-x-auto rounded-xl border-[1.5px] border-[var(--pp-line)] p-1"
       }
       style={compact ? { padding: 3 } : { background: "var(--pp-surface)" }}
@@ -2380,6 +2455,512 @@ function SectionLogView({ section, entries, setSectionLogs, onBack }) {
         )}
       </div>
     </section>
+  );
+}
+
+function fmtPeso(n) {
+  const num = Number(n) || 0;
+  return "₱" + num.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function daysUntil(dateStr, recurring) {
+  if (!dateStr) return null;
+  const today = new Date(todayISO() + "T00:00:00");
+  const target = new Date(dateStr + "T00:00:00");
+  if (recurring) {
+    target.setFullYear(today.getFullYear());
+    if (target < today) target.setFullYear(today.getFullYear() + 1);
+  }
+  return Math.round((target - today) / 86400000);
+}
+
+const finInputCls = "w-full rounded-xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] px-3 py-2 text-[0.85rem] font-semibold text-[var(--pp-ink)]";
+const FIN_CATEGORIES = ["Groceries", "Bills", "Transport", "Food", "Salary", "Allowance", "Savings", "Other"];
+
+function FinancialNotesPage() {
+  const [financial, setFinancial] = useLocalStorageState("pastelplan.financial.v1", {
+    entries: [],
+    budgets: [],
+    savingsGoal: { label: "", target: 0, current: 0 },
+  });
+  const [goalEditing, setGoalEditing] = useState(false);
+
+  const income = financial.entries.filter((e) => e.type === "income").reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const expense = financial.entries.filter((e) => e.type === "expense").reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const monthKey = todayISO().slice(0, 7);
+  const spentForCategory = (category) =>
+    financial.entries
+      .filter((e) => e.type === "expense" && e.category === category && e.date && e.date.slice(0, 7) === monthKey)
+      .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+
+  const g = financial.savingsGoal || { label: "", target: 0, current: 0 };
+  const goalPct = g.target > 0 ? Math.min(100, Math.round((g.current / g.target) * 100)) : 0;
+
+  const addBudget = () => setFinancial((prev) => ({ ...prev, budgets: [...prev.budgets, { id: uid(), category: "Groceries", limit: 0 }] }));
+  const updateBudget = (id, key, val) =>
+    setFinancial((prev) => ({ ...prev, budgets: prev.budgets.map((b) => (b.id === id ? { ...b, [key]: val } : b)) }));
+  const removeBudget = (id) => setFinancial((prev) => ({ ...prev, budgets: prev.budgets.filter((b) => b.id !== id) }));
+
+  const addEntry = () =>
+    setFinancial((prev) => ({
+      ...prev,
+      entries: [...prev.entries, { id: uid(), type: "expense", amount: 0, category: "Groceries", date: todayISO(), note: "" }],
+    }));
+  const updateEntry = (id, key, val) =>
+    setFinancial((prev) => ({ ...prev, entries: prev.entries.map((e) => (e.id === id ? { ...e, [key]: val } : e)) }));
+  const removeEntry = (id) => setFinancial((prev) => ({ ...prev, entries: prev.entries.filter((e) => e.id !== id) }));
+  const sortedEntries = [...financial.entries].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+  return (
+    <div className="flex flex-col gap-5 px-4.5 pb-1.5 pt-4.5">
+      <section>
+        <SectionTitle icon={Wallet} fill="var(--pp-mint)" ink="var(--pp-mint-ink)" title="Balance Summary" />
+        <div className="flex gap-2">
+          <div className="flex-1 rounded-2xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] p-2.5 text-center">
+            <span className="block text-[0.6rem] font-extrabold uppercase tracking-[.03em] text-[var(--pp-ink-soft)]">Balance</span>
+            <span className="block truncate pp-font-display text-[1.05rem] font-bold text-[var(--pp-ink)]">{fmtPeso(income - expense)}</span>
+          </div>
+          <div className="flex-1 rounded-2xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] p-2.5 text-center">
+            <span className="block text-[0.6rem] font-extrabold uppercase tracking-[.03em] text-[var(--pp-ink-soft)]">Income</span>
+            <span className="block truncate pp-font-display text-[1.05rem] font-bold text-[var(--pp-mint-ink)]">{fmtPeso(income)}</span>
+          </div>
+          <div className="flex-1 rounded-2xl border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] p-2.5 text-center">
+            <span className="block text-[0.6rem] font-extrabold uppercase tracking-[.03em] text-[var(--pp-ink-soft)]">Expenses</span>
+            <span className="block truncate pp-font-display text-[1.05rem] font-bold text-[var(--pp-blush-ink)]">{fmtPeso(expense)}</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <SectionTitle icon={Target} fill="var(--pp-gold)" ink="var(--pp-gold-ink)" title="Savings Goal" />
+        <div className="pp-card">
+          {goalEditing ? (
+            <>
+              <label className="mb-1 block text-[0.68rem] font-bold text-[var(--pp-ink-soft)]">Goal label</label>
+              <input
+                type="text"
+                value={g.label}
+                placeholder="e.g. Emergency Fund"
+                onChange={(e) => setFinancial((prev) => ({ ...prev, savingsGoal: { ...prev.savingsGoal, label: e.target.value } }))}
+                className={finInputCls}
+              />
+              <label className="mb-1 mt-2 block text-[0.68rem] font-bold text-[var(--pp-ink-soft)]">Target amount</label>
+              <input
+                type="number"
+                value={g.target || ""}
+                placeholder="0"
+                onChange={(e) => setFinancial((prev) => ({ ...prev, savingsGoal: { ...prev.savingsGoal, target: Number(e.target.value) || 0 } }))}
+                className={finInputCls}
+              />
+              <label className="mb-1 mt-2 block text-[0.68rem] font-bold text-[var(--pp-ink-soft)]">Current amount</label>
+              <input
+                type="number"
+                value={g.current || ""}
+                placeholder="0"
+                onChange={(e) => setFinancial((prev) => ({ ...prev, savingsGoal: { ...prev.savingsGoal, current: Number(e.target.value) || 0 } }))}
+                className={finInputCls}
+              />
+              <button type="button" onClick={() => setGoalEditing(false)} className="mt-2.5 w-full rounded-xl bg-[var(--pp-ink)] py-2 text-[0.8rem] font-bold text-[var(--pp-surface)]">
+                Done
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-[0.85rem] font-bold text-[var(--pp-ink)]">{g.label || "No goal set yet"}</span>
+                <span className="whitespace-nowrap text-[0.7rem] font-semibold text-[var(--pp-ink-soft)]">
+                  {fmtPeso(g.current)} / {fmtPeso(g.target)}
+                </span>
+              </div>
+              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[var(--pp-paper)]">
+                <div className="h-full rounded-full" style={{ width: `${goalPct}%`, background: "var(--pp-gold)" }} />
+              </div>
+              <button
+                type="button"
+                onClick={() => setGoalEditing(true)}
+                className="mt-2.5 flex items-center gap-1 text-[0.72rem] font-bold text-[var(--pp-ink-soft)]"
+              >
+                <PencilLine size={12} strokeWidth={2.2} /> Edit Goal
+              </button>
+            </>
+          )}
+        </div>
+      </section>
+
+      <section>
+        <SectionTitle icon={BarChart3} fill="var(--pp-sky)" ink="var(--pp-sky-ink)" title="Budget Tracker" />
+        {financial.budgets.length === 0 ? (
+          <div className="pp-card">
+            <p className="py-2 text-center text-[0.78rem] italic text-[var(--pp-ink-soft)]">No budgets set yet.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {financial.budgets.map((b) => {
+              const spent = spentForCategory(b.category);
+              const pct = b.limit > 0 ? Math.min(100, Math.round((spent / b.limit) * 100)) : 0;
+              const over = spent > b.limit;
+              return (
+                <div key={b.id} className="pp-card">
+                  <div className="flex items-center gap-1.5">
+                    <select value={b.category} onChange={(e) => updateBudget(b.id, "category", e.target.value)} className={finInputCls + " flex-1"}>
+                      {FIN_CATEGORIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      value={b.limit || ""}
+                      placeholder="Limit"
+                      onChange={(e) => updateBudget(b.id, "limit", Number(e.target.value) || 0)}
+                      className={finInputCls + " w-24"}
+                    />
+                    <button type="button" onClick={() => removeBudget(b.id)} aria-label="Remove budget" className="grid h-9 w-9 shrink-0 place-items-center text-[var(--pp-ink-soft)]">
+                      <X size={16} strokeWidth={2.2} />
+                    </button>
+                  </div>
+                  <div className="mt-2 flex items-baseline justify-between gap-2">
+                    <span className="text-[0.7rem] font-semibold text-[var(--pp-ink-soft)]">Spent this month</span>
+                    <span className="text-[0.72rem] font-bold" style={{ color: over ? "var(--pp-blush-ink)" : "var(--pp-ink)" }}>
+                      {fmtPeso(spent)} / {fmtPeso(b.limit)}
+                    </span>
+                  </div>
+                  <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-[var(--pp-paper)]">
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: over ? "var(--pp-blush-ink)" : "var(--pp-sky-ink)" }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={addBudget}
+          className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-[var(--pp-line)] py-3 text-[0.8rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          <Plus size={16} strokeWidth={2.2} /> Add budget category
+        </button>
+      </section>
+
+      <section>
+        <SectionTitle icon={Receipt} fill="var(--pp-blush)" ink="var(--pp-blush-ink)" title="Expense / Income Log" />
+        {sortedEntries.length === 0 ? (
+          <div className="pp-card">
+            <p className="py-2 text-center text-[0.78rem] italic text-[var(--pp-ink-soft)]">No entries yet.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {sortedEntries.map((entry) => {
+              const isIncome = entry.type === "income";
+              return (
+                <div key={entry.id} className="pp-card">
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => updateEntry(entry.id, "type", "expense")}
+                      className="flex-1 rounded-xl border-[1.5px] py-1.5 text-[0.72rem] font-bold"
+                      style={!isIncome ? { background: "var(--pp-blush)", borderColor: "var(--pp-blush)", color: "var(--pp-blush-ink)" } : { borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }}
+                    >
+                      Expense
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateEntry(entry.id, "type", "income")}
+                      className="flex-1 rounded-xl border-[1.5px] py-1.5 text-[0.72rem] font-bold"
+                      style={isIncome ? { background: "var(--pp-mint)", borderColor: "var(--pp-mint)", color: "var(--pp-mint-ink)" } : { borderColor: "var(--pp-line)", color: "var(--pp-ink-soft)" }}
+                    >
+                      Income
+                    </button>
+                    <button type="button" onClick={() => removeEntry(entry.id)} aria-label="Remove entry" className="grid h-9 w-9 shrink-0 place-items-center text-[var(--pp-ink-soft)]">
+                      <X size={16} strokeWidth={2.2} />
+                    </button>
+                  </div>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      value={entry.amount || ""}
+                      placeholder="Amount"
+                      onChange={(e) => updateEntry(entry.id, "amount", Number(e.target.value) || 0)}
+                      className={finInputCls + " w-24"}
+                    />
+                    <select value={entry.category} onChange={(e) => updateEntry(entry.id, "category", e.target.value)} className={finInputCls + " flex-1"}>
+                      {FIN_CATEGORIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <input type="date" value={entry.date} onChange={(e) => updateEntry(entry.id, "date", e.target.value)} className={finInputCls} />
+                    <input
+                      type="text"
+                      value={entry.note || ""}
+                      placeholder="Note (optional)"
+                      onChange={(e) => updateEntry(entry.id, "note", e.target.value)}
+                      className={finInputCls}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={addEntry}
+          className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-[var(--pp-line)] py-3 text-[0.8rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          <Plus size={16} strokeWidth={2.2} /> Add entry
+        </button>
+      </section>
+    </div>
+  );
+}
+
+const FAMILY_ROLES = ["Parent", "Spouse", "Child", "Sibling", "Grandparent", "Other"];
+const ACTIVITY_TYPES = ["School", "Tutorial", "Training", "Other"];
+
+function FamilyNotesPage() {
+  const [family, setFamily] = useLocalStorageState("pastelplan.family.v1", {
+    members: [],
+    activities: [],
+    chores: [],
+    importantDates: [],
+    journal: [],
+  });
+
+  const addMember = () => setFamily((prev) => ({ ...prev, members: [...prev.members, { id: uid(), name: "", role: "Parent", birthday: "" }] }));
+  const updateMember = (id, key, val) => setFamily((prev) => ({ ...prev, members: prev.members.map((m) => (m.id === id ? { ...m, [key]: val } : m)) }));
+  const removeMember = (id) => setFamily((prev) => ({ ...prev, members: prev.members.filter((m) => m.id !== id) }));
+
+  const addActivity = () =>
+    setFamily((prev) => ({ ...prev, activities: [...prev.activities, { id: uid(), type: "School", title: "", date: todayISO(), note: "" }] }));
+  const updateActivity = (id, key, val) =>
+    setFamily((prev) => ({ ...prev, activities: prev.activities.map((a) => (a.id === id ? { ...a, [key]: val } : a)) }));
+  const removeActivity = (id) => setFamily((prev) => ({ ...prev, activities: prev.activities.filter((a) => a.id !== id) }));
+  const sortedActivities = [...family.activities].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+  const addChore = () => setFamily((prev) => ({ ...prev, chores: [...prev.chores, { id: uid(), title: "", assignee: "", done: false }] }));
+  const updateChore = (id, key, val) => setFamily((prev) => ({ ...prev, chores: prev.chores.map((c) => (c.id === id ? { ...c, [key]: val } : c)) }));
+  const removeChore = (id) => setFamily((prev) => ({ ...prev, chores: prev.chores.filter((c) => c.id !== id) }));
+
+  const addDate = () =>
+    setFamily((prev) => ({ ...prev, importantDates: [...prev.importantDates, { id: uid(), label: "", date: todayISO(), recurring: true }] }));
+  const updateDate = (id, key, val) =>
+    setFamily((prev) => ({ ...prev, importantDates: prev.importantDates.map((d) => (d.id === id ? { ...d, [key]: val } : d)) }));
+  const removeDate = (id) => setFamily((prev) => ({ ...prev, importantDates: prev.importantDates.filter((d) => d.id !== id) }));
+  const sortedDates = [...family.importantDates].sort((a, b) => {
+    const da = daysUntil(a.date, a.recurring);
+    const db = daysUntil(b.date, b.recurring);
+    return (da === null ? 9999 : da) - (db === null ? 9999 : db);
+  });
+
+  const addJournal = () => setFamily((prev) => ({ ...prev, journal: [...prev.journal, { id: uid(), date: todayISO(), text: "" }] }));
+  const updateJournal = (id, key, val) => setFamily((prev) => ({ ...prev, journal: prev.journal.map((j) => (j.id === id ? { ...j, [key]: val } : j)) }));
+  const removeJournal = (id) => setFamily((prev) => ({ ...prev, journal: prev.journal.filter((j) => j.id !== id) }));
+  const sortedJournal = [...family.journal].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+  return (
+    <div className="flex flex-col gap-5 px-4.5 pb-1.5 pt-4.5">
+      <section>
+        <SectionTitle icon={Users} fill="var(--pp-seafoam)" ink="var(--pp-seafoam-ink)" title="Family Members" />
+        {family.members.length === 0 ? (
+          <div className="pp-card">
+            <p className="py-2 text-center text-[0.78rem] italic text-[var(--pp-ink-soft)]">No family members added yet.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {family.members.map((m) => (
+              <div key={m.id} className="pp-card">
+                <div className="flex items-center gap-1.5">
+                  <input type="text" value={m.name} placeholder="Full name" onChange={(e) => updateMember(m.id, "name", e.target.value)} className={finInputCls + " flex-1"} />
+                  <button type="button" onClick={() => removeMember(m.id)} aria-label="Remove member" className="grid h-9 w-9 shrink-0 place-items-center text-[var(--pp-ink-soft)]">
+                    <X size={16} strokeWidth={2.2} />
+                  </button>
+                </div>
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <select value={m.role} onChange={(e) => updateMember(m.id, "role", e.target.value)} className={finInputCls}>
+                    {FAMILY_ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                  <input type="date" value={m.birthday || ""} onChange={(e) => updateMember(m.id, "birthday", e.target.value)} className={finInputCls} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={addMember}
+          className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-[var(--pp-line)] py-3 text-[0.8rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          <Plus size={16} strokeWidth={2.2} /> Add family member
+        </button>
+      </section>
+
+      <section>
+        <SectionTitle icon={BookOpen} fill="var(--pp-sky)" ink="var(--pp-sky-ink)" title="Activities" />
+        {sortedActivities.length === 0 ? (
+          <div className="pp-card">
+            <p className="py-2 text-center text-[0.78rem] italic text-[var(--pp-ink-soft)]">No activities yet.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {sortedActivities.map((a) => (
+              <div key={a.id} className="pp-card">
+                <div className="flex items-center gap-1.5">
+                  <select value={a.type} onChange={(e) => updateActivity(a.id, "type", e.target.value)} className={finInputCls}>
+                    {ACTIVITY_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                  <input type="text" value={a.title} placeholder="Title" onChange={(e) => updateActivity(a.id, "title", e.target.value)} className={finInputCls + " flex-1"} />
+                  <button type="button" onClick={() => removeActivity(a.id)} aria-label="Remove activity" className="grid h-9 w-9 shrink-0 place-items-center text-[var(--pp-ink-soft)]">
+                    <X size={16} strokeWidth={2.2} />
+                  </button>
+                </div>
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <input type="date" value={a.date} onChange={(e) => updateActivity(a.id, "date", e.target.value)} className={finInputCls} />
+                  <input type="text" value={a.note || ""} placeholder="Note (optional)" onChange={(e) => updateActivity(a.id, "note", e.target.value)} className={finInputCls} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={addActivity}
+          className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-[var(--pp-line)] py-3 text-[0.8rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          <Plus size={16} strokeWidth={2.2} /> Add activity
+        </button>
+      </section>
+
+      <section>
+        <SectionTitle icon={Check} fill="var(--pp-mint)" ink="var(--pp-mint-ink)" title="Shared To-Dos" />
+        {family.chores.length === 0 ? (
+          <div className="pp-card">
+            <p className="py-2 text-center text-[0.78rem] italic text-[var(--pp-ink-soft)]">No shared to-dos yet.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {family.chores.map((c) => (
+              <div key={c.id} className="flex items-center gap-2.5">
+                <CheckBox checked={c.done} onClick={() => updateChore(c.id, "done", !c.done)} size={20} tone="var(--pp-mint-ink)" label={`Mark ${c.title} done`} />
+                <input
+                  type="text"
+                  value={c.title}
+                  placeholder="Task"
+                  onChange={(e) => updateChore(c.id, "title", e.target.value)}
+                  className={finInputCls + " flex-1"}
+                  style={c.done ? { textDecoration: "line-through", opacity: 0.6 } : undefined}
+                />
+                <input
+                  type="text"
+                  value={c.assignee || ""}
+                  placeholder="Assignee"
+                  onChange={(e) => updateChore(c.id, "assignee", e.target.value)}
+                  className={finInputCls + " w-24"}
+                />
+                <button type="button" onClick={() => removeChore(c.id)} aria-label="Remove to-do" className="grid h-9 w-9 shrink-0 place-items-center text-[var(--pp-ink-soft)]">
+                  <X size={16} strokeWidth={2.2} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={addChore}
+          className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-[var(--pp-line)] py-3 text-[0.8rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          <Plus size={16} strokeWidth={2.2} /> Add to-do
+        </button>
+      </section>
+
+      <section>
+        <SectionTitle icon={CalendarClock} fill="var(--pp-gold)" ink="var(--pp-gold-ink)" title="Important Dates" />
+        {sortedDates.length === 0 ? (
+          <div className="pp-card">
+            <p className="py-2 text-center text-[0.78rem] italic text-[var(--pp-ink-soft)]">No important dates yet.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {sortedDates.map((d) => {
+              const n = daysUntil(d.date, d.recurring);
+              const countdown = n === null ? "" : n === 0 ? "Today! 🎉" : n === 1 ? "Tomorrow" : n > 0 ? `In ${n} days` : "Past";
+              return (
+                <div key={d.id} className="pp-card">
+                  <div className="flex items-center gap-1.5">
+                    <input type="text" value={d.label} placeholder="e.g. Mom's birthday" onChange={(e) => updateDate(d.id, "label", e.target.value)} className={finInputCls + " flex-1"} />
+                    <button type="button" onClick={() => removeDate(d.id)} aria-label="Remove date" className="grid h-9 w-9 shrink-0 place-items-center text-[var(--pp-ink-soft)]">
+                      <X size={16} strokeWidth={2.2} />
+                    </button>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <input type="date" value={d.date} onChange={(e) => updateDate(d.id, "date", e.target.value)} className={finInputCls} />
+                    <label className="flex shrink-0 items-center gap-1.5 text-[0.72rem] font-semibold text-[var(--pp-ink-soft)]">
+                      <input type="checkbox" checked={!!d.recurring} onChange={(e) => updateDate(d.id, "recurring", e.target.checked)} /> Yearly
+                    </label>
+                  </div>
+                  {countdown && <p className="mt-1.5 text-[0.72rem] font-bold text-[var(--pp-gold-ink)]">{countdown}</p>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={addDate}
+          className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-[var(--pp-line)] py-3 text-[0.8rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          <Plus size={16} strokeWidth={2.2} /> Add important date
+        </button>
+      </section>
+
+      <section>
+        <SectionTitle icon={NotebookPen} fill="var(--pp-blush)" ink="var(--pp-blush-ink)" title="Family Journal" />
+        {sortedJournal.length === 0 ? (
+          <div className="pp-card">
+            <p className="py-2 text-center text-[0.78rem] italic text-[var(--pp-ink-soft)]">No journal entries yet.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {sortedJournal.map((j) => (
+              <div key={j.id} className="pp-card">
+                <div className="flex items-center gap-1.5">
+                  <input type="date" value={j.date} onChange={(e) => updateJournal(j.id, "date", e.target.value)} className={finInputCls} />
+                  <button type="button" onClick={() => removeJournal(j.id)} aria-label="Remove entry" className="grid h-9 w-9 shrink-0 place-items-center text-[var(--pp-ink-soft)]">
+                    <X size={16} strokeWidth={2.2} />
+                  </button>
+                </div>
+                <textarea
+                  value={j.text}
+                  placeholder="What's on your mind?"
+                  onChange={(e) => updateJournal(j.id, "text", e.target.value)}
+                  rows={3}
+                  className={finInputCls + " mt-1.5 resize-y"}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={addJournal}
+          className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-[var(--pp-line)] py-3 text-[0.8rem] font-bold text-[var(--pp-ink-soft)]"
+        >
+          <Plus size={16} strokeWidth={2.2} /> Add journal entry
+        </button>
+      </section>
+    </div>
   );
 }
 
