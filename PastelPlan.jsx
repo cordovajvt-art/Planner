@@ -817,7 +817,7 @@ export default function PastelPlan() {
                   boxShadow: "0 2px 12px -4px rgba(156,122,36,0.35)",
                 }}
               >
-                <img width="22" height="22" alt="" src="https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Left%20arrow/3D/left_arrow_3d.png" />
+                <ArrowLeft size={16} strokeWidth={2} />
               </button>
             )}
             <div className="flex-1 min-w-0">
@@ -2253,7 +2253,7 @@ function SectionsList({ classItem, sections, sectionLogs, setClassSections, setS
   return (
     <section>
       <button type="button" onClick={onBack} aria-label="Back to Class Schedule" className="mb-3 flex items-center text-[var(--pp-ink-soft)]">
-        <ChevronLeft size={16} strokeWidth={2.2} />
+        <ArrowLeft size={16} strokeWidth={2.2} />
       </button>
       <p className="mb-3 -mt-1 text-[0.9rem] font-semibold text-[var(--pp-ink)]">{classItem.className}</p>
       <SectionTitle icon={Users} fill="var(--pp-seafoam)" ink="var(--pp-seafoam-ink)" title="Sections" />
@@ -2328,7 +2328,7 @@ function SectionLogView({ section, entries, setSectionLogs, onBack }) {
   return (
     <section>
       <button type="button" onClick={onBack} aria-label="Back to Sections" className="mb-3 flex items-center text-[var(--pp-ink-soft)]">
-        <ChevronLeft size={16} strokeWidth={2.2} />
+        <ArrowLeft size={16} strokeWidth={2.2} />
       </button>
       <p className="mb-3 -mt-1 text-[0.9rem] font-semibold text-[var(--pp-ink)]">{section.name}</p>
       <SectionTitle icon={ClipboardList} fill="var(--pp-blush)" ink="var(--pp-blush-ink)" title="Activity Log" />
@@ -2421,7 +2421,7 @@ function TeacherWorkspace({
           aria-label="Back to Class Schedule"
           className="mb-3 flex items-center text-[var(--pp-ink-soft)]"
         >
-          <ChevronLeft size={16} strokeWidth={2.2} />
+          <ArrowLeft size={16} strokeWidth={2.2} />
         </button>
         <p className="mb-3 -mt-1 text-[0.9rem] font-semibold text-[var(--pp-ink)]">
           {activeClass.code && <span className="mr-1.5 text-[var(--pp-sky-ink)]">{activeClass.code}</span>}
@@ -2749,7 +2749,7 @@ function OutlineSummaryList({ weeks, onBack, onSelectWeek }) {
         aria-label="Back"
         className="mb-3 flex w-9 items-center justify-center rounded-[10px] border-[1.5px] border-[var(--pp-line)] bg-[var(--pp-surface)] py-1.5 text-[var(--pp-ink-soft)]"
       >
-        <ChevronLeft size={15} strokeWidth={2.2} />
+        <ArrowLeft size={15} strokeWidth={2.2} />
       </button>
       <div className="overflow-x-auto rounded-xl border-[1.5px] border-[var(--pp-line)]">
         <table className="w-full min-w-[860px] border-collapse">
